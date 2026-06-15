@@ -38,11 +38,11 @@ body{
 
 /* ── Sidebar (same as index) ── */
 .sidebar{
-  width:var(--sidebar-w);min-height:100vh;background:var(--cream-sidebar);
+  width:var(--sidebar-w);height:100vh;background:var(--cream-sidebar);
   border-right:1px solid rgba(0,0,0,0.1);position:fixed;top:0;left:0;
-  display:flex;flex-direction:column;z-index:100;overflow-y:auto;
+  display:flex;flex-direction:column;z-index:100;overflow:hidden;
 }
-.sidebar-inner{padding:28px 20px 20px;flex:1;display:flex;flex-direction:column}
+.sidebar-inner{padding:28px 20px 20px;flex:1;display:flex;flex-direction:column;overflow-y:auto;}
 .sidebar-logo{font-size:24px;font-weight:900;letter-spacing:-.04em;color:var(--text);text-decoration:none;display:block;margin-bottom:32px}
 .sidebar-logo span{color:var(--green)}
 .sidebar-section-label{font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;padding:0 8px}
