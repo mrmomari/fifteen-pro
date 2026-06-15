@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
@@ -650,6 +651,18 @@ body{
 .footer-logo{font-size:26px;font-weight:900;letter-spacing:-.04em;color:var(--text);margin-bottom:8px}
 .footer-logo span{color:var(--green)}
 .footer-copy{font-size:12px;color:var(--text-dim);line-height:1.8}
+/* ── Social icons ── */
+.soc{width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;transition:opacity .2s,transform .15s;font-size:11px;flex-shrink:0}
+.soc:hover{opacity:.8;transform:scale(1.12)}
+.soc.li{background:#0A66C2;color:#fff}.soc.ig{background:radial-gradient(circle at 30% 107%,#fdf497 0%,#fd5949 45%,#d6249f 60%,#285AEB 90%);color:#fff}.soc.tw{background:#000;color:#fff}.soc.fb{background:#1877F2;color:#fff}.soc.yt{background:#FF0000;color:#fff}.soc.wa{background:#25D366;color:#fff}.soc.tt{background:#010101;color:#fff}.soc.sc{background:#FFFC00;color:#1C2416}
+.sf-soc-row{display:flex;flex-wrap:wrap;gap:5px}
+.sf-addr{font-size:9px;color:var(--text-dim);line-height:1.6;margin-bottom:7px;white-space:pre-line}
+.sf-contact{margin-top:10px;width:100%}
+.sf-top{display:flex;align-items:center;justify-content:space-between;width:100%}
+.sidebar-footer{flex-direction:column;align-items:flex-start}
+.ft-soc-row{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:14px 0 6px}
+.ft-soc-row .soc{width:36px;height:36px;font-size:15px}
+.footer-addr{font-size:11px;color:var(--text-dim);margin:4px 0 10px;line-height:1.7;white-space:pre-line}
 
 /* ── Icons ── */
 .icon{display:inline-block;vertical-align:middle;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -770,11 +783,26 @@ body{
 
   </div>
   <div class="sidebar-footer">
-    <span>15fifteen15 &nbsp;·&nbsp; Business Acceleration</span>
-    <button class="admin-trigger" onclick="openAdminModal()" title="Admin login">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-      Admin
-    </button>
+    <div class="sf-top">
+      <span>15fifteen15 &nbsp;·&nbsp; Business Acceleration</span>
+      <button class="admin-trigger" onclick="openAdminModal()" title="Admin login">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Admin
+      </button>
+    </div>
+    <div id="sfContact" style="display:none">
+      <div id="sfAddr" class="sf-addr"></div>
+      <div class="sf-soc-row">
+        <a class="soc li" id="sf-li" href="#" target="_blank" rel="noopener" style="display:none" title="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+        <a class="soc ig" id="sf-ig" href="#" target="_blank" rel="noopener" style="display:none" title="Instagram"><i class="fa-brands fa-instagram"></i></a>
+        <a class="soc tw" id="sf-tw" href="#" target="_blank" rel="noopener" style="display:none" title="X / Twitter"><i class="fa-brands fa-x-twitter"></i></a>
+        <a class="soc fb" id="sf-fb" href="#" target="_blank" rel="noopener" style="display:none" title="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+        <a class="soc yt" id="sf-yt" href="#" target="_blank" rel="noopener" style="display:none" title="YouTube"><i class="fa-brands fa-youtube"></i></a>
+        <a class="soc wa" id="sf-wa" href="#" target="_blank" rel="noopener" style="display:none" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></a>
+        <a class="soc tt" id="sf-tt" href="#" target="_blank" rel="noopener" style="display:none" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>
+        <a class="soc sc" id="sf-sc" href="#" target="_blank" rel="noopener" style="display:none" title="Snapchat"><i class="fa-brands fa-snapchat"></i></a>
+      </div>
+    </div>
   </div>
 </aside>
 
@@ -1119,6 +1147,17 @@ body{
 <footer class="footer">
   <div class="container">
     <div class="footer-logo">FIFTEEN<span>.</span></div>
+    <div class="ft-soc-row" id="ftSocRow" style="display:none">
+      <a class="soc li" id="ft-li" href="#" target="_blank" rel="noopener" style="display:none" title="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+      <a class="soc ig" id="ft-ig" href="#" target="_blank" rel="noopener" style="display:none" title="Instagram"><i class="fa-brands fa-instagram"></i></a>
+      <a class="soc tw" id="ft-tw" href="#" target="_blank" rel="noopener" style="display:none" title="X / Twitter"><i class="fa-brands fa-x-twitter"></i></a>
+      <a class="soc fb" id="ft-fb" href="#" target="_blank" rel="noopener" style="display:none" title="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+      <a class="soc yt" id="ft-yt" href="#" target="_blank" rel="noopener" style="display:none" title="YouTube"><i class="fa-brands fa-youtube"></i></a>
+      <a class="soc wa" id="ft-wa" href="#" target="_blank" rel="noopener" style="display:none" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></a>
+      <a class="soc tt" id="ft-tt" href="#" target="_blank" rel="noopener" style="display:none" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>
+      <a class="soc sc" id="ft-sc" href="#" target="_blank" rel="noopener" style="display:none" title="Snapchat"><i class="fa-brands fa-snapchat"></i></a>
+    </div>
+    <div class="footer-addr" id="ftAddr" style="display:none"></div>
     <div class="footer-copy" style="margin-bottom:4px">15fifteen15 &nbsp;·&nbsp; Business Acceleration &amp; Digital Solutions</div>
     <div class="footer-copy">© 2025 Fifteen. All rights reserved. One partner per industry sector.</div>
   </div>
@@ -1229,6 +1268,51 @@ document.querySelectorAll('a[href^="#"]').forEach(a=>{
     if(target){e.preventDefault();target.scrollIntoView({behavior:'smooth',block:'start'})}
   });
 });
+</script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+(function(){
+  try {
+    if(typeof FIREBASE_CONFIG === 'undefined' || !FIREBASE_CONFIG.apiKey) return;
+    firebase.initializeApp(FIREBASE_CONFIG);
+    const db = firebase.firestore();
+    db.collection('settings').doc('company').get().then(doc => {
+      if (!doc.exists) return;
+      const d = doc.data();
+      const addr = (d.address || '').trim();
+      const sfAddr = document.getElementById('sfAddr');
+      const ftAddr = document.getElementById('ftAddr');
+      if (sfAddr) sfAddr.textContent = addr;
+      if (ftAddr) { ftAddr.textContent = addr; ftAddr.style.display = addr ? 'block' : 'none'; }
+      const platforms = [
+        { key:'linkedin',  sfId:'sf-li', ftId:'ft-li' },
+        { key:'instagram', sfId:'sf-ig', ftId:'ft-ig' },
+        { key:'twitter',   sfId:'sf-tw', ftId:'ft-tw' },
+        { key:'facebook',  sfId:'sf-fb', ftId:'ft-fb' },
+        { key:'youtube',   sfId:'sf-yt', ftId:'ft-yt' },
+        { key:'whatsapp',  sfId:'sf-wa', ftId:'ft-wa' },
+        { key:'tiktok',    sfId:'sf-tt', ftId:'ft-tt' },
+        { key:'snapchat',  sfId:'sf-sc', ftId:'ft-sc' },
+      ];
+      let hasSocial = false;
+      for (const p of platforms) {
+        const url = d.social?.[p.key] || '';
+        [p.sfId, p.ftId].forEach(id => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          if (url) { el.href = url; el.style.display = 'inline-flex'; hasSocial = true; }
+          else { el.style.display = 'none'; }
+        });
+      }
+      const ftSocRow = document.getElementById('ftSocRow');
+      if (ftSocRow) ftSocRow.style.display = hasSocial ? 'flex' : 'none';
+      const sfContact = document.getElementById('sfContact');
+      if (sfContact) sfContact.style.display = (addr || hasSocial) ? 'block' : 'none';
+    }).catch(() => {});
+  } catch(e) {}
+})();
 </script>
 </body>
 </html>
