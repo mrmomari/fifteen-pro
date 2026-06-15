@@ -1,0 +1,96 @@
+{
+  "currency": "$",
+  "lastUpdated": "2026-06-15",
+  "services": [
+    {
+      "id": 1, "phase": 1, "phaseLabel": "Brand & Authority",
+      "name": "Brand Identity",
+      "description": "Logo, colors, typography & complete brand guidelines",
+      "price": 1500, "type": "one-time", "active": true
+    },
+    {
+      "id": 2, "phase": 1, "phaseLabel": "Brand & Authority",
+      "name": "Motion Video",
+      "description": "Professional motion graphics and brand video production",
+      "price": 900, "type": "one-time", "active": true
+    },
+    {
+      "id": 3, "phase": 1, "phaseLabel": "Brand & Authority",
+      "name": "Animations",
+      "description": "Custom digital animations for web and social media",
+      "price": 700, "type": "one-time", "active": true
+    },
+    {
+      "id": 4, "phase": 1, "phaseLabel": "Brand & Authority",
+      "name": "Digital Arts",
+      "description": "Bespoke digital artwork and visual content creation",
+      "price": 500, "type": "one-time", "active": true
+    },
+    {
+      "id": 5, "phase": 1, "phaseLabel": "Brand & Authority",
+      "name": "Editorial & Print",
+      "description": "Brochures, flyers, catalogs and print-ready materials",
+      "price": 600, "type": "one-time", "active": true
+    },
+    {
+      "id": 6, "phase": 2, "phaseLabel": "Growth & Traffic",
+      "name": "Branded Content",
+      "description": "Influencer partnerships and branded content strategy",
+      "price": 350, "type": "monthly", "active": true
+    },
+    {
+      "id": 7, "phase": 2, "phaseLabel": "Growth & Traffic",
+      "name": "Platform Management",
+      "description": "Full social media management across all platforms",
+      "price": 280, "type": "monthly", "active": true
+    },
+    {
+      "id": 8, "phase": 2, "phaseLabel": "Growth & Traffic",
+      "name": "Ranking Control / SEO",
+      "description": "Search engine domination and ranking optimization",
+      "price": 450, "type": "monthly", "active": true
+    },
+    {
+      "id": 9, "phase": 2, "phaseLabel": "Growth & Traffic",
+      "name": "Newsletters & SMS",
+      "description": "Email campaigns and high-impact SMS marketing automation",
+      "price": 220, "type": "monthly", "active": true
+    },
+    {
+      "id": 10, "phase": 2, "phaseLabel": "Growth & Traffic",
+      "name": "Performance Marketing",
+      "description": "Paid advertising and performance media buying",
+      "price": 600, "type": "monthly", "active": true
+    },
+    {
+      "id": 11, "phase": 3, "phaseLabel": "Infrastructure & Scale",
+      "name": "Website Creation",
+      "description": "Custom high-performance website design and development",
+      "price": 3000, "type": "one-time", "active": true
+    },
+    {
+      "id": 12, "phase": 3, "phaseLabel": "Infrastructure & Scale",
+      "name": "E-commerce Storefront",
+      "description": "Full e-commerce store setup, design and optimization",
+      "price": 4000, "type": "one-time", "active": true
+    },
+    {
+      "id": 13, "phase": 3, "phaseLabel": "Infrastructure & Scale",
+      "name": "Secure E-commerce",
+      "description": "Enterprise-grade secure e-commerce infrastructure",
+      "price": 6000, "type": "one-time", "active": true
+    },
+    {
+      "id": 14, "phase": 3, "phaseLabel": "Infrastructure & Scale",
+      "name": "Business Hub / ERP",
+      "description": "Custom ERP and business management system build",
+      "price": 9500, "type": "one-time", "active": true
+    },
+    {
+      "id": 15, "phase": 3, "phaseLabel": "Infrastructure & Scale",
+      "name": "Analytics Dashboard",
+      "description": "Real-time KPI tracking and statistics dashboard",
+      "price": 2500, "type": "one-time", "active": true
+    }
+  ]
+}

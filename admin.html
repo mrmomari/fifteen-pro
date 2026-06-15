@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Fifteen Pricing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased;min-height:100vh}
+:root{
+  --green:#26915E;--green-dim:#1d7a4c;--orange:#E36C44;
+  --cream:#E0E8CF;--cream-alt:#D5DFBE;--cream-card:rgba(255,255,255,0.55);
+  --text:#1C2416;--text-muted:#5A6B4E;--text-dim:#7A8B6A;
+  --radius:10px;--radius-lg:14px;
+}
+
+/* ── Login screen ── */
+#loginScreen{
+  display:flex;align-items:center;justify-content:center;
+  min-height:100vh;padding:20px;
+}
+.login-box{
+  background:rgba(255,255,255,0.55);border:1px solid rgba(0,0,0,0.1);
+  border-radius:20px;padding:48px 44px;width:100%;max-width:380px;
+  box-shadow:0 8px 40px rgba(0,0,0,0.1);text-align:center;
+}
+.login-logo{font-size:28px;font-weight:900;letter-spacing:-.04em;margin-bottom:6px}
+.login-logo span{color:var(--green)}
+.login-sub{font-size:13px;color:var(--text-muted);margin-bottom:36px}
+.login-label{display:block;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);text-align:left;margin-bottom:6px}
+.login-input{
+  width:100%;padding:12px 14px;background:rgba(255,255,255,0.8);
+  border:1px solid rgba(0,0,0,0.12);border-radius:8px;
+  font-size:14px;font-family:inherit;color:var(--text);outline:none;margin-bottom:14px;
+  transition:border-color .15s,box-shadow .15s;
+}
+.login-input:focus{border-color:rgba(38,145,94,.4);box-shadow:0 0 0 3px rgba(38,145,94,.08)}
+.login-input::placeholder{color:var(--text-dim)}
+.login-btn{
+  width:100%;padding:13px;background:var(--green);color:#fff;border:none;border-radius:8px;
+  font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.04em;transition:background .15s;
+}
+.login-btn:hover{background:var(--green-dim)}
+.login-error{font-size:12px;color:#c0392b;margin-top:10px;display:none}
+
+/* ── Admin panel ── */
+#adminPanel{display:none;padding:0 0 80px}
+
+.admin-topbar{
+  background:var(--text);padding:14px 32px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:50;
+}
+.admin-logo{font-size:18px;font-weight:900;letter-spacing:-.03em;color:#fff}
+.admin-logo span{color:var(--green)}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.admin-save-btn{
+  padding:9px 22px;background:var(--orange);color:#fff;border:none;border-radius:7px;
+  font-size:13px;font-weight:800;cursor:pointer;letter-spacing:.03em;transition:all .2s;
+  box-shadow:0 3px 12px rgba(227,108,68,.35);
+}
+.admin-save-btn:hover{background:#ec7850;transform:translateY(-1px)}
+.admin-save-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.admin-logout{font-size:12px;color:rgba(255,255,255,.5);background:none;border:none;cursor:pointer;text-decoration:underline;transition:color .15s}
+.admin-logout:hover{color:rgba(255,255,255,.8)}
+
+.admin-body{max-width:900px;margin:0 auto;padding:36px 24px}
+
+/* Status bar */
+.status-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(255,255,255,0.5);border:1px solid rgba(0,0,0,0.09);
+  border-radius:10px;padding:14px 20px;margin-bottom:28px;
+}
+.status-left{font-size:13px;color:var(--text-muted)}
+.status-left strong{color:var(--text)}
+.status-badge{font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px}
+.status-badge.ok{background:rgba(38,145,94,.12);color:var(--green);border:1px solid rgba(38,145,94,.2)}
+.status-badge.warn{background:rgba(227,108,68,.1);color:var(--orange);border:1px solid rgba(227,108,68,.2)}
+
+/* GitHub token setup */
+.token-section{
+  background:rgba(255,255,255,0.5);border:1px solid rgba(0,0,0,0.09);
+  border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:28px;
+}
+.token-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.token-title{font-size:13px;font-weight:800;color:var(--text)}
+.token-status{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
+.token-status.set{background:rgba(38,145,94,.12);color:var(--green)}
+.token-status.unset{background:rgba(227,108,68,.1);color:var(--orange)}
+.token-row{display:flex;gap:10px}
+.token-input{
+  flex:1;padding:9px 13px;background:rgba(255,255,255,0.8);
+  border:1px solid rgba(0,0,0,0.12);border-radius:8px;
+  font-size:13px;font-family:monospace;color:var(--text);outline:none;
+  transition:border-color .15s;
+}
+.token-input:focus{border-color:rgba(38,145,94,.4)}
+.token-input::placeholder{color:var(--text-dim)}
+.token-save-btn{
+  padding:9px 18px;background:var(--green);color:#fff;border:none;border-radius:8px;
+  font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;transition:background .15s;
+}
+.token-save-btn:hover{background:var(--green-dim)}
+.token-clear-btn{
+  padding:9px 14px;background:transparent;color:var(--text-muted);
+  border:1px solid rgba(0,0,0,0.12);border-radius:8px;
+  font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .15s;
+}
+.token-clear-btn:hover{background:rgba(0,0,0,0.05)}
+.token-help{font-size:11px;color:var(--text-dim);margin-top:8px}
+.token-help a{color:var(--green);font-weight:600}
+
+/* Section heading */
+.section-heading{
+  display:flex;align-items:center;gap:10px;margin-bottom:16px;
+}
+.section-heading h2{font-size:15px;font-weight:800;color:var(--text)}
+.phase-pill{font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--green);background:rgba(38,145,94,.1);border:1px solid rgba(38,145,94,.18);padding:3px 10px;border-radius:6px}
+
+/* Service cards grid */
+.services-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:36px}
+.service-admin-card{
+  background:rgba(255,255,255,0.52);border:1px solid rgba(0,0,0,0.09);
+  border-radius:var(--radius);padding:18px 16px;
+  transition:box-shadow .2s;
+}
+.service-admin-card:hover{box-shadow:0 4px 16px rgba(0,0,0,0.08)}
+.sac-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.sac-num{font-size:10px;font-weight:900;color:var(--green);font-family:monospace;letter-spacing:.06em}
+.sac-name{font-size:14px;font-weight:800;color:var(--text);margin-bottom:6px;letter-spacing:-.01em}
+
+/* Toggle switch */
+.toggle-wrap{display:flex;align-items:center;gap:7px}
+.toggle-label{font-size:10px;font-weight:700;color:var(--text-muted)}
+.toggle{position:relative;width:34px;height:18px;cursor:pointer}
+.toggle input{opacity:0;width:0;height:0;position:absolute}
+.toggle-track{
+  position:absolute;inset:0;border-radius:9px;background:rgba(0,0,0,0.15);
+  transition:background .2s;
+}
+.toggle input:checked + .toggle-track{background:var(--green)}
+.toggle-thumb{
+  position:absolute;top:2px;left:2px;width:14px;height:14px;
+  border-radius:50%;background:#fff;transition:transform .2s;
+  box-shadow:0 1px 4px rgba(0,0,0,0.2);
+}
+.toggle input:checked ~ .toggle-thumb{transform:translateX(16px)}
+
+/* Price inputs */
+.price-row{display:flex;align-items:center;gap:8px;margin-top:10px}
+.price-symbol{font-size:16px;font-weight:800;color:var(--text-muted)}
+.price-input{
+  flex:1;padding:9px 11px;background:rgba(255,255,255,0.8);
+  border:1px solid rgba(0,0,0,0.12);border-radius:7px;
+  font-size:15px;font-weight:700;font-family:inherit;color:var(--text);
+  outline:none;transition:border-color .15s,box-shadow .15s;
+}
+.price-input:focus{border-color:rgba(38,145,94,.45);box-shadow:0 0 0 3px rgba(38,145,94,.08)}
+.type-select{
+  padding:9px 11px;background:rgba(255,255,255,0.8);
+  border:1px solid rgba(0,0,0,0.12);border-radius:7px;
+  font-size:12px;font-weight:700;font-family:inherit;color:var(--text);
+  outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23666' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;
+  transition:border-color .15s;
+}
+.type-select:focus{border-color:rgba(38,145,94,.45)}
+.type-select option{background:#fff}
+
+/* Desc input */
+.desc-input{
+  width:100%;margin-top:8px;padding:8px 11px;
+  background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);
+  border-radius:7px;font-size:12px;font-family:inherit;color:var(--text);
+  outline:none;resize:none;transition:border-color .15s;
+}
+.desc-input:focus{border-color:rgba(38,145,94,.4)}
+
+/* Save status toast */
+.toast{
+  position:fixed;bottom:28px;right:28px;z-index:200;
+  background:var(--text);color:#fff;padding:12px 20px;border-radius:10px;
+  font-size:13px;font-weight:600;opacity:0;transform:translateY(12px);
+  transition:all .3s;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,0.2);
+}
+.toast.show{opacity:1;transform:none}
+.toast.success{background:var(--green)}
+.toast.error{background:#c0392b}
+
+/* Inactive card */
+.service-admin-card.inactive{opacity:.55}
+
+@media(max-width:600px){
+  .services-grid{grid-template-columns:1fr}
+  .admin-body{padding:24px 14px}
+  .admin-topbar{padding:12px 16px}
+  .status-bar{flex-direction:column;align-items:flex-start;gap:8px}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ LOGIN ═══ -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">FIFTEEN<span>.</span></div>
+    <p class="login-sub">Pricing Admin Panel</p>
+    <label class="login-label" for="adminPw">Admin Password</label>
+    <input type="password" id="adminPw" class="login-input" placeholder="Enter password" autocomplete="current-password">
+    <button class="login-btn" onclick="doLogin()">Access Panel</button>
+    <p class="login-error" id="loginError">Incorrect password. Try again.</p>
+  </div>
+</div>
+
+<!-- ═══ ADMIN PANEL ═══ -->
+<div id="adminPanel">
+
+  <div class="admin-topbar">
+    <div class="admin-logo">FIFTEEN<span>.</span> <span style="font-size:11px;font-weight:500;color:rgba(255,255,255,.45);margin-left:8px">Pricing Admin</span></div>
+    <div class="topbar-right">
+      <button class="admin-save-btn" id="saveBtn" onclick="saveAll()">Save & Publish →</button>
+      <button class="admin-logout" onclick="logout()">Log out</button>
+    </div>
+  </div>
+
+  <div class="admin-body">
+
+    <!-- Status -->
+    <div class="status-bar">
+      <div class="status-left">Managing <strong>15 services</strong> across 3 phases · Changes publish to the live site in ~60 seconds</div>
+      <div class="status-badge ok" id="statusBadge">✓ Connected</div>
+    </div>
+
+    <!-- GitHub token -->
+    <div class="token-section">
+      <div class="token-header">
+        <span class="token-title">GitHub Save Token</span>
+        <span class="token-status unset" id="tokenStatus">Not set</span>
+      </div>
+      <div class="token-row">
+        <input type="password" id="ghTokenInput" class="token-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+        <button class="token-save-btn" onclick="saveToken()">Save Token</button>
+        <button class="token-clear-btn" onclick="clearToken()">Clear</button>
+      </div>
+      <p class="token-help">
+        Need a token? Go to <a href="https://github.com/settings/tokens/new" target="_blank">github.com/settings/tokens/new</a> →
+        select <strong>repo</strong> scope → Generate → paste here. Stored only in your browser.
+      </p>
+    </div>
+
+    <!-- Service grids per phase -->
+    <div id="adminContent"></div>
+
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ─── Config ─── */
+const ADMIN_PASSWORD = 'fifteen2025'; // ← Change this password here
+const REPO           = 'mrmomari/fifteen-pro';
+const FILE_PATH      = 'prices.json';
+
+/* ─── State ─── */
+let services = [];
+
+/* ─── Login ─── */
+function doLogin() {
+  const pw = document.getElementById('adminPw').value;
+  if(pw === ADMIN_PASSWORD) {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('adminPanel').style.display  = 'block';
+    loadPrices();
+    checkToken();
+  } else {
+    const err = document.getElementById('loginError');
+    err.style.display = 'block';
+    setTimeout(()=>err.style.display='none', 2400);
+  }
+}
+document.getElementById('adminPw').addEventListener('keydown', e => {
+  if(e.key === 'Enter') doLogin();
+});
+
+function logout() {
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('adminPanel').style.display  = 'none';
+  document.getElementById('adminPw').value = '';
+}
+
+/* ─── Token ─── */
+function getToken()   { return localStorage.getItem('fifteen_gh_token') || ''; }
+function saveToken()  {
+  const t = document.getElementById('ghTokenInput').value.trim();
+  if(!t) return;
+  localStorage.setItem('fifteen_gh_token', t);
+  document.getElementById('ghTokenInput').value = '';
+  checkToken();
+  showToast('Token saved to browser ✓', 'success');
+}
+function clearToken() {
+  localStorage.removeItem('fifteen_gh_token');
+  checkToken();
+  showToast('Token cleared', '');
+}
+function checkToken() {
+  const has = !!getToken();
+  const el  = document.getElementById('tokenStatus');
+  el.textContent = has ? '✓ Token set' : 'Not set';
+  el.className   = 'token-status ' + (has ? 'set' : 'unset');
+}
+
+/* ─── Load prices ─── */
+async function loadPrices() {
+  try {
+    const res = await fetch('prices.json?v=' + Date.now());
+    const data = await res.json();
+    services = data.services;
+  } catch(e) {
+    showToast('Could not load prices.json', 'error');
+    return;
+  }
+  renderAdmin();
+}
+
+/* ─── Render admin cards ─── */
+function renderAdmin() {
+  const phases = [
+    {num:1, label:'Phase 01 — Brand & Authority'},
+    {num:2, label:'Phase 02 — Growth & Traffic'},
+    {num:3, label:'Phase 03 — Infrastructure & Scale'},
+  ];
+  const content = document.getElementById('adminContent');
+  content.innerHTML = phases.map(ph => {
+    const phServices = services.filter(s => s.phase === ph.num);
+    return `
+      <div class="section-heading">
+        <div class="phase-pill">Phase 0${ph.num}</div>
+        <h2>${ph.label}</h2>
+      </div>
+      <div class="services-grid">
+        ${phServices.map(s => renderServiceCard(s)).join('')}
+      </div>
+    `;
+  }).join('');
+}
+
+function renderServiceCard(s) {
+  const isActive = s.active !== false;
+  return `
+    <div class="service-admin-card ${isActive?'':'inactive'}" id="scard${s.id}">
+      <div class="sac-top">
+        <span class="sac-num">SERVICE 0${s.id < 10 ? '' : ''}${s.id}</span>
+        <div class="toggle-wrap">
+          <span class="toggle-label">${isActive?'Active':'Off'}</span>
+          <label class="toggle">
+            <input type="checkbox" ${isActive?'checked':''} onchange="toggleActive(${s.id},this)">
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
+        </div>
+      </div>
+      <div class="sac-name">${s.name}</div>
+      <div class="price-row">
+        <span class="price-symbol">$</span>
+        <input type="number" class="price-input" id="price${s.id}" value="${s.price}" min="0" step="50" oninput="markDirty()">
+        <select class="type-select" id="type${s.id}" onchange="markDirty()">
+          <option value="one-time" ${s.type==='one-time'?'selected':''}>one-time</option>
+          <option value="monthly" ${s.type==='monthly'?'selected':''}>/ month</option>
+        </select>
+      </div>
+      <textarea class="desc-input" id="desc${s.id}" rows="2" oninput="markDirty()">${s.description}</textarea>
+    </div>
+  `;
+}
+
+/* ─── Active toggle ─── */
+function toggleActive(id, checkbox) {
+  const card = document.getElementById('scard'+id);
+  if(checkbox.checked) card.classList.remove('inactive');
+  else card.classList.add('inactive');
+  const lbl = checkbox.closest('.toggle-wrap').querySelector('.toggle-label');
+  lbl.textContent = checkbox.checked ? 'Active' : 'Off';
+  markDirty();
+}
+
+/* ─── Dirty state ─── */
+let isDirty = false;
+function markDirty() {
+  if(!isDirty) {
+    isDirty = true;
+    document.getElementById('saveBtn').textContent = 'Save & Publish → (unsaved)';
+  }
+}
+
+/* ─── Collect current values ─── */
+function collectValues() {
+  return services.map(s => {
+    const priceEl = document.getElementById('price'+s.id);
+    const typeEl  = document.getElementById('type'+s.id);
+    const descEl  = document.getElementById('desc'+s.id);
+    const card    = document.getElementById('scard'+s.id);
+    const checkbox = card ? card.querySelector('input[type="checkbox"]') : null;
+    return {
+      ...s,
+      price:    priceEl  ? parseFloat(priceEl.value)||0 : s.price,
+      type:     typeEl   ? typeEl.value : s.type,
+      description: descEl ? descEl.value.trim() : s.description,
+      active:   checkbox ? checkbox.checked : s.active,
+    };
+  });
+}
+
+/* ─── Save to GitHub ─── */
+async function saveAll() {
+  const token = getToken();
+  const btn   = document.getElementById('saveBtn');
+  const updatedServices = collectValues();
+  const payload = {
+    currency: '$',
+    lastUpdated: new Date().toISOString().slice(0,10),
+    services: updatedServices,
+  };
+
+  if(!token) {
+    showToast('Set your GitHub token first to publish changes.', 'error');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Publishing...';
+  showToast('Connecting to GitHub…', '');
+
+  try {
+    /* 1. Get current file SHA */
+    const getRes = await fetch(`https://api.github.com/repos/${REPO}/contents/${FILE_PATH}`, {
+      headers: { Authorization: 'token '+token, Accept: 'application/vnd.github+json' }
+    });
+    if(!getRes.ok) throw new Error('Could not read file. Check your token has repo write access.');
+    const fileData = await getRes.json();
+
+    /* 2. PUT updated file */
+    const putRes = await fetch(`https://api.github.com/repos/${REPO}/contents/${FILE_PATH}`, {
+      method: 'PUT',
+      headers: {
+        Authorization: 'token '+token,
+        Accept: 'application/vnd.github+json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        message: 'Update service prices via admin panel',
+        content: btoa(unescape(encodeURIComponent(JSON.stringify(payload, null, 2)))),
+        sha: fileData.sha,
+      }),
+    });
+    if(!putRes.ok) {
+      const err = await putRes.json();
+      throw new Error(err.message || 'GitHub API error');
+    }
+
+    /* Success */
+    services = updatedServices;
+    isDirty  = false;
+    btn.disabled = false;
+    btn.textContent = 'Save & Publish →';
+    showToast('✓ Published! Live site updates in ~60 seconds', 'success');
+
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = 'Save & Publish → (unsaved)';
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+/* ─── Toast ─── */
+function showToast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className   = 'toast show ' + (type||'');
+  clearTimeout(el._t);
+  el._t = setTimeout(()=> el.classList.remove('show'), 3500);
+}
+
+/* Warn on unsaved leave */
+window.addEventListener('beforeunload', e => {
+  if(isDirty){ e.preventDefault(); e.returnValue = ''; }
+});
+</script>
+</body>
+</html>

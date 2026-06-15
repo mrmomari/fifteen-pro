@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Build Your Plan — Fifteen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:#E0E8CF;
+  color:#1C2416;
+  font-family:'Inter',system-ui,sans-serif;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  padding-bottom:100px;
+}
+:root{
+  --green:#26915E;
+  --green-dim:#1d7a4c;
+  --orange:#E36C44;
+  --cream:#E0E8CF;
+  --cream-sidebar:#C6D3A4;
+  --cream-alt:#D5DFBE;
+  --text:#1C2416;
+  --text-muted:#5A6B4E;
+  --text-dim:#7A8B6A;
+  --sidebar-w:268px;
+  --radius:12px;
+  --radius-lg:16px;
+}
+
+/* ── Layout ── */
+.app-layout{display:flex;min-height:100vh}
+
+/* ── Sidebar (same as index) ── */
+.sidebar{
+  width:var(--sidebar-w);min-height:100vh;background:var(--cream-sidebar);
+  border-right:1px solid rgba(0,0,0,0.1);position:fixed;top:0;left:0;
+  display:flex;flex-direction:column;z-index:100;overflow-y:auto;
+}
+.sidebar-inner{padding:28px 20px 20px;flex:1;display:flex;flex-direction:column}
+.sidebar-logo{font-size:24px;font-weight:900;letter-spacing:-.04em;color:var(--text);text-decoration:none;display:block;margin-bottom:32px}
+.sidebar-logo span{color:var(--green)}
+.sidebar-section-label{font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;padding:0 8px}
+.sidebar-nav{display:flex;flex-direction:column;gap:2px;margin-bottom:24px}
+.sidebar-link{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;color:var(--text-muted);transition:all .15s}
+.sidebar-link:hover{background:rgba(0,0,0,0.07);color:var(--text)}
+.sidebar-link.active{background:var(--orange);color:#fff}
+.sidebar-link.active svg{opacity:1}
+.sidebar-link svg{opacity:.65;flex-shrink:0}
+.sidebar-divider{height:1px;background:rgba(0,0,0,0.1);margin:18px 0}
+.portal-box{background:rgba(255,255,255,0.38);border:1px solid rgba(0,0,0,0.09);border-radius:10px;padding:16px;margin-bottom:24px}
+.portal-lock{display:flex;align-items:center;gap:7px;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--green);margin-bottom:12px}
+.portal-input{width:100%;padding:9px 11px;background:rgba(255,255,255,0.75);border:1px solid rgba(0,0,0,0.12);border-radius:7px;font-size:12px;font-family:inherit;color:var(--text);outline:none;margin-bottom:7px;transition:border-color .15s}
+.portal-input:focus{border-color:rgba(38,145,94,.45)}
+.portal-input::placeholder{color:var(--text-dim)}
+.portal-btn{width:100%;padding:9px;background:var(--green);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:800;cursor:pointer;letter-spacing:.03em;margin-top:2px;transition:background .15s}
+.portal-btn:hover{background:var(--green-dim)}
+.portal-sub{text-align:center;margin-top:9px;font-size:10px;color:var(--text-dim)}
+.portal-sub a{color:var(--green);text-decoration:none;font-weight:600}
+.sidebar-resources{display:flex;flex-direction:column;gap:2px;margin-bottom:20px}
+.resource-link{display:flex;align-items:center;gap:9px;padding:8px 12px;border-radius:8px;text-decoration:none;font-size:12px;font-weight:500;color:var(--text-muted);transition:all .15s}
+.resource-link:hover{background:rgba(0,0,0,0.07);color:var(--text)}
+.resource-link svg{opacity:.55;flex-shrink:0}
+.ext-arrow{margin-left:auto;opacity:0;font-size:10px;color:var(--green);transition:opacity .15s}
+.resource-link:hover .ext-arrow{opacity:1}
+.sidebar-footer{padding:16px 20px;font-size:10px;color:var(--text-dim);border-top:1px solid rgba(0,0,0,0.09);letter-spacing:.02em}
+.sidebar-toggle{display:none;position:fixed;top:14px;right:14px;z-index:200;background:var(--orange);color:#fff;border:none;border-radius:8px;width:44px;height:44px;cursor:pointer;align-items:center;justify-content:center;box-shadow:0 3px 14px rgba(227,108,68,.4)}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.25);z-index:99;backdrop-filter:blur(2px)}
+
+/* ── Main ── */
+.main-wrap{margin-left:var(--sidebar-w);flex:1;min-width:0}
+.container{max-width:980px;margin:0 auto;padding:0 28px}
+
+/* ── Shop hero ── */
+.shop-hero{padding:56px 0 36px;text-align:center}
+.shop-hero h1{font-size:clamp(26px,3.5vw,44px);font-weight:900;letter-spacing:-.03em;color:var(--text);margin-bottom:10px}
+.shop-hero h1 span{color:var(--orange)}
+.shop-hero p{font-size:15px;color:var(--text-muted);max-width:520px;margin:0 auto}
+.badge{display:inline-block;background:rgba(38,145,94,.1);color:var(--green);border:1px solid rgba(38,145,94,.22);padding:4px 14px;border-radius:20px;font-size:11px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;margin-bottom:16px}
+
+/* ── Phase section ── */
+.phase-section{margin-bottom:52px}
+.phase-label{
+  display:flex;align-items:center;gap:12px;
+  margin-bottom:32px;
+  padding:14px 20px;
+  background:rgba(255,255,255,0.4);
+  border:1px solid rgba(0,0,0,0.08);
+  border-radius:10px;
+}
+.phase-num{
+  font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--green);background:rgba(38,145,94,.1);border:1px solid rgba(38,145,94,.2);
+  padding:4px 10px;border-radius:6px;white-space:nowrap;
+}
+.phase-name{font-size:15px;font-weight:800;color:var(--text);letter-spacing:-.01em}
+.phase-selected{margin-left:auto;font-size:12px;font-weight:700;color:var(--green);background:rgba(38,145,94,.1);padding:4px 10px;border-radius:20px;display:none}
+.phase-selected.visible{display:block}
+
+/* ── Card fan ── */
+.service-fan{
+  display:flex;
+  justify-content:center;
+  align-items:flex-end;
+  gap:0;
+  perspective:1200px;
+  padding:20px 40px 24px;
+  position:relative;
+}
+.fan-card{
+  width:172px;
+  min-height:200px;
+  position:relative;
+  margin-left:-48px;
+  cursor:pointer;
+  transition:transform 0.38s cubic-bezier(0.34,1.3,0.64,1), margin 0.38s ease, box-shadow 0.25s ease, z-index 0s;
+  border-radius:16px;
+  flex-shrink:0;
+}
+.fan-card:first-child{margin-left:0}
+
+/* Resting rotations */
+.fan-card:nth-child(1){transform:rotate3d(0,0,1,-10deg) translateY(16px) rotateY(8deg);z-index:1}
+.fan-card:nth-child(2){transform:rotate3d(0,0,1,-5deg) translateY(7px) rotateY(4deg);z-index:2}
+.fan-card:nth-child(3){transform:rotate3d(0,0,1,0deg) translateY(0) rotateY(0deg);z-index:3}
+.fan-card:nth-child(4){transform:rotate3d(0,0,1,5deg) translateY(7px) rotateY(-4deg);z-index:4}
+.fan-card:nth-child(5){transform:rotate3d(0,0,1,10deg) translateY(16px) rotateY(-8deg);z-index:5}
+
+/* Fan spread on hover */
+.service-fan:hover .fan-card{margin-left:12px}
+.service-fan:hover .fan-card:nth-child(1){transform:rotate3d(0,0,1,-4deg) translateY(8px) rotateY(2deg)}
+.service-fan:hover .fan-card:nth-child(2){transform:rotate3d(0,0,1,-2deg) translateY(3px) rotateY(1deg)}
+.service-fan:hover .fan-card:nth-child(3){transform:rotate3d(0,0,1,0deg) translateY(0) rotateY(0deg)}
+.service-fan:hover .fan-card:nth-child(4){transform:rotate3d(0,0,1,2deg) translateY(3px) rotateY(-1deg)}
+.service-fan:hover .fan-card:nth-child(5){transform:rotate3d(0,0,1,4deg) translateY(8px) rotateY(-2deg)}
+
+/* Individual card lift */
+.service-fan:hover .fan-card:hover{
+  transform:rotate3d(0,0,1,0deg) translateY(-22px) rotateY(0deg) scale(1.04) !important;
+  z-index:20 !important;
+  margin-left:12px;
+}
+
+/* Card inner */
+.card-inner{
+  width:100%;
+  min-height:200px;
+  background:rgba(255,255,255,0.65);
+  border:1px solid rgba(0,0,0,0.1);
+  border-radius:16px;
+  padding:20px 16px 16px;
+  box-shadow:0 8px 28px rgba(0,0,0,0.1), 0 2px 6px rgba(0,0,0,0.06);
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  backdrop-filter:blur(8px);
+  transition:background .2s, box-shadow .2s, border-color .2s;
+  position:relative;
+  overflow:hidden;
+}
+.fan-card:hover .card-inner{
+  background:rgba(255,255,255,0.88);
+  box-shadow:0 20px 48px rgba(0,0,0,0.14), 0 4px 12px rgba(0,0,0,0.08);
+}
+.fan-card.in-cart .card-inner{
+  background:rgba(38,145,94,0.1);
+  border-color:rgba(38,145,94,.4);
+}
+
+/* Card content */
+.card-num{font-size:10px;font-weight:900;color:var(--green);font-family:monospace;letter-spacing:.08em}
+.card-name{font-size:13px;font-weight:800;color:var(--text);letter-spacing:-.01em;line-height:1.3}
+.card-desc{font-size:11px;color:var(--text-muted);line-height:1.55;flex:1}
+.card-price{
+  font-size:18px;font-weight:900;color:var(--text);letter-spacing:-.02em;
+  display:flex;align-items:baseline;gap:3px;
+}
+.card-price-type{font-size:10px;font-weight:600;color:var(--text-dim)}
+.card-add-btn{
+  width:100%;padding:8px;
+  background:var(--orange);color:#fff;border:none;border-radius:8px;
+  font-size:11px;font-weight:800;cursor:pointer;letter-spacing:.04em;
+  transition:all .2s;
+  box-shadow:0 3px 10px rgba(227,108,68,.3);
+}
+.card-add-btn:hover{background:#ec7850;transform:translateY(-1px)}
+.fan-card.in-cart .card-add-btn{background:var(--green);box-shadow:0 3px 10px rgba(38,145,94,.3)}
+.fan-card.in-cart .card-add-btn:hover{background:var(--green-dim)}
+
+/* Cart check badge */
+.cart-badge{
+  position:absolute;top:10px;right:10px;
+  width:22px;height:22px;border-radius:50%;
+  background:var(--green);color:#fff;
+  display:none;align-items:center;justify-content:center;
+  font-size:12px;font-weight:900;
+  box-shadow:0 2px 8px rgba(38,145,94,.4);
+}
+.fan-card.in-cart .cart-badge{display:flex}
+
+/* ── Cart bar ── */
+.cart-bar{
+  position:fixed;bottom:0;left:var(--sidebar-w);right:0;
+  background:var(--text);
+  padding:16px 28px;
+  display:flex;align-items:center;justify-content:space-between;gap:20px;
+  z-index:80;
+  transform:translateY(100%);
+  transition:transform .3s cubic-bezier(0.34,1.2,0.64,1);
+  box-shadow:0 -4px 24px rgba(0,0,0,0.18);
+}
+.cart-bar.visible{transform:translateY(0)}
+.cart-summary{display:flex;align-items:center;gap:20px;flex:1;min-width:0}
+.cart-count-text{font-size:13px;color:rgba(255,255,255,0.7);font-weight:500;white-space:nowrap}
+.cart-chips{display:flex;flex-wrap:wrap;gap:6px;flex:1;min-width:0;overflow:hidden;max-height:28px}
+.cart-chip{
+  font-size:10px;font-weight:700;color:var(--text);background:var(--cream);
+  padding:3px 9px;border-radius:20px;white-space:nowrap;letter-spacing:.02em;
+}
+.cart-right{display:flex;align-items:center;gap:16px;flex-shrink:0}
+.cart-total-display{
+  text-align:right;
+}
+.cart-total-label{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.cart-total-amount{font-size:22px;font-weight:900;color:#fff;letter-spacing:-.02em;line-height:1}
+.cart-cta-btn{
+  padding:12px 24px;background:var(--orange);color:#fff;border:none;border-radius:8px;
+  font-size:13px;font-weight:800;cursor:pointer;letter-spacing:.04em;white-space:nowrap;
+  box-shadow:0 4px 16px rgba(227,108,68,.4);transition:all .2s;
+}
+.cart-cta-btn:hover{background:#ec7850;transform:translateY(-1px)}
+.cart-clear-btn{font-size:11px;color:rgba(255,255,255,.45);background:none;border:none;cursor:pointer;text-decoration:underline;white-space:nowrap;transition:color .15s}
+.cart-clear-btn:hover{color:rgba(255,255,255,.7)}
+
+/* ── Quote modal ── */
+.quote-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:300;
+  display:none;align-items:center;justify-content:center;padding:20px;
+  backdrop-filter:blur(6px);
+}
+.quote-overlay.open{display:flex}
+.quote-modal{
+  background:#fff;border-radius:20px;
+  width:100%;max-width:640px;max-height:90vh;overflow-y:auto;
+  box-shadow:0 32px 80px rgba(0,0,0,0.25);
+  animation:modalIn .35s cubic-bezier(0.34,1.3,0.64,1);
+}
+@keyframes modalIn{from{opacity:0;transform:scale(.9) translateY(20px)}to{opacity:1;transform:none}}
+
+.quote-header{
+  background:var(--text);padding:28px 36px;border-radius:20px 20px 0 0;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.quote-logo-text{font-size:22px;font-weight:900;letter-spacing:-.04em;color:#fff}
+.quote-logo-text span{color:var(--green)}
+.quote-close{background:none;border:none;color:rgba(255,255,255,.5);font-size:22px;cursor:pointer;line-height:1;transition:color .15s}
+.quote-close:hover{color:#fff}
+.quote-body{padding:32px 36px}
+.quote-subtitle{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--green);margin-bottom:6px}
+.quote-title{font-size:24px;font-weight:900;color:var(--text);margin-bottom:24px;letter-spacing:-.02em}
+
+.quote-services-list{margin-bottom:24px}
+.quote-service-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 0;border-bottom:1px solid rgba(0,0,0,0.06);gap:12px;
+}
+.quote-service-row:last-child{border-bottom:none}
+.qs-left{display:flex;align-items:center;gap:10px}
+.qs-num{font-size:10px;font-weight:800;color:var(--green);font-family:monospace;min-width:20px}
+.qs-name{font-size:13px;font-weight:700;color:var(--text)}
+.qs-type{font-size:10px;color:var(--text-dim);margin-left:4px;font-weight:500}
+.qs-price{font-size:14px;font-weight:800;color:var(--text);white-space:nowrap}
+
+.quote-totals{
+  background:rgba(38,145,94,.06);border:1px solid rgba(38,145,94,.15);
+  border-radius:10px;padding:16px 20px;margin-bottom:24px;
+}
+.quote-total-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.quote-total-row:last-child{margin-bottom:0;padding-top:10px;border-top:1px solid rgba(38,145,94,.15);margin-top:6px}
+.quote-total-label{font-size:12px;color:var(--text-muted)}
+.quote-total-val{font-size:13px;font-weight:700;color:var(--text)}
+.quote-total-row.grand .quote-total-label{font-size:13px;font-weight:800;color:var(--text)}
+.quote-total-row.grand .quote-total-val{font-size:20px;font-weight:900;color:var(--green)}
+
+.quote-contact-title{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:12px}
+.quote-contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px}
+.qc-input{
+  width:100%;padding:10px 13px;background:#f8f9f5;border:1px solid rgba(0,0,0,0.12);
+  border-radius:8px;font-size:13px;font-family:inherit;color:var(--text);outline:none;
+  transition:border-color .15s;
+}
+.qc-input:focus{border-color:rgba(38,145,94,.4)}
+.qc-input::placeholder{color:#aaa}
+
+.quote-actions{display:flex;gap:10px}
+.quote-print-btn{
+  flex:1;padding:13px;background:var(--text);color:#fff;border:none;border-radius:8px;
+  font-size:13px;font-weight:800;cursor:pointer;letter-spacing:.04em;transition:all .2s;
+}
+.quote-print-btn:hover{background:#2d3a26;transform:translateY(-1px)}
+.quote-back-btn{
+  padding:13px 20px;background:transparent;color:var(--text-muted);
+  border:1.5px solid rgba(0,0,0,0.15);border-radius:8px;
+  font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;
+}
+.quote-back-btn:hover{background:rgba(0,0,0,0.04)}
+.quote-note{text-align:center;margin-top:16px;font-size:11px;color:#aaa}
+
+/* ── Print styles ── */
+@media print{
+  .sidebar,.cart-bar,.sidebar-toggle,.sidebar-overlay,
+  .quote-close,.quote-actions,.quote-note,.shop-hero,.phase-section{display:none!important}
+  .quote-overlay{position:static;background:none;padding:0;display:block!important}
+  .quote-modal{box-shadow:none;max-height:none;border-radius:0}
+  body{padding:0}
+}
+
+/* ── Empty state ── */
+.empty-state{text-align:center;padding:40px 20px;color:var(--text-dim)}
+.empty-state svg{margin-bottom:12px;opacity:.35}
+.empty-state p{font-size:14px}
+
+/* ── Responsive ── */
+@media(max-width:960px){
+  .sidebar{transform:translateX(-100%);transition:transform .25s}
+  .sidebar.open{transform:translateX(0)}
+  .sidebar-overlay.open{display:block}
+  .sidebar-toggle{display:flex}
+  .main-wrap{margin-left:0}
+  .cart-bar{left:0}
+  .service-fan{flex-direction:column;align-items:center;gap:12px;padding:0 0 16px}
+  .fan-card{margin-left:0!important;width:100%;max-width:320px}
+  .fan-card:nth-child(n){transform:none!important}
+  .service-fan:hover .fan-card:hover{transform:translateY(-4px) scale(1.01)!important}
+  .quote-contact-grid{grid-template-columns:1fr}
+  .quote-body{padding:24px 20px}
+  .quote-header{padding:20px 24px}
+  .cart-bar{flex-direction:column;gap:10px;padding:14px 18px}
+  .cart-summary{width:100%}
+  .cart-right{width:100%;justify-content:space-between}
+  .container{padding:0 16px}
+}
+@media(max-width:400px){
+  .quote-actions{flex-direction:column}
+}
+</style>
+</head>
+<body>
+<div class="app-layout">
+
+<!-- ═══ SIDEBAR ═══ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-inner">
+    <a href="index.html" class="sidebar-logo">FIFTEEN<span>.</span></a>
+
+    <div class="sidebar-section-label">Navigate</div>
+    <nav class="sidebar-nav">
+      <a href="index.html#solutions" class="sidebar-link">
+        <svg fill="none" stroke="var(--green)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        Solutions
+      </a>
+      <a href="index.html#process" class="sidebar-link">
+        <svg fill="none" stroke="var(--green)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        Process
+      </a>
+      <a href="shop.html" class="sidebar-link active">
+        <svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        Build Your Plan
+      </a>
+      <a href="index.html#apply" class="sidebar-link">
+        <svg fill="none" stroke="var(--orange)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="15" height="15" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        Apply Now
+      </a>
+    </nav>
+
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section-label">Client Portal</div>
+    <div class="portal-box">
+      <div class="portal-lock">
+        <svg fill="none" stroke="var(--green)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Partner Access
+      </div>
+      <input type="email" placeholder="Partner email" class="portal-input" autocomplete="email">
+      <input type="password" placeholder="Password" class="portal-input" autocomplete="current-password">
+      <button class="portal-btn" onclick="handlePortalLogin(this)">Access Portal</button>
+      <p class="portal-sub">No account? <a href="index.html#apply">Apply to join →</a></p>
+    </div>
+
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section-label">Resources</div>
+    <div class="sidebar-resources">
+      <a href="Company profile On Stage 2025.pdf" target="_blank" rel="noopener" class="resource-link">
+        <svg fill="none" stroke="var(--green)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Company Profile<span class="ext-arrow">↗</span>
+      </a>
+      <a href="Products Guide.pdf" target="_blank" rel="noopener" class="resource-link">
+        <svg fill="none" stroke="var(--green)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Products Guide<span class="ext-arrow">↗</span>
+      </a>
+      <a href="Ultimate Guide.pdf" target="_blank" rel="noopener" class="resource-link">
+        <svg fill="none" stroke="var(--green)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Ultimate Guide<span class="ext-arrow">↗</span>
+      </a>
+      <a href="fifteen---bundle-flyer1.1.pdf" target="_blank" rel="noopener" class="resource-link">
+        <svg fill="none" stroke="var(--orange)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Bundle Flyer<span class="ext-arrow">↗</span>
+      </a>
+    </div>
+  </div>
+  <div class="sidebar-footer">15fifteen15 · Business Acceleration</div>
+</aside>
+
+<button class="sidebar-toggle" id="sidebarToggle" aria-label="Menu">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+    <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+  </svg>
+</button>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main-wrap">
+  <div class="container">
+
+    <!-- Shop hero -->
+    <div class="shop-hero">
+      <div class="badge">15 Services · Pick Your Stack</div>
+      <h1>Build Your <span>Custom Plan</span></h1>
+      <p>Hover a phase to spread the cards. Click any service to add it to your plan. Get a branded quote in seconds.</p>
+    </div>
+
+    <!-- Cards rendered by JS -->
+    <div id="shopContent"></div>
+
+  </div>
+</div>
+
+<!-- ═══ CART BAR ═══ -->
+<div class="cart-bar" id="cartBar">
+  <div class="cart-summary">
+    <span class="cart-count-text" id="cartCountText">0 services</span>
+    <div class="cart-chips" id="cartChips"></div>
+  </div>
+  <div class="cart-right">
+    <div class="cart-total-display">
+      <div class="cart-total-label">Est. Total</div>
+      <div class="cart-total-amount" id="cartTotalAmt">$0</div>
+    </div>
+    <button class="cart-clear-btn" onclick="clearCart()">Clear</button>
+    <button class="cart-cta-btn" onclick="openQuote()">Get Quote →</button>
+  </div>
+</div>
+
+<!-- ═══ QUOTE MODAL ═══ -->
+<div class="quote-overlay" id="quoteOverlay">
+  <div class="quote-modal" id="quoteModal">
+    <div class="quote-header">
+      <div class="quote-logo-text">FIFTEEN<span>.</span></div>
+      <button class="quote-close" onclick="closeQuote()" aria-label="Close">✕</button>
+    </div>
+    <div class="quote-body">
+      <div class="quote-subtitle">Your Custom Plan</div>
+      <div class="quote-title">Service Quote Summary</div>
+
+      <div class="quote-services-list" id="quoteServicesList"></div>
+      <div class="quote-totals" id="quoteTotals"></div>
+
+      <div class="quote-contact-title">Your Details</div>
+      <div class="quote-contact-grid">
+        <input type="text" id="quoteName" placeholder="Your full name" class="qc-input">
+        <input type="email" id="quoteEmail" placeholder="Business email" class="qc-input">
+        <input type="tel" id="quotePhone" placeholder="Phone number" class="qc-input">
+        <input type="text" id="quoteCo" placeholder="Company name" class="qc-input">
+      </div>
+
+      <div class="quote-actions">
+        <button class="quote-print-btn" onclick="printQuote()">Print / Save as PDF</button>
+        <button class="quote-back-btn" onclick="closeQuote()">← Keep Editing</button>
+      </div>
+      <p class="quote-note">Screenshot or print this quote to save it. Applications reviewed within 48 hours.</p>
+    </div>
+  </div>
+</div>
+
+</div><!-- /app-layout -->
+
+<script>
+/* ─── State ─── */
+let SERVICES = [];
+let cart = new Set(); // service ids
+
+/* ─── Default prices (fallback if prices.json fails) ─── */
+const DEFAULTS = [
+  {id:1,phase:1,phaseLabel:"Brand & Authority",name:"Brand Identity",description:"Logo, colors, typography & complete brand guidelines",price:1500,type:"one-time",active:true},
+  {id:2,phase:1,phaseLabel:"Brand & Authority",name:"Motion Video",description:"Professional motion graphics and brand video production",price:900,type:"one-time",active:true},
+  {id:3,phase:1,phaseLabel:"Brand & Authority",name:"Animations",description:"Custom digital animations for web and social media",price:700,type:"one-time",active:true},
+  {id:4,phase:1,phaseLabel:"Brand & Authority",name:"Digital Arts",description:"Bespoke digital artwork and visual content creation",price:500,type:"one-time",active:true},
+  {id:5,phase:1,phaseLabel:"Brand & Authority",name:"Editorial & Print",description:"Brochures, flyers, catalogs and print-ready materials",price:600,type:"one-time",active:true},
+  {id:6,phase:2,phaseLabel:"Growth & Traffic",name:"Branded Content",description:"Influencer partnerships and branded content strategy",price:350,type:"monthly",active:true},
+  {id:7,phase:2,phaseLabel:"Growth & Traffic",name:"Platform Management",description:"Full social media management across all platforms",price:280,type:"monthly",active:true},
+  {id:8,phase:2,phaseLabel:"Growth & Traffic",name:"Ranking Control / SEO",description:"Search engine domination and ranking optimization",price:450,type:"monthly",active:true},
+  {id:9,phase:2,phaseLabel:"Growth & Traffic",name:"Newsletters & SMS",description:"Email campaigns and high-impact SMS marketing automation",price:220,type:"monthly",active:true},
+  {id:10,phase:2,phaseLabel:"Growth & Traffic",name:"Performance Marketing",description:"Paid advertising and performance media buying",price:600,type:"monthly",active:true},
+  {id:11,phase:3,phaseLabel:"Infrastructure & Scale",name:"Website Creation",description:"Custom high-performance website design and development",price:3000,type:"one-time",active:true},
+  {id:12,phase:3,phaseLabel:"Infrastructure & Scale",name:"E-commerce Storefront",description:"Full e-commerce store setup, design and optimization",price:4000,type:"one-time",active:true},
+  {id:13,phase:3,phaseLabel:"Infrastructure & Scale",name:"Secure E-commerce",description:"Enterprise-grade secure e-commerce infrastructure",price:6000,type:"one-time",active:true},
+  {id:14,phase:3,phaseLabel:"Infrastructure & Scale",name:"Business Hub / ERP",description:"Custom ERP and business management system build",price:9500,type:"one-time",active:true},
+  {id:15,phase:3,phaseLabel:"Infrastructure & Scale",name:"Analytics Dashboard",description:"Real-time KPI tracking and statistics dashboard",price:2500,type:"one-time",active:true}
+];
+
+/* ─── Init ─── */
+async function init() {
+  try {
+    const res = await fetch('prices.json?v=' + Date.now());
+    const data = await res.json();
+    SERVICES = data.services.filter(s => s.active);
+  } catch(e) {
+    SERVICES = DEFAULTS;
+  }
+  renderShop();
+}
+
+/* ─── Render ─── */
+function renderShop() {
+  const phases = [1,2,3];
+  const phaseIcons = [
+    '<path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>',
+    '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>',
+    '<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>'
+  ];
+  const el = document.getElementById('shopContent');
+  el.innerHTML = phases.map((p,pi) => {
+    const services = SERVICES.filter(s => s.phase === p);
+    if(!services.length) return '';
+    const label = services[0].phaseLabel;
+    return `
+      <div class="phase-section" data-phase="${p}">
+        <div class="phase-label">
+          <svg fill="none" stroke="var(--green)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" viewBox="0 0 24 24">${phaseIcons[pi]}</svg>
+          <span class="phase-num">Phase 0${p}</span>
+          <span class="phase-name">${label}</span>
+          <span class="phase-selected" id="phaseCount${p}">0 selected</span>
+        </div>
+        <div class="service-fan" id="fan${p}">
+          ${services.map(s => renderCard(s)).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderCard(s) {
+  const fmt = n => '$' + n.toLocaleString();
+  const typeLabel = s.type === 'monthly' ? '/mo' : ' one-time';
+  return `
+    <div class="fan-card" id="card${s.id}" onclick="toggleCart(${s.id})">
+      <div class="card-inner">
+        <div class="cart-badge">✓</div>
+        <div class="card-num">0${s.id < 10 ? '' : ''}${s.id}</div>
+        <div class="card-name">${s.name}</div>
+        <div class="card-desc">${s.description}</div>
+        <div class="card-price">${fmt(s.price)}<span class="card-price-type">${typeLabel}</span></div>
+        <button class="card-add-btn" id="btn${s.id}">+ Add to Plan</button>
+      </div>
+    </div>
+  `;
+}
+
+/* ─── Cart logic ─── */
+function toggleCart(id) {
+  if(cart.has(id)) {
+    cart.delete(id);
+  } else {
+    cart.add(id);
+  }
+  updateCardUI(id);
+  updateCart();
+}
+
+function updateCardUI(id) {
+  const card = document.getElementById('card'+id);
+  const btn  = document.getElementById('btn'+id);
+  if(!card) return;
+  if(cart.has(id)) {
+    card.classList.add('in-cart');
+    btn.textContent = '✓ In Your Plan';
+  } else {
+    card.classList.remove('in-cart');
+    btn.textContent = '+ Add to Plan';
+  }
+}
+
+function updateCart() {
+  const items = [...cart].map(id => SERVICES.find(s => s.id === id)).filter(Boolean);
+  const bar   = document.getElementById('cartBar');
+  const chips = document.getElementById('cartChips');
+  const countText = document.getElementById('cartCountText');
+  const totalAmt  = document.getElementById('cartTotalAmt');
+
+  /* Phase count badges */
+  [1,2,3].forEach(p => {
+    const cnt = items.filter(s => s.phase === p).length;
+    const el  = document.getElementById('phaseCount'+p);
+    if(!el) return;
+    if(cnt) { el.textContent = cnt + ' selected'; el.classList.add('visible'); }
+    else    { el.classList.remove('visible'); }
+  });
+
+  if(!items.length) {
+    bar.classList.remove('visible');
+    return;
+  }
+
+  bar.classList.add('visible');
+  countText.textContent = items.length + (items.length===1?' service':' services') + ' selected';
+  chips.innerHTML = items.slice(0,5).map(s=>`<span class="cart-chip">${s.name}</span>`).join('') +
+    (items.length > 5 ? `<span class="cart-chip">+${items.length-5} more</span>` : '');
+
+  const oneTime = items.filter(s=>s.type==='one-time').reduce((a,s)=>a+s.price,0);
+  const monthly = items.filter(s=>s.type==='monthly').reduce((a,s)=>a+s.price,0);
+  const fmt = n => '$' + n.toLocaleString();
+
+  if(oneTime && monthly) {
+    totalAmt.textContent = fmt(oneTime) + ' + ' + fmt(monthly) + '/mo';
+  } else if(monthly) {
+    totalAmt.textContent = fmt(monthly) + '/mo';
+  } else {
+    totalAmt.textContent = fmt(oneTime);
+  }
+}
+
+function clearCart() {
+  const ids = [...cart];
+  cart.clear();
+  ids.forEach(id => updateCardUI(id));
+  updateCart();
+}
+
+/* ─── Quote modal ─── */
+function openQuote() {
+  if(!cart.size) return;
+  const items = [...cart].map(id => SERVICES.find(s => s.id === id)).filter(Boolean);
+  const fmt   = n => '$' + n.toLocaleString();
+
+  const list  = document.getElementById('quoteServicesList');
+  list.innerHTML = items.map(s => `
+    <div class="quote-service-row">
+      <div class="qs-left">
+        <span class="qs-num">0${s.id < 10 ? '' : ''}${s.id}</span>
+        <span class="qs-name">${s.name}<span class="qs-type">${s.type==='monthly'?'· monthly':'· one-time'}</span></span>
+      </div>
+      <span class="qs-price">${fmt(s.price)}${s.type==='monthly'?'/mo':''}</span>
+    </div>
+  `).join('');
+
+  const oneTime = items.filter(s=>s.type==='one-time').reduce((a,s)=>a+s.price,0);
+  const monthly = items.filter(s=>s.type==='monthly').reduce((a,s)=>a+s.price,0);
+  const totals  = document.getElementById('quoteTotals');
+  let rows = '';
+  if(oneTime) rows += `<div class="quote-total-row"><span class="quote-total-label">One-time investment</span><span class="quote-total-val">${fmt(oneTime)}</span></div>`;
+  if(monthly) rows += `<div class="quote-total-row"><span class="quote-total-label">Monthly retainer</span><span class="quote-total-val">${fmt(monthly)}/mo</span></div>`;
+  const grandLabel = (oneTime && monthly) ? 'Total (first month)' : 'Total';
+  const grandVal   = fmt(oneTime + monthly) + (monthly ? (oneTime?'':'/mo'):'');
+  rows += `<div class="quote-total-row grand"><span class="quote-total-label">${grandLabel}</span><span class="quote-total-val">${grandVal}</span></div>`;
+  totals.innerHTML = rows;
+
+  document.getElementById('quoteOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeQuote() {
+  document.getElementById('quoteOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function printQuote() {
+  window.print();
+}
+
+/* ─── Portal / Sidebar ─── */
+function handlePortalLogin(btn) {
+  const email = btn.closest('.portal-box').querySelector('[type="email"]').value.trim();
+  if(!email){btn.closest('.portal-box').querySelector('[type="email"]').focus();return;}
+  btn.textContent='Checking access...';btn.style.opacity='.7';
+  setTimeout(()=>{btn.textContent="✓ Request Sent — We'll Be In Touch";btn.style.background='#1d7a4c';btn.style.opacity='1';},1200);
+}
+
+const toggle  = document.getElementById('sidebarToggle');
+const sidebar = document.getElementById('sidebar');
+const overlay = document.getElementById('sidebarOverlay');
+toggle.addEventListener('click',()=>{sidebar.classList.toggle('open');overlay.classList.toggle('open');});
+overlay.addEventListener('click',()=>{sidebar.classList.remove('open');overlay.classList.remove('open');});
+
+document.getElementById('quoteOverlay').addEventListener('click', e => {
+  if(e.target === document.getElementById('quoteOverlay')) closeQuote();
+});
+
+/* ─── Boot ─── */
+init();
+</script>
+</body>
+</html>
