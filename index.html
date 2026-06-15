@@ -603,6 +603,47 @@ body{
 .form-submit{width:100%;padding:15px;font-size:15px;margin-top:6px}
 .form-sub{text-align:center;margin-top:18px;font-size:12px;color:var(--text-dim)}
 
+/* ── Partners strip ── */
+.partners-strip{
+  padding:48px 0 44px;background:#fff;border-top:1px solid rgba(0,0,0,0.07);
+  border-bottom:1px solid rgba(0,0,0,0.07);overflow:hidden;
+}
+.partners-heading{
+  text-align:center;font-size:11px;font-weight:800;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--text-dim);margin-bottom:28px;
+}
+.partners-track-wrap{position:relative;overflow:hidden;}
+.partners-track-wrap::before,.partners-track-wrap::after{
+  content:'';position:absolute;top:0;bottom:0;width:80px;z-index:2;pointer-events:none;
+}
+.partners-track-wrap::before{left:0;background:linear-gradient(to right,#fff,transparent);}
+.partners-track-wrap::after{right:0;background:linear-gradient(to left,#fff,transparent);}
+.partners-track{
+  display:flex;gap:16px;width:max-content;
+  animation:marquee 38s linear infinite;
+}
+.partners-track:hover{animation-play-state:paused;}
+@keyframes marquee{
+  0%{transform:translateX(0);}
+  100%{transform:translateX(-50%);}
+}
+.partner-card{
+  display:flex;align-items:center;justify-content:center;
+  min-width:130px;height:72px;padding:10px 16px;
+  background:#fff;border:1.5px solid rgba(0,0,0,0.08);border-radius:12px;
+  flex-shrink:0;transition:border-color .2s,box-shadow .2s;
+}
+.partner-card:hover{border-color:rgba(38,145,94,.3);box-shadow:0 3px 16px rgba(0,0,0,0.07);}
+.partner-card img{
+  max-width:100%;max-height:50px;object-fit:contain;filter:grayscale(1);
+  transition:filter .2s;opacity:.7;
+}
+.partner-card:hover img{filter:grayscale(0);opacity:1;}
+.partner-card-name{
+  font-size:11px;font-weight:700;color:var(--text-muted);
+  text-align:center;line-height:1.3;letter-spacing:-.01em;
+}
+
 /* ── Footer ── */
 .footer{padding:40px 0;border-top:1px solid rgba(0,0,0,0.08);text-align:center;background:var(--cream-alt)}
 .footer-logo{font-size:26px;font-weight:900;letter-spacing:-.04em;color:var(--text);margin-bottom:8px}
@@ -1008,6 +1049,67 @@ body{
         Check Industry Availability &amp; Apply
       </button>
       <div class="form-sub">Jeeh, Jeeh! &nbsp;·&nbsp; Applications reviewed within 48 hours. Strictly confidential.</div>
+    </div>
+  </div>
+</section>
+
+<!-- PARTNERS STRIP -->
+<section class="partners-strip">
+  <div class="partners-heading">Our Partners</div>
+  <div class="partners-track-wrap">
+    <div class="partners-track" id="partnersTrack">
+      <!-- Set 1 -->
+      <div class="partner-card"><div class="partner-card-name">Mazzika</div></div>
+      <div class="partner-card"><div class="partner-card-name">Yuta</div></div>
+      <div class="partner-card"><div class="partner-card-name">Al-Omda Lounge</div></div>
+      <div class="partner-card"><div class="partner-card-name">Renolinx</div></div>
+      <div class="partner-card"><div class="partner-card-name">Tawseela Canada</div></div>
+      <div class="partner-card"><div class="partner-card-name">Doner Point</div></div>
+      <div class="partner-card"><div class="partner-card-name">AutoPlus Car Sales</div></div>
+      <div class="partner-card"><div class="partner-card-name">Khalid Felifel</div></div>
+      <div class="partner-card"><div class="partner-card-name">WikiTours</div></div>
+      <div class="partner-card"><div class="partner-card-name">S. Soliman Engineering</div></div>
+      <div class="partner-card"><div class="partner-card-name">Habibi Executive VVIP</div></div>
+      <div class="partner-card"><div class="partner-card-name">Goodman Elbassiouni</div></div>
+      <div class="partner-card"><div class="partner-card-name">Elegant Stars</div></div>
+      <div class="partner-card"><div class="partner-card-name">Talents &amp; Events</div></div>
+      <div class="partner-card"><div class="partner-card-name">Marine Cleaning Service</div></div>
+      <div class="partner-card"><div class="partner-card-name">Star of Elegance</div></div>
+      <div class="partner-card"><div class="partner-card-name">Suma's</div></div>
+      <div class="partner-card"><div class="partner-card-name">Mütlü</div></div>
+      <div class="partner-card"><div class="partner-card-name">The Lounge</div></div>
+      <div class="partner-card"><div class="partner-card-name">Care Pharma Group</div></div>
+      <div class="partner-card"><div class="partner-card-name">SmartFix Tech</div></div>
+      <div class="partner-card"><div class="partner-card-name">Shipway</div></div>
+      <div class="partner-card"><div class="partner-card-name">EgyCan</div></div>
+      <div class="partner-card"><div class="partner-card-name">Brownie's Club</div></div>
+      <div class="partner-card"><div class="partner-card-name">Nour Bakes Desserts</div></div>
+      <!-- Set 2 (duplicate for seamless loop) -->
+      <div class="partner-card"><div class="partner-card-name">Mazzika</div></div>
+      <div class="partner-card"><div class="partner-card-name">Yuta</div></div>
+      <div class="partner-card"><div class="partner-card-name">Al-Omda Lounge</div></div>
+      <div class="partner-card"><div class="partner-card-name">Renolinx</div></div>
+      <div class="partner-card"><div class="partner-card-name">Tawseela Canada</div></div>
+      <div class="partner-card"><div class="partner-card-name">Doner Point</div></div>
+      <div class="partner-card"><div class="partner-card-name">AutoPlus Car Sales</div></div>
+      <div class="partner-card"><div class="partner-card-name">Khalid Felifel</div></div>
+      <div class="partner-card"><div class="partner-card-name">WikiTours</div></div>
+      <div class="partner-card"><div class="partner-card-name">S. Soliman Engineering</div></div>
+      <div class="partner-card"><div class="partner-card-name">Habibi Executive VVIP</div></div>
+      <div class="partner-card"><div class="partner-card-name">Goodman Elbassiouni</div></div>
+      <div class="partner-card"><div class="partner-card-name">Elegant Stars</div></div>
+      <div class="partner-card"><div class="partner-card-name">Talents &amp; Events</div></div>
+      <div class="partner-card"><div class="partner-card-name">Marine Cleaning Service</div></div>
+      <div class="partner-card"><div class="partner-card-name">Star of Elegance</div></div>
+      <div class="partner-card"><div class="partner-card-name">Suma's</div></div>
+      <div class="partner-card"><div class="partner-card-name">Mütlü</div></div>
+      <div class="partner-card"><div class="partner-card-name">The Lounge</div></div>
+      <div class="partner-card"><div class="partner-card-name">Care Pharma Group</div></div>
+      <div class="partner-card"><div class="partner-card-name">SmartFix Tech</div></div>
+      <div class="partner-card"><div class="partner-card-name">Shipway</div></div>
+      <div class="partner-card"><div class="partner-card-name">EgyCan</div></div>
+      <div class="partner-card"><div class="partner-card-name">Brownie's Club</div></div>
+      <div class="partner-card"><div class="partner-card-name">Nour Bakes Desserts</div></div>
     </div>
   </div>
 </section>
