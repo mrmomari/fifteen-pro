@@ -81,30 +81,15 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
 .status-badge.ok{background:rgba(38,145,94,.12);color:var(--green);border:1px solid rgba(38,145,94,.2)}
 .status-badge.warn{background:rgba(227,108,68,.1);color:var(--orange);border:1px solid rgba(227,108,68,.2)}
 
-/* GitHub token setup */
-.token-section{
-  background:rgba(255,255,255,0.5);border:1px solid rgba(0,0,0,0.09);
-  border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:28px;
+/* How to publish */
+.how-section{
+  background:rgba(38,145,94,.06);border:1px solid rgba(38,145,94,.15);
+  border-radius:var(--radius-lg);padding:18px 24px;margin-bottom:28px;
 }
-.token-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.token-title{font-size:13px;font-weight:800;color:var(--text)}
-.token-status{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
-.token-status.set{background:rgba(38,145,94,.12);color:var(--green)}
-.token-status.unset{background:rgba(227,108,68,.1);color:var(--orange)}
-.token-row{display:flex;gap:10px}
-.token-input{
-  flex:1;padding:9px 13px;background:rgba(255,255,255,0.8);
-  border:1px solid rgba(0,0,0,0.12);border-radius:8px;
-  font-size:13px;font-family:monospace;color:var(--text);outline:none;
-  transition:border-color .15s;
-}
-.token-input:focus{border-color:rgba(38,145,94,.4)}
-.token-input::placeholder{color:var(--text-dim)}
-.token-save-btn{
-  padding:9px 18px;background:var(--green);color:#fff;border:none;border-radius:8px;
-  font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;transition:background .15s;
-}
-.token-save-btn:hover{background:var(--green-dim)}
+.how-title{font-size:12px;font-weight:800;color:var(--green);margin-bottom:10px;}
+.how-steps{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px;}
+.how-steps li{font-size:12px;color:var(--text-muted);display:flex;gap:10px;align-items:baseline;}
+.how-steps li b{color:var(--text);min-width:18px;font-size:11px;font-weight:800;}
 .token-clear-btn{
   padding:9px 14px;background:transparent;color:var(--text-muted);
   border:1px solid rgba(0,0,0,0.12);border-radius:8px;
@@ -223,7 +208,7 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
   <div class="admin-topbar">
     <div class="admin-logo">FIFTEEN<span>.</span> <span style="font-size:11px;font-weight:500;color:rgba(255,255,255,.45);margin-left:8px">Pricing Admin</span></div>
     <div class="topbar-right">
-      <button class="admin-save-btn" id="saveBtn" onclick="saveAll()">Save & Publish →</button>
+      <button class="admin-save-btn" id="saveBtn" onclick="saveAll()">↓ Download prices.json</button>
       <button class="admin-logout" onclick="logout()">Log out</button>
     </div>
   </div>
@@ -236,20 +221,15 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
       <div class="status-badge ok" id="statusBadge">✓ Connected</div>
     </div>
 
-    <!-- GitHub token -->
-    <div class="token-section">
-      <div class="token-header">
-        <span class="token-title">GitHub Save Token</span>
-        <span class="token-status unset" id="tokenStatus">Not set</span>
-      </div>
-      <div class="token-row">
-        <input type="password" id="ghTokenInput" class="token-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
-        <button class="token-save-btn" onclick="saveToken()">Save Token</button>
-        <button class="token-clear-btn" onclick="clearToken()">Clear</button>
-      </div>
-      <p class="token-help">
-        This lets the admin panel save price changes directly to GitHub. To get one: go to <a href="https://github.com/settings/tokens/new" target="_blank">GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)</a>, check the <strong>repo</strong> scope, click Generate, then paste it here. It is stored only in your browser and never sent anywhere else.
-      </p>
+    <!-- How to publish -->
+    <div class="how-section">
+      <div class="how-title">How to publish price changes</div>
+      <ol class="how-steps">
+        <li><b>1.</b> Edit any prices below, then click <strong>↓ Download prices.json</strong> in the top bar.</li>
+        <li><b>2.</b> Go to your GitHub repo → find <strong>prices.json</strong> → click the pencil ✏️ edit icon.</li>
+        <li><b>3.</b> Select all the text, paste the downloaded file content, then click <strong>Commit changes</strong>.</li>
+        <li><b>4.</b> The live site updates in ~60 seconds automatically.</li>
+      </ol>
     </div>
 
     <!-- Service grids per phase -->
@@ -275,7 +255,6 @@ function showAdminPanel(){
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('adminPanel').style.display  = 'block';
   loadPrices();
-  checkToken();
 }
 if(sessionStorage.getItem('fifteen_admin_auth') === '1'){
   sessionStorage.removeItem('fifteen_admin_auth');
@@ -301,27 +280,6 @@ function logout() {
   document.getElementById('adminPw').value = '';
 }
 
-/* ─── Token ─── */
-function getToken()   { return localStorage.getItem('fifteen_gh_token') || ''; }
-function saveToken()  {
-  const t = document.getElementById('ghTokenInput').value.trim();
-  if(!t) return;
-  localStorage.setItem('fifteen_gh_token', t);
-  document.getElementById('ghTokenInput').value = '';
-  checkToken();
-  showToast('Token saved to browser ✓', 'success');
-}
-function clearToken() {
-  localStorage.removeItem('fifteen_gh_token');
-  checkToken();
-  showToast('Token cleared', '');
-}
-function checkToken() {
-  const has = !!getToken();
-  const el  = document.getElementById('tokenStatus');
-  el.textContent = has ? '✓ Token set' : 'Not set';
-  el.className   = 'token-status ' + (has ? 'set' : 'unset');
-}
 
 /* ─── Load prices ─── */
 async function loadPrices() {
@@ -402,7 +360,7 @@ let isDirty = false;
 function markDirty() {
   if(!isDirty) {
     isDirty = true;
-    document.getElementById('saveBtn').textContent = 'Save & Publish → (unsaved)';
+    document.getElementById('saveBtn').textContent = '↓ Download prices.json ●';
   }
 }
 
@@ -424,65 +382,26 @@ function collectValues() {
   });
 }
 
-/* ─── Save to GitHub ─── */
-async function saveAll() {
-  const token = getToken();
-  const btn   = document.getElementById('saveBtn');
+/* ─── Download prices.json ─── */
+function saveAll() {
+  const btn = document.getElementById('saveBtn');
   const updatedServices = collectValues();
   const payload = {
     currency: '$',
     lastUpdated: new Date().toISOString().slice(0,10),
     services: updatedServices,
   };
-
-  if(!token) {
-    showToast('Set your GitHub token first to publish changes.', 'error');
-    return;
-  }
-
-  btn.disabled = true;
-  btn.textContent = 'Publishing...';
-  showToast('Connecting to GitHub…', '');
-
-  try {
-    /* 1. Get current file SHA */
-    const getRes = await fetch(`https://api.github.com/repos/${REPO}/contents/${FILE_PATH}`, {
-      headers: { Authorization: 'token '+token, Accept: 'application/vnd.github+json' }
-    });
-    if(!getRes.ok) throw new Error('Could not read file. Check your token has repo write access.');
-    const fileData = await getRes.json();
-
-    /* 2. PUT updated file */
-    const putRes = await fetch(`https://api.github.com/repos/${REPO}/contents/${FILE_PATH}`, {
-      method: 'PUT',
-      headers: {
-        Authorization: 'token '+token,
-        Accept: 'application/vnd.github+json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        message: 'Update service prices via admin panel',
-        content: btoa(unescape(encodeURIComponent(JSON.stringify(payload, null, 2)))),
-        sha: fileData.sha,
-      }),
-    });
-    if(!putRes.ok) {
-      const err = await putRes.json();
-      throw new Error(err.message || 'GitHub API error');
-    }
-
-    /* Success */
-    services = updatedServices;
-    isDirty  = false;
-    btn.disabled = false;
-    btn.textContent = 'Save & Publish →';
-    showToast('✓ Published! Live site updates in ~60 seconds', 'success');
-
-  } catch(e) {
-    btn.disabled = false;
-    btn.textContent = 'Save & Publish → (unsaved)';
-    showToast('Error: ' + e.message, 'error');
-  }
+  const json = JSON.stringify(payload, null, 2);
+  const blob = new Blob([json], {type: 'application/json'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'prices.json';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+  services = updatedServices;
+  isDirty  = false;
+  btn.textContent = '↓ Download prices.json';
+  showToast('✓ Downloaded! Upload prices.json to GitHub to go live.', 'success');
 }
 
 /* ─── Toast ─── */
