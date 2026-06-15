@@ -619,13 +619,14 @@ body{
 .partners-track-wrap::before{left:0;background:linear-gradient(to right,#fff,transparent);}
 .partners-track-wrap::after{right:0;background:linear-gradient(to left,#fff,transparent);}
 .partners-track{
-  display:flex;gap:16px;width:max-content;
+  display:flex;flex-wrap:nowrap;gap:16px;
   animation:marquee 38s linear infinite;
+  will-change:transform;
 }
 .partners-track:hover{animation-play-state:paused;}
 @keyframes marquee{
-  0%{transform:translateX(0);}
-  100%{transform:translateX(-50%);}
+  from{transform:translateX(0);}
+  to{transform:translateX(-50%);}
 }
 .partner-card{
   display:flex;align-items:center;justify-content:center;
