@@ -148,12 +148,22 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
 .partners-track-wrap::before,.partners-track-wrap::after{content:'';position:absolute;top:0;bottom:0;width:80px;z-index:2;pointer-events:none}
 .partners-track-wrap::before{left:0;background:linear-gradient(to right,#fff,transparent)}
 .partners-track-wrap::after{right:0;background:linear-gradient(to left,#fff,transparent)}
-.partners-track{display:flex;flex-wrap:nowrap;gap:16px;animation:marquee 38s linear infinite;will-change:transform}
+.partners-track{display:flex;flex-wrap:nowrap;gap:16px;width:max-content;animation:marquee 38s linear infinite;will-change:transform}
 .partners-track:hover{animation-play-state:paused}
 @keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 .partner-card{display:flex;align-items:center;justify-content:center;min-width:130px;height:72px;padding:10px 16px;background:#fff;border:1.5px solid rgba(0,0,0,0.08);border-radius:12px;flex-shrink:0;transition:border-color .2s,box-shadow .2s}
 .partner-card:hover{border-color:rgba(38,145,94,.3);box-shadow:0 3px 16px rgba(0,0,0,0.07)}
 .partner-card-name{font-size:11px;font-weight:700;color:var(--text-muted);text-align:center;line-height:1.3;letter-spacing:-.01em}
+/* ── Team / Expertise ── */
+.team-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:48px}
+.team-card{background:rgba(255,255,255,0.55);border:1px solid rgba(0,0,0,0.08);border-radius:var(--radius-lg);padding:32px 24px 28px;text-align:center;transition:all .25s;box-shadow:0 2px 8px rgba(0,0,0,0.04)}
+.team-card:hover{background:rgba(255,255,255,0.8);transform:translateY(-4px);box-shadow:0 10px 28px rgba(0,0,0,0.09)}
+.team-photo{width:90px;height:90px;border-radius:50%;margin:0 auto 18px;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900;color:#fff;letter-spacing:-.03em;overflow:hidden;position:relative;border:3px solid rgba(255,255,255,0.8);box-shadow:0 4px 14px rgba(0,0,0,0.12)}
+.team-photo img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.team-photo-initials{position:relative;z-index:1}
+.team-name{font-size:16px;font-weight:800;color:var(--text);letter-spacing:-.02em;margin-bottom:5px}
+.team-role{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--green);margin-bottom:14px}
+.team-bio{font-size:13px;color:var(--text-muted);line-height:1.75}
 .footer{padding:40px 0;border-top:1px solid rgba(0,0,0,0.08);text-align:center;background:var(--cream-alt)}
 .footer-logo{font-size:26px;font-weight:900;letter-spacing:-.04em;color:var(--text);margin-bottom:8px}
 .footer-logo span{color:var(--green)}
@@ -490,6 +500,10 @@ select.din{cursor:pointer;appearance:none;-webkit-appearance:none;background-ima
         <svg class="icon" width="15" height="15" viewBox="0 0 24 24" style="stroke:var(--green)"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
         Process
       </a>
+      <a href="#expertise" class="sidebar-link">
+        <svg class="icon" width="15" height="15" viewBox="0 0 24 24" style="stroke:var(--green)"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Our Expertise
+      </a>
       <a href="shop.html" class="sidebar-link">
         <svg class="icon" width="15" height="15" viewBox="0 0 24 24" style="stroke:var(--green)"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
         Build Your Plan
@@ -679,6 +693,45 @@ select.din{cursor:pointer;appearance:none;-webkit-appearance:none;background-ima
         <div class="t-title" data-editable="timeline.p2.title">Massive Scale</div>
         <p class="t-body" data-editable="timeline.p2.body">We execute the deep operational renovations, deploy custom ERP automations, launch full scaling campaigns, and legally secure your long-term market dominance. This is where compounding begins and competitors get locked out permanently.</p>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- OUR EXPERTISE -->
+<section class="section alt-section" id="expertise">
+  <div class="container">
+    <div class="badge" data-editable="expertise.badge">The Team</div>
+    <div class="section-title" data-editable="expertise.title">Our <span class="green">Expertise</span></div>
+    <p class="section-sub" data-editable="expertise.sub">Three decades of combined experience transforming businesses across the MENA region and beyond.</p>
+    <div class="team-grid">
+
+      <div class="team-card">
+        <div class="team-photo" style="background:linear-gradient(135deg,#26915E,#1d7a4c)">
+          <span class="team-photo-initials" data-editable="team.0.initials">01</span>
+        </div>
+        <div class="team-name" data-editable="team.0.name">Team Member Name</div>
+        <div class="team-role" data-editable="team.0.role">Co-Founder &amp; Managing Director</div>
+        <div class="team-bio" data-editable="team.0.bio">Add this person's background, industry experience, and key achievements here. Click Edit Mode in admin to update this text.</div>
+      </div>
+
+      <div class="team-card">
+        <div class="team-photo" style="background:linear-gradient(135deg,#E36C44,#c95a34)">
+          <span class="team-photo-initials" data-editable="team.1.initials">02</span>
+        </div>
+        <div class="team-name" data-editable="team.1.name">Team Member Name</div>
+        <div class="team-role" data-editable="team.1.role">Head of Digital Strategy</div>
+        <div class="team-bio" data-editable="team.1.bio">Add this person's background, industry experience, and key achievements here. Click Edit Mode in admin to update this text.</div>
+      </div>
+
+      <div class="team-card">
+        <div class="team-photo" style="background:linear-gradient(135deg,#2d6a9f,#1a5480)">
+          <span class="team-photo-initials" data-editable="team.2.initials">03</span>
+        </div>
+        <div class="team-name" data-editable="team.2.name">Team Member Name</div>
+        <div class="team-role" data-editable="team.2.role">Business Transformation Lead</div>
+        <div class="team-bio" data-editable="team.2.bio">Add this person's background, industry experience, and key achievements here. Click Edit Mode in admin to update this text.</div>
+      </div>
+
     </div>
   </div>
 </section>

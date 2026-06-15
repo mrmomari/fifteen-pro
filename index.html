@@ -621,6 +621,7 @@ body{
 .partners-track-wrap::after{right:0;background:linear-gradient(to left,#fff,transparent);}
 .partners-track{
   display:flex;flex-wrap:nowrap;gap:16px;
+  width:max-content;
   animation:marquee 38s linear infinite;
   will-change:transform;
 }
@@ -645,6 +646,18 @@ body{
   font-size:11px;font-weight:700;color:var(--text-muted);
   text-align:center;line-height:1.3;letter-spacing:-.01em;
 }
+
+/* ── Team / Expertise ── */
+.team-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:48px}
+.team-card{background:rgba(255,255,255,0.55);border:1px solid rgba(0,0,0,0.08);border-radius:var(--radius-lg);padding:32px 24px 28px;text-align:center;transition:all .25s;box-shadow:0 2px 8px rgba(0,0,0,0.04)}
+.team-card:hover{background:rgba(255,255,255,0.8);transform:translateY(-4px);box-shadow:0 10px 28px rgba(0,0,0,0.09)}
+.team-photo{width:90px;height:90px;border-radius:50%;margin:0 auto 18px;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900;color:#fff;letter-spacing:-.03em;overflow:hidden;position:relative;border:3px solid rgba(255,255,255,0.8);box-shadow:0 4px 14px rgba(0,0,0,0.12)}
+.team-photo img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.team-photo-initials{position:relative;z-index:1}
+.team-name{font-size:16px;font-weight:800;color:var(--text);letter-spacing:-.02em;margin-bottom:5px}
+.team-role{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--green);margin-bottom:14px}
+.team-bio{font-size:13px;color:var(--text-muted);line-height:1.75}
+@media(max-width:960px){.team-grid{grid-template-columns:1fr}}
 
 /* ── Footer ── */
 .footer{padding:40px 0;border-top:1px solid rgba(0,0,0,0.08);text-align:center;background:var(--cream-alt)}
@@ -732,6 +745,15 @@ body{
           <polyline points="17 6 23 6 23 12"/>
         </svg>
         Process
+      </a>
+      <a href="#expertise" class="sidebar-link">
+        <svg class="icon" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" style="stroke:var(--green)">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+        Our Expertise
       </a>
       <a href="shop.html" class="sidebar-link">
         <svg class="icon" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" style="stroke:var(--green)">
@@ -1017,6 +1039,45 @@ body{
   </div>
 </section>
 
+
+<!-- OUR EXPERTISE -->
+<section class="section alt-section" id="expertise">
+  <div class="container">
+    <div class="badge">The Team</div>
+    <div class="section-title">Our <span class="green">Expertise</span></div>
+    <p class="section-sub">Three decades of combined experience transforming businesses across the MENA region and beyond.</p>
+    <div class="team-grid">
+
+      <div class="team-card">
+        <div class="team-photo" style="background:linear-gradient(135deg,#26915E,#1d7a4c)">
+          <span class="team-photo-initials">01</span>
+        </div>
+        <div class="team-name">Team Member Name</div>
+        <div class="team-role">Co-Founder &amp; Managing Director</div>
+        <div class="team-bio">Add this person's background, industry experience, and key achievements here. Click Edit Mode in admin to update this text.</div>
+      </div>
+
+      <div class="team-card">
+        <div class="team-photo" style="background:linear-gradient(135deg,#E36C44,#c95a34)">
+          <span class="team-photo-initials">02</span>
+        </div>
+        <div class="team-name">Team Member Name</div>
+        <div class="team-role">Head of Digital Strategy</div>
+        <div class="team-bio">Add this person's background, industry experience, and key achievements here. Click Edit Mode in admin to update this text.</div>
+      </div>
+
+      <div class="team-card">
+        <div class="team-photo" style="background:linear-gradient(135deg,#2d6a9f,#1a5480)">
+          <span class="team-photo-initials">03</span>
+        </div>
+        <div class="team-name">Team Member Name</div>
+        <div class="team-role">Business Transformation Lead</div>
+        <div class="team-bio">Add this person's background, industry experience, and key achievements here. Click Edit Mode in admin to update this text.</div>
+      </div>
+
+    </div>
+  </div>
+</section>
 
 <!-- FORM / APPLY -->
 <section class="section" id="apply">
