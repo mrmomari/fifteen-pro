@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin — Fifteen Pricing</title>
+<title>Admin — Fifteen</title>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -12,179 +14,168 @@
 body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased;min-height:100vh}
 :root{
   --green:#26915E;--green-dim:#1d7a4c;--orange:#E36C44;
-  --cream:#E0E8CF;--cream-alt:#D5DFBE;--cream-card:rgba(255,255,255,0.55);
+  --cream:#E0E8CF;--cream-alt:#D5DFBE;
   --text:#1C2416;--text-muted:#5A6B4E;--text-dim:#7A8B6A;
   --radius:10px;--radius-lg:14px;
 }
 
-/* ── Login screen ── */
-#loginScreen{
-  display:flex;align-items:center;justify-content:center;
-  min-height:100vh;padding:20px;
-}
-.login-box{
-  background:rgba(255,255,255,0.55);border:1px solid rgba(0,0,0,0.1);
-  border-radius:20px;padding:48px 44px;width:100%;max-width:380px;
-  box-shadow:0 8px 40px rgba(0,0,0,0.1);text-align:center;
-}
+/* ── Login ── */
+#loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.login-box{background:rgba(255,255,255,.55);border:1px solid rgba(0,0,0,.1);border-radius:20px;padding:48px 44px;width:100%;max-width:380px;box-shadow:0 8px 40px rgba(0,0,0,.1);text-align:center}
 .login-logo{font-size:28px;font-weight:900;letter-spacing:-.04em;margin-bottom:6px}
 .login-logo span{color:var(--green)}
 .login-sub{font-size:13px;color:var(--text-muted);margin-bottom:36px}
 .login-label{display:block;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);text-align:left;margin-bottom:6px}
-.login-input{
-  width:100%;padding:12px 14px;background:rgba(255,255,255,0.8);
-  border:1px solid rgba(0,0,0,0.12);border-radius:8px;
-  font-size:14px;font-family:inherit;color:var(--text);outline:none;margin-bottom:14px;
-  transition:border-color .15s,box-shadow .15s;
-}
+.login-input{width:100%;padding:12px 14px;background:rgba(255,255,255,.8);border:1px solid rgba(0,0,0,.12);border-radius:8px;font-size:14px;font-family:inherit;color:var(--text);outline:none;margin-bottom:14px;transition:border-color .15s,box-shadow .15s}
 .login-input:focus{border-color:rgba(38,145,94,.4);box-shadow:0 0 0 3px rgba(38,145,94,.08)}
-.login-input::placeholder{color:var(--text-dim)}
-.login-btn{
-  width:100%;padding:13px;background:var(--green);color:#fff;border:none;border-radius:8px;
-  font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.04em;transition:background .15s;
-}
+.login-btn{width:100%;padding:13px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.04em;transition:background .15s}
 .login-btn:hover{background:var(--green-dim)}
 .login-error{font-size:12px;color:#c0392b;margin-top:10px;display:none}
 
 /* ── Admin panel ── */
-#adminPanel{display:none;padding:0 0 80px}
+#adminPanel{display:none;padding-bottom:80px}
 
-.admin-topbar{
-  background:var(--text);padding:14px 32px;
-  display:flex;align-items:center;justify-content:space-between;
-  position:sticky;top:0;z-index:50;
-}
+.admin-topbar{background:var(--text);padding:14px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
 .admin-logo{font-size:18px;font-weight:900;letter-spacing:-.03em;color:#fff}
 .admin-logo span{color:var(--green)}
+.topbar-label{font-size:11px;font-weight:500;color:rgba(255,255,255,.45);margin-left:8px}
 .topbar-right{display:flex;align-items:center;gap:12px}
-.admin-save-btn{
-  padding:9px 22px;background:var(--orange);color:#fff;border:none;border-radius:7px;
-  font-size:13px;font-weight:800;cursor:pointer;letter-spacing:.03em;transition:all .2s;
-  box-shadow:0 3px 12px rgba(227,108,68,.35);
-}
+.admin-save-btn{padding:9px 22px;background:var(--orange);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:800;cursor:pointer;letter-spacing:.03em;transition:all .2s;box-shadow:0 3px 12px rgba(227,108,68,.35)}
 .admin-save-btn:hover{background:#ec7850;transform:translateY(-1px)}
 .admin-save-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.cloud-badge{font-size:11px;font-weight:700;padding:5px 12px;background:rgba(38,145,94,.18);color:#9EE8BF;border:1px solid rgba(38,145,94,.3);border-radius:20px;letter-spacing:.02em}
+.cloud-badge.disconnected{background:rgba(255,255,255,.07);color:rgba(255,255,255,.4);border-color:rgba(255,255,255,.1)}
 .admin-logout{font-size:12px;color:rgba(255,255,255,.5);background:none;border:none;cursor:pointer;text-decoration:underline;transition:color .15s}
 .admin-logout:hover{color:rgba(255,255,255,.8)}
 
+/* ── Tab navigation ── */
+.admin-tabs{background:rgba(0,0,0,.06);border-bottom:1px solid rgba(0,0,0,.1);padding:0 32px}
+.admin-tabs-inner{display:flex;gap:0;max-width:900px;margin:0 auto}
+.admin-tab{padding:13px 22px;border:none;background:none;font-size:13px;font-weight:700;color:var(--text-muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;letter-spacing:.01em;transition:all .15s}
+.admin-tab:hover{color:var(--text)}
+.admin-tab.active{color:var(--green);border-bottom-color:var(--green)}
+
+/* ── Admin body ── */
 .admin-body{max-width:900px;margin:0 auto;padding:36px 24px}
 
-/* Status bar */
-.status-bar{
-  display:flex;align-items:center;justify-content:space-between;
-  background:rgba(255,255,255,0.5);border:1px solid rgba(0,0,0,0.09);
-  border-radius:10px;padding:14px 20px;margin-bottom:28px;
-}
+/* ── Firebase banner ── */
+.firebase-banner{display:flex;align-items:center;gap:14px;background:rgba(38,145,94,.07);border:1px solid rgba(38,145,94,.18);border-radius:var(--radius);padding:14px 18px;margin-bottom:20px}
+.fb-title{font-size:13px;font-weight:700;color:var(--text)}
+.fb-desc{font-size:12px;color:var(--text-muted)}
+.fb-desc a{color:var(--green);font-weight:600;cursor:pointer;text-decoration:none}
+.fb-desc a:hover{text-decoration:underline}
+.fb-close{margin-left:auto;background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:16px;line-height:1;padding:4px}
+
+/* ── Status bar ── */
+.status-bar{display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.5);border:1px solid rgba(0,0,0,.09);border-radius:10px;padding:14px 20px;margin-bottom:28px}
 .status-left{font-size:13px;color:var(--text-muted)}
 .status-left strong{color:var(--text)}
 .status-badge{font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px}
 .status-badge.ok{background:rgba(38,145,94,.12);color:var(--green);border:1px solid rgba(38,145,94,.2)}
 .status-badge.warn{background:rgba(227,108,68,.1);color:var(--orange);border:1px solid rgba(227,108,68,.2)}
 
-/* How to publish */
-.how-section{
-  background:rgba(38,145,94,.06);border:1px solid rgba(38,145,94,.15);
-  border-radius:var(--radius-lg);padding:18px 24px;margin-bottom:28px;
-}
-.how-title{font-size:12px;font-weight:800;color:var(--green);margin-bottom:10px;}
-.how-steps{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px;}
-.how-steps li{font-size:12px;color:var(--text-muted);display:flex;gap:10px;align-items:baseline;}
-.how-steps li b{color:var(--text);min-width:18px;font-size:11px;font-weight:800;}
-.token-clear-btn{
-  padding:9px 14px;background:transparent;color:var(--text-muted);
-  border:1px solid rgba(0,0,0,0.12);border-radius:8px;
-  font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .15s;
-}
-.token-clear-btn:hover{background:rgba(0,0,0,0.05)}
-.token-help{font-size:11px;color:var(--text-dim);margin-top:8px}
-.token-help a{color:var(--green);font-weight:600}
-
-/* Section heading */
-.section-heading{
-  display:flex;align-items:center;gap:10px;margin-bottom:16px;
-}
+/* ── Service cards ── */
+.section-heading{display:flex;align-items:center;gap:10px;margin-bottom:16px}
 .section-heading h2{font-size:15px;font-weight:800;color:var(--text)}
 .phase-pill{font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--green);background:rgba(38,145,94,.1);border:1px solid rgba(38,145,94,.18);padding:3px 10px;border-radius:6px}
-
-/* Service cards grid */
 .services-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:36px}
-.service-admin-card{
-  background:rgba(255,255,255,0.52);border:1px solid rgba(0,0,0,0.09);
-  border-radius:var(--radius);padding:18px 16px;
-  transition:box-shadow .2s;
-}
-.service-admin-card:hover{box-shadow:0 4px 16px rgba(0,0,0,0.08)}
+.service-admin-card{background:rgba(255,255,255,.52);border:1px solid rgba(0,0,0,.09);border-radius:var(--radius);padding:18px 16px;transition:box-shadow .2s}
+.service-admin-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.08)}
 .sac-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .sac-num{font-size:10px;font-weight:900;color:var(--green);font-family:monospace;letter-spacing:.06em}
 .sac-name{font-size:14px;font-weight:800;color:var(--text);margin-bottom:6px;letter-spacing:-.01em}
-
-/* Toggle switch */
+.service-admin-card.inactive{opacity:.55}
 .toggle-wrap{display:flex;align-items:center;gap:7px}
 .toggle-label{font-size:10px;font-weight:700;color:var(--text-muted)}
 .toggle{position:relative;width:34px;height:18px;cursor:pointer}
 .toggle input{opacity:0;width:0;height:0;position:absolute}
-.toggle-track{
-  position:absolute;inset:0;border-radius:9px;background:rgba(0,0,0,0.15);
-  transition:background .2s;
-}
+.toggle-track{position:absolute;inset:0;border-radius:9px;background:rgba(0,0,0,.15);transition:background .2s}
 .toggle input:checked + .toggle-track{background:var(--green)}
-.toggle-thumb{
-  position:absolute;top:2px;left:2px;width:14px;height:14px;
-  border-radius:50%;background:#fff;transition:transform .2s;
-  box-shadow:0 1px 4px rgba(0,0,0,0.2);
-}
+.toggle-thumb{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 4px rgba(0,0,0,.2)}
 .toggle input:checked ~ .toggle-thumb{transform:translateX(16px)}
-
-/* Price inputs */
 .price-row{display:flex;align-items:center;gap:8px;margin-top:10px;margin-bottom:10px}
 .price-symbol{font-size:16px;font-weight:800;color:var(--text-muted);flex-shrink:0}
-.price-input{
-  flex:1;min-width:0;padding:9px 11px;background:rgba(255,255,255,0.8);
-  border:1px solid rgba(0,0,0,0.12);border-radius:7px;
-  font-size:15px;font-weight:700;font-family:inherit;color:var(--text);
-  outline:none;transition:border-color .15s,box-shadow .15s;
-}
+.price-input{flex:1;min-width:0;padding:9px 11px;background:rgba(255,255,255,.8);border:1px solid rgba(0,0,0,.12);border-radius:7px;font-size:15px;font-weight:700;font-family:inherit;color:var(--text);outline:none;transition:border-color .15s,box-shadow .15s}
 .price-input:focus{border-color:rgba(38,145,94,.45);box-shadow:0 0 0 3px rgba(38,145,94,.08)}
-.type-select{
-  width:90px;flex-shrink:0;padding:9px 8px;background:rgba(255,255,255,0.8);
-  border:1px solid rgba(0,0,0,0.12);border-radius:7px;
-  font-size:11px;font-weight:700;font-family:inherit;color:var(--text);
-  outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23666' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;background-position:right 8px center;padding-right:24px;
-  transition:border-color .15s;
-}
+.type-select{width:90px;flex-shrink:0;padding:9px 8px;background:rgba(255,255,255,.8);border:1px solid rgba(0,0,0,.12);border-radius:7px;font-size:11px;font-weight:700;font-family:inherit;color:var(--text);outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23666' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;padding-right:24px;transition:border-color .15s}
 .type-select:focus{border-color:rgba(38,145,94,.45)}
-.type-select option{background:#fff}
-
-/* Desc input */
-.desc-input{
-  width:100%;margin-top:8px;padding:8px 11px;
-  background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.1);
-  border-radius:7px;font-size:12px;font-family:inherit;color:var(--text);
-  outline:none;resize:none;transition:border-color .15s;
-}
+.desc-input{width:100%;margin-top:8px;padding:8px 11px;background:rgba(255,255,255,.8);border:1px solid rgba(0,0,0,.1);border-radius:7px;font-size:12px;font-family:inherit;color:var(--text);outline:none;resize:none;transition:border-color .15s}
 .desc-input:focus{border-color:rgba(38,145,94,.4)}
 
-/* Save status toast */
-.toast{
-  position:fixed;bottom:28px;right:28px;z-index:200;
-  background:var(--text);color:#fff;padding:12px 20px;border-radius:10px;
-  font-size:13px;font-weight:600;opacity:0;transform:translateY(12px);
-  transition:all .3s;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,0.2);
-}
+/* ── Settings tabs ── */
+.settings-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:28px}
+.st-tab{padding:8px 18px;border:1px solid rgba(0,0,0,.12);background:rgba(255,255,255,.45);border-radius:8px;font-size:12px;font-weight:700;color:var(--text-muted);cursor:pointer;transition:all .15s;letter-spacing:.01em}
+.st-tab:hover{background:rgba(255,255,255,.7);color:var(--text)}
+.st-tab.active{background:var(--text);color:#fff;border-color:var(--text)}
+.settings-panel{display:none}
+.settings-panel.active{display:block}
+
+/* ── Settings forms ── */
+.settings-section{background:rgba(255,255,255,.5);border:1px solid rgba(0,0,0,.09);border-radius:var(--radius-lg);padding:28px;margin-bottom:20px}
+.settings-section-title{font-size:15px;font-weight:800;color:var(--text);margin-bottom:6px}
+.settings-section-subtitle{font-size:12px;font-weight:800;color:var(--text-muted);margin-top:24px;margin-bottom:12px;text-transform:uppercase;letter-spacing:.08em}
+.settings-desc{font-size:12px;color:var(--text-muted);margin-bottom:20px}
+.settings-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+.sf{display:flex;flex-direction:column;gap:5px}
+.sf.full{grid-column:1/-1}
+.sf-label{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted)}
+.sf-input{padding:10px 12px;background:rgba(255,255,255,.8);border:1px solid rgba(0,0,0,.12);border-radius:8px;font-size:13px;font-family:inherit;color:var(--text);outline:none;transition:border-color .15s,box-shadow .15s;width:100%}
+.sf-input:focus{border-color:rgba(38,145,94,.45);box-shadow:0 0 0 3px rgba(38,145,94,.08)}
+.sf-input::placeholder{color:var(--text-dim)}
+textarea.sf-input{resize:vertical;min-height:72px}
+select.sf-input{cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23666' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+
+.settings-save-btn{margin-top:22px;padding:11px 26px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;letter-spacing:.03em;transition:all .2s;box-shadow:0 3px 12px rgba(38,145,94,.25)}
+.settings-save-btn:hover{background:var(--green-dim);transform:translateY(-1px)}
+.cancel-btn{margin-top:22px;padding:11px 20px;background:transparent;color:var(--text-muted);border:1px solid rgba(0,0,0,.15);border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s}
+.cancel-btn:hover{background:rgba(0,0,0,.04)}
+
+/* ── Promo codes & partner logins ── */
+.row-table{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.data-row{display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(255,255,255,.65);border:1px solid rgba(0,0,0,.09);border-radius:8px;flex-wrap:wrap}
+.data-row input,.data-row select{padding:7px 10px;background:rgba(255,255,255,.9);border:1px solid rgba(0,0,0,.12);border-radius:6px;font-size:12px;font-family:inherit;color:var(--text);outline:none;flex:1;min-width:90px}
+.data-row input:focus,.data-row select:focus{border-color:rgba(38,145,94,.4)}
+.del-btn{padding:6px 10px;background:rgba(220,50,50,.08);color:#c0392b;border:1px solid rgba(220,50,50,.15);border-radius:6px;font-size:12px;cursor:pointer;flex-shrink:0;transition:all .15s;font-weight:700}
+.del-btn:hover{background:rgba(220,50,50,.15)}
+.add-row-btn{padding:9px 18px;background:transparent;color:var(--green);border:1px dashed rgba(38,145,94,.4);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px;margin-top:8px}
+.add-row-btn:hover{background:rgba(38,145,94,.06);border-color:rgba(38,145,94,.6)}
+.row-hint{font-size:10px;color:var(--text-dim);font-weight:600;white-space:nowrap;flex-shrink:0}
+
+/* ── Catalog list ── */
+.catalog-service-row{display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(255,255,255,.55);border:1px solid rgba(0,0,0,.09);border-radius:8px;margin-bottom:8px}
+.csr-phase{font-size:9px;font-weight:800;color:var(--green);background:rgba(38,145,94,.1);border-radius:4px;padding:2px 7px;flex-shrink:0;letter-spacing:.06em}
+.csr-name{font-size:13px;font-weight:700;color:var(--text);flex:1}
+.csr-price{font-size:12px;font-weight:600;color:var(--text-muted);flex-shrink:0}
+
+/* ── Firebase setup ── */
+.setup-step{display:flex;gap:14px;align-items:flex-start;margin-bottom:18px}
+.setup-num{width:26px;height:26px;border-radius:50%;background:var(--green);color:#fff;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.setup-step-text{font-size:13px;color:var(--text-muted);line-height:1.6}
+.setup-step-text strong{color:var(--text);font-weight:700}
+.setup-step-text a{color:var(--green);font-weight:600;text-decoration:none}
+.setup-step-text a:hover{text-decoration:underline}
+.config-status{padding:10px 16px;border-radius:8px;font-size:12px;font-weight:600;margin-top:16px}
+.config-status.connected{background:rgba(38,145,94,.1);color:var(--green);border:1px solid rgba(38,145,94,.2)}
+.config-status.not-configured{background:rgba(227,108,68,.08);color:var(--orange);border:1px solid rgba(227,108,68,.2)}
+.config-actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+
+/* ── Add service form ── */
+.add-service-form{background:rgba(38,145,94,.05);border:1px solid rgba(38,145,94,.18);border-radius:var(--radius);padding:20px;margin-top:16px}
+.add-service-form h4{font-size:13px;font-weight:800;color:var(--green);margin-bottom:16px;letter-spacing:.02em}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:28px;right:28px;z-index:200;background:var(--text);color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;opacity:0;transform:translateY(12px);transition:all .3s;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.2)}
 .toast.show{opacity:1;transform:none}
 .toast.success{background:var(--green)}
 .toast.error{background:#c0392b}
 
-/* Inactive card */
-.service-admin-card.inactive{opacity:.55}
-
 @media(max-width:600px){
-  .services-grid{grid-template-columns:1fr}
+  .services-grid,.settings-grid{grid-template-columns:1fr}
   .admin-body{padding:24px 14px}
   .admin-topbar{padding:12px 16px}
+  .admin-tabs{padding:0 14px}
   .status-bar{flex-direction:column;align-items:flex-start;gap:8px}
+  .data-row{flex-wrap:wrap}
 }
 </style>
 </head>
@@ -194,7 +185,7 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
 <div id="loginScreen">
   <div class="login-box">
     <div class="login-logo">FIFTEEN<span>.</span></div>
-    <p class="login-sub">Pricing Admin Panel</p>
+    <p class="login-sub">Admin Panel</p>
     <label class="login-label" for="adminPw">Admin Password</label>
     <input type="password" id="adminPw" class="login-input" placeholder="Enter password" autocomplete="current-password">
     <button class="login-btn" onclick="doLogin()">Access Panel</button>
@@ -205,127 +196,387 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
 <!-- ═══ ADMIN PANEL ═══ -->
 <div id="adminPanel">
 
+  <!-- Topbar -->
   <div class="admin-topbar">
-    <div class="admin-logo">FIFTEEN<span>.</span> <span style="font-size:11px;font-weight:500;color:rgba(255,255,255,.45);margin-left:8px">Pricing Admin</span></div>
+    <div class="admin-logo">FIFTEEN<span>.</span><span class="topbar-label" id="topbarLabel">Pricing Admin</span></div>
     <div class="topbar-right">
-      <button class="admin-save-btn" id="saveBtn" onclick="saveAll()">↓ Download prices.json</button>
+      <span class="cloud-badge disconnected" id="cloudBadge">○ Local only</span>
+      <button class="admin-save-btn" id="saveBtn" onclick="handleSave()">↓ Download prices.json</button>
       <button class="admin-logout" onclick="logout()">Log out</button>
     </div>
   </div>
 
-  <div class="admin-body">
-
-    <!-- Status -->
-    <div class="status-bar">
-      <div class="status-left">Managing <strong>15 services</strong> across 3 phases · Changes publish to the live site in ~60 seconds</div>
-      <div class="status-badge ok" id="statusBadge">✓ Connected</div>
+  <!-- Tab navigation -->
+  <div class="admin-tabs">
+    <div class="admin-tabs-inner">
+      <button class="admin-tab active" id="tab-btn-services" onclick="switchTab('services')">Services</button>
+      <button class="admin-tab" id="tab-btn-settings" onclick="switchTab('settings')">⚙ Settings</button>
     </div>
-
-    <!-- How to publish -->
-    <div class="how-section">
-      <div class="how-title">How to publish price changes</div>
-      <ol class="how-steps">
-        <li><b>1.</b> Edit any prices below, then click <strong>↓ Download prices.json</strong> in the top bar.</li>
-        <li><b>2.</b> Go to your GitHub repo → find <strong>prices.json</strong> → click the pencil ✏️ edit icon.</li>
-        <li><b>3.</b> Select all the text, paste the downloaded file content, then click <strong>Commit changes</strong>.</li>
-        <li><b>4.</b> The live site updates in ~60 seconds automatically.</li>
-      </ol>
-    </div>
-
-    <!-- Service grids per phase -->
-    <div id="adminContent"></div>
-
   </div>
-</div>
+
+  <!-- ── SERVICES TAB ── -->
+  <div id="tab-services" class="admin-body">
+
+    <div class="firebase-banner" id="firebaseBanner">
+      <div>
+        <div class="fb-title">☁ Connect Firebase for cloud sync</div>
+        <div class="fb-desc">Settings are local-only. <a onclick="switchTab('settings');switchSettingsTab('setup')">Set up Firebase →</a></div>
+      </div>
+      <button class="fb-close" onclick="this.parentElement.style.display='none'">✕</button>
+    </div>
+
+    <div class="status-bar">
+      <div class="status-left">Managing <strong id="serviceCount">15 services</strong> across 3 phases · <span id="syncStatus">download to publish changes</span></div>
+      <div class="status-badge ok" id="statusBadge">✓ Loaded</div>
+    </div>
+
+    <div id="adminContent"></div>
+  </div>
+
+  <!-- ── SETTINGS TAB ── -->
+  <div id="tab-settings" class="admin-body" style="display:none">
+
+    <div class="settings-tabs">
+      <button class="st-tab active" id="st-btn-company"  onclick="switchSettingsTab('company')">Company Info</button>
+      <button class="st-tab"        id="st-btn-pricing"  onclick="switchSettingsTab('pricing')">Pricing & Discounts</button>
+      <button class="st-tab"        id="st-btn-catalog"  onclick="switchSettingsTab('catalog')">Services Catalog</button>
+      <button class="st-tab"        id="st-btn-access"   onclick="switchSettingsTab('access')">Users & Access</button>
+      <button class="st-tab"        id="st-btn-setup"    onclick="switchSettingsTab('setup')">☁ Firebase Setup</button>
+    </div>
+
+    <!-- Company Info -->
+    <div id="st-company" class="settings-panel active">
+      <div class="settings-section">
+        <div class="settings-section-title">Company Information</div>
+        <p class="settings-desc">Displayed across all public pages. Changes save to the cloud and reflect live.</p>
+        <div class="settings-grid">
+          <div class="sf"><label class="sf-label">Company Name</label><input class="sf-input" id="s-name" type="text" placeholder="Fifteen"></div>
+          <div class="sf"><label class="sf-label">Tagline</label><input class="sf-input" id="s-tagline" type="text" placeholder="15-Point Business Acceleration Engine"></div>
+          <div class="sf"><label class="sf-label">Logo URL</label><input class="sf-input" id="s-logo" type="url" placeholder="https://..."></div>
+          <div class="sf"><label class="sf-label">Contact Email</label><input class="sf-input" id="s-email" type="email" placeholder="hello@fifteen.pro"></div>
+          <div class="sf"><label class="sf-label">Phone</label><input class="sf-input" id="s-phone" type="text" placeholder="+1 ..."></div>
+          <div class="sf full"><label class="sf-label">Address</label><textarea class="sf-input" id="s-address" rows="2" placeholder="123 Street, City, Country"></textarea></div>
+        </div>
+        <div class="settings-section-subtitle">Social Links</div>
+        <div class="settings-grid">
+          <div class="sf"><label class="sf-label">LinkedIn</label><input class="sf-input" id="s-linkedin" type="url" placeholder="https://linkedin.com/company/..."></div>
+          <div class="sf"><label class="sf-label">Instagram</label><input class="sf-input" id="s-instagram" type="url" placeholder="https://instagram.com/..."></div>
+          <div class="sf"><label class="sf-label">Facebook</label><input class="sf-input" id="s-facebook" type="url" placeholder="https://facebook.com/..."></div>
+          <div class="sf"><label class="sf-label">TikTok</label><input class="sf-input" id="s-tiktok" type="url" placeholder="https://tiktok.com/@..."></div>
+          <div class="sf"><label class="sf-label">Twitter / X</label><input class="sf-input" id="s-twitter" type="url" placeholder="https://x.com/..."></div>
+          <div class="sf"><label class="sf-label">YouTube</label><input class="sf-input" id="s-youtube" type="url" placeholder="https://youtube.com/@..."></div>
+        </div>
+        <button class="settings-save-btn" onclick="saveCompanyInfo()">Save Company Info</button>
+      </div>
+    </div>
+
+    <!-- Pricing & Discounts -->
+    <div id="st-pricing" class="settings-panel">
+      <div class="settings-section">
+        <div class="settings-section-title">Global Pricing Settings</div>
+        <p class="settings-desc">These apply across the shop and all service quotes.</p>
+        <div class="settings-grid">
+          <div class="sf"><label class="sf-label">Currency Symbol</label><input class="sf-input" id="s-currency" type="text" value="$" maxlength="5" style="width:80px"></div>
+          <div class="sf"><label class="sf-label">Tax Rate (%)</label><input class="sf-input" id="s-tax" type="number" value="0" min="0" max="100" step="0.5"></div>
+          <div class="sf"><label class="sf-label">Bundle Discount (%)</label><input class="sf-input" id="s-bundle-discount" type="number" value="0" min="0" max="100" step="1"></div>
+          <div class="sf"><label class="sf-label">Min Services for Bundle</label><input class="sf-input" id="s-bundle-min" type="number" value="5" min="2" max="15" step="1"></div>
+        </div>
+        <div class="settings-section-subtitle">Promo Codes</div>
+        <div id="promoCodes" class="row-table"></div>
+        <button class="add-row-btn" onclick="addPromoRow()">+ Add Promo Code</button>
+        <button class="settings-save-btn" onclick="savePricingSettings()">Save Pricing Settings</button>
+      </div>
+    </div>
+
+    <!-- Services Catalog -->
+    <div id="st-catalog" class="settings-panel">
+      <div class="settings-section">
+        <div class="settings-section-title">Services Catalog</div>
+        <p class="settings-desc">Add or remove services. Edit prices and descriptions in the Services tab.</p>
+        <div id="catalogList"></div>
+        <button class="add-row-btn" style="margin-top:12px" onclick="document.getElementById('addServiceForm').style.display='block';this.style.display='none'">+ Add New Service</button>
+        <div id="addServiceForm" style="display:none" class="add-service-form">
+          <h4>New Service</h4>
+          <div class="settings-grid">
+            <div class="sf"><label class="sf-label">Name</label><input class="sf-input" id="ns-name" type="text" placeholder="Service Name"></div>
+            <div class="sf"><label class="sf-label">Phase</label>
+              <select class="sf-input" id="ns-phase">
+                <option value="1">Phase 1 — Brand & Authority</option>
+                <option value="2">Phase 2 — Growth & Traffic</option>
+                <option value="3">Phase 3 — Infrastructure & Scale</option>
+              </select>
+            </div>
+            <div class="sf"><label class="sf-label">Price ($)</label><input class="sf-input" id="ns-price" type="number" value="500" min="0"></div>
+            <div class="sf"><label class="sf-label">Billing</label>
+              <select class="sf-input" id="ns-type">
+                <option value="one-time">One-time</option>
+                <option value="monthly">Monthly</option>
+              </select>
+            </div>
+            <div class="sf full"><label class="sf-label">Description</label><input class="sf-input" id="ns-desc" type="text" placeholder="Brief description of this service"></div>
+          </div>
+          <div style="display:flex;gap:10px">
+            <button class="settings-save-btn" onclick="addNewService()">Add Service</button>
+            <button class="cancel-btn" onclick="document.getElementById('addServiceForm').style.display='none';document.querySelector('.add-row-btn[onclick*=addServiceForm]').style.display='inline-flex'">Cancel</button>
+          </div>
+        </div>
+        <button class="settings-save-btn" style="margin-top:24px;display:block" onclick="saveCatalogToCloud()">☁ Save Catalog to Cloud</button>
+      </div>
+    </div>
+
+    <!-- Users & Access -->
+    <div id="st-access" class="settings-panel">
+      <div class="settings-section">
+        <div class="settings-section-title">Admin Password</div>
+        <div class="settings-grid">
+          <div class="sf"><label class="sf-label">Current Password</label><input class="sf-input" id="s-cur-pw" type="password" placeholder="Current password"></div>
+          <div class="sf"><label class="sf-label">New Password</label><input class="sf-input" id="s-new-pw" type="password" placeholder="New password (min 8 chars)"></div>
+          <div class="sf"><label class="sf-label">Confirm New Password</label><input class="sf-input" id="s-con-pw" type="password" placeholder="Confirm new password"></div>
+        </div>
+        <button class="settings-save-btn" onclick="changeAdminPassword()">Update Password</button>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-title">Partner Logins</div>
+        <p class="settings-desc">Partners log in from the main page to access their portal.</p>
+        <div id="partnerLogins" class="row-table"></div>
+        <button class="add-row-btn" onclick="addPartnerRow()">+ Add Partner</button>
+        <button class="settings-save-btn" onclick="saveAccessSettings()">Save Access Settings</button>
+      </div>
+    </div>
+
+    <!-- Firebase Setup -->
+    <div id="st-setup" class="settings-panel">
+      <div class="settings-section">
+        <div class="settings-section-title">Firebase Cloud Setup</div>
+        <p class="settings-desc">Connect Firebase to store all settings in the cloud — safe, persistent, and accessible from any device.</p>
+
+        <div class="setup-step">
+          <div class="setup-num">1</div>
+          <div class="setup-step-text">Go to <a href="https://console.firebase.google.com/" target="_blank">console.firebase.google.com</a> and click <strong>Add project</strong>. Name it something like <strong>fifteen-pro</strong>.</div>
+        </div>
+        <div class="setup-step">
+          <div class="setup-num">2</div>
+          <div class="setup-step-text">Inside the project go to <strong>Build → Firestore Database → Create database</strong>. Choose <strong>Start in test mode</strong>.</div>
+        </div>
+        <div class="setup-step">
+          <div class="setup-num">3</div>
+          <div class="setup-step-text">Go to <strong>Project settings</strong> (gear icon) → <strong>Your apps</strong> → click the <strong>&lt;/&gt; Web</strong> icon to add a web app. Copy the <code>firebaseConfig</code> values.</div>
+        </div>
+        <div class="setup-step">
+          <div class="setup-num">4</div>
+          <div class="setup-step-text">Paste each value in the fields below and click <strong>Connect Firebase</strong>.</div>
+        </div>
+
+        <div class="settings-grid" style="margin-top:20px">
+          <div class="sf"><label class="sf-label">API Key</label><input class="sf-input" id="fb-apiKey" type="text" placeholder="AIzaSy..."></div>
+          <div class="sf"><label class="sf-label">Project ID</label><input class="sf-input" id="fb-projectId" type="text" placeholder="fifteen-pro"></div>
+          <div class="sf"><label class="sf-label">App ID</label><input class="sf-input" id="fb-appId" type="text" placeholder="1:123:web:abc"></div>
+          <div class="sf"><label class="sf-label">Messaging Sender ID</label><input class="sf-input" id="fb-messagingSenderId" type="text" placeholder="1234567890"></div>
+          <div class="sf"><label class="sf-label">Auth Domain</label><input class="sf-input" id="fb-authDomain" type="text" placeholder="fifteen-pro.firebaseapp.com"></div>
+          <div class="sf"><label class="sf-label">Storage Bucket</label><input class="sf-input" id="fb-storageBucket" type="text" placeholder="fifteen-pro.appspot.com"></div>
+        </div>
+
+        <div id="firebaseStatus" class="config-status not-configured" style="margin-top:16px">
+          ○ Not connected — enter your config values above
+        </div>
+
+        <div class="config-actions">
+          <button class="settings-save-btn" style="margin-top:0" onclick="connectFirebase()">Connect Firebase</button>
+          <button class="cancel-btn" style="margin-top:0" onclick="disconnectFirebase()">Disconnect</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /tab-settings -->
+</div><!-- /adminPanel -->
 
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
 <script>
-/* ─── Config ─── */
-const ADMIN_PASSWORD = 'fifteen2025'; // ← Change this password here
-const REPO           = 'mrmomari/fifteen-pro';
-const FILE_PATH      = 'prices.json';
-
-/* ─── State ─── */
+/* ══════════════════════════════════════════════════════════════════════════
+   CONFIG & STATE
+══════════════════════════════════════════════════════════════════════════ */
+let ADMIN_PASSWORD = 'fifteen2025';
 let services = [];
+let db = null;
+let isDirty = false;
 
-/* ─── Login ─── */
-function showAdminPanel(){
-  document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('adminPanel').style.display  = 'block';
-  loadPrices();
+/* ══════════════════════════════════════════════════════════════════════════
+   FIREBASE INIT
+══════════════════════════════════════════════════════════════════════════ */
+function getStoredFirebaseConfig() {
+  try { return JSON.parse(localStorage.getItem('fifteen_fb_config') || 'null'); }
+  catch(e) { return null; }
 }
-if(sessionStorage.getItem('fifteen_admin_auth') === '1'){
+
+function isPlaceholderConfig(cfg) {
+  return !cfg || !cfg.apiKey || cfg.apiKey === 'YOUR_API_KEY' || cfg.projectId === 'YOUR_PROJECT_ID';
+}
+
+async function initFirebase(config) {
+  if (!config || isPlaceholderConfig(config)) return false;
+  try {
+    if (firebase.apps.length === 0) {
+      firebase.initializeApp(config);
+    }
+    db = firebase.firestore();
+    // quick connectivity check
+    await db.collection('settings').doc('company').get();
+    return true;
+  } catch(e) {
+    console.warn('Firebase init failed:', e.message);
+    db = null;
+    return false;
+  }
+}
+
+function setCloudBadge(connected) {
+  const el = document.getElementById('cloudBadge');
+  const banner = document.getElementById('firebaseBanner');
+  if (connected) {
+    el.textContent = '☁ Cloud sync on';
+    el.className = 'cloud-badge';
+    if (banner) banner.style.display = 'none';
+    document.getElementById('syncStatus').textContent = 'changes sync to cloud automatically';
+  } else {
+    el.textContent = '○ Local only';
+    el.className = 'cloud-badge disconnected';
+    document.getElementById('syncStatus').textContent = 'download to publish changes';
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   LOGIN
+══════════════════════════════════════════════════════════════════════════ */
+async function showAdminPanel() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('adminPanel').style.display = 'block';
+
+  // Try Firebase
+  const storedCfg = getStoredFirebaseConfig();
+  const connected = await initFirebase(storedCfg);
+  setCloudBadge(connected);
+
+  if (connected) {
+    await loadAllSettings();
+    populateSetupFields(storedCfg);
+    document.getElementById('firebaseStatus').className = 'config-status connected';
+    document.getElementById('firebaseStatus').textContent = '✓ Connected to Firebase';
+  } else if (storedCfg && !isPlaceholderConfig(storedCfg)) {
+    populateSetupFields(storedCfg);
+  }
+
+  await loadServices();
+}
+
+if (sessionStorage.getItem('fifteen_admin_auth') === '1') {
   sessionStorage.removeItem('fifteen_admin_auth');
   document.addEventListener('DOMContentLoaded', showAdminPanel);
 }
+
 function doLogin() {
   const pw = document.getElementById('adminPw').value;
-  if(pw === ADMIN_PASSWORD) {
+  if (pw === ADMIN_PASSWORD) {
     showAdminPanel();
   } else {
     const err = document.getElementById('loginError');
     err.style.display = 'block';
-    setTimeout(()=>err.style.display='none', 2400);
+    setTimeout(() => err.style.display = 'none', 2400);
   }
 }
-document.getElementById('adminPw').addEventListener('keydown', e => {
-  if(e.key === 'Enter') doLogin();
-});
+document.getElementById('adminPw').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 
 function logout() {
   document.getElementById('loginScreen').style.display = 'flex';
-  document.getElementById('adminPanel').style.display  = 'none';
+  document.getElementById('adminPanel').style.display = 'none';
   document.getElementById('adminPw').value = '';
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   TAB NAVIGATION
+══════════════════════════════════════════════════════════════════════════ */
+function switchTab(name) {
+  ['services', 'settings'].forEach(t => {
+    document.getElementById('tab-' + t).style.display = t === name ? 'block' : 'none';
+    document.getElementById('tab-btn-' + t).classList.toggle('active', t === name);
+  });
+  const lbl = document.getElementById('topbarLabel');
+  const btn = document.getElementById('saveBtn');
+  if (name === 'services') {
+    lbl.textContent = 'Pricing Admin';
+    btn.style.display = 'inline-block';
+  } else {
+    lbl.textContent = 'Settings';
+    btn.style.display = 'none';
+    renderCatalogList();
+  }
+}
 
-/* ─── Load prices ─── */
-async function loadPrices() {
+function switchSettingsTab(name) {
+  ['company', 'pricing', 'catalog', 'access', 'setup'].forEach(t => {
+    document.getElementById('st-' + t).classList.toggle('active', t === name);
+    document.getElementById('st-btn-' + t).classList.toggle('active', t === name);
+  });
+  if (name === 'catalog') renderCatalogList();
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   LOAD SERVICES
+══════════════════════════════════════════════════════════════════════════ */
+async function loadServices() {
   try {
+    if (db) {
+      const doc = await db.collection('catalog').doc('services').get();
+      if (doc.exists && doc.data().items) {
+        services = doc.data().items;
+        renderAdmin();
+        return;
+      }
+    }
+    // Fallback to prices.json
     const res = await fetch('prices.json?v=' + Date.now());
     const data = await res.json();
     services = data.services;
   } catch(e) {
-    showToast('Could not load prices.json', 'error');
+    showToast('Could not load services', 'error');
     return;
   }
   renderAdmin();
 }
 
-/* ─── Render admin cards ─── */
+/* ══════════════════════════════════════════════════════════════════════════
+   RENDER SERVICES
+══════════════════════════════════════════════════════════════════════════ */
 function renderAdmin() {
+  document.getElementById('serviceCount').textContent = services.length + ' services';
   const phases = [
     {num:1, label:'Phase 01 — Brand & Authority'},
     {num:2, label:'Phase 02 — Growth & Traffic'},
     {num:3, label:'Phase 03 — Infrastructure & Scale'},
   ];
-  const content = document.getElementById('adminContent');
-  content.innerHTML = phases.map(ph => {
-    const phServices = services.filter(s => s.phase === ph.num);
+  document.getElementById('adminContent').innerHTML = phases.map(ph => {
+    const ph_svcs = services.filter(s => s.phase === ph.num);
     return `
       <div class="section-heading">
         <div class="phase-pill">Phase 0${ph.num}</div>
         <h2>${ph.label}</h2>
       </div>
-      <div class="services-grid">
-        ${phServices.map(s => renderServiceCard(s)).join('')}
-      </div>
+      <div class="services-grid">${ph_svcs.map(s => renderServiceCard(s)).join('')}</div>
     `;
   }).join('');
 }
 
 function renderServiceCard(s) {
-  const isActive = s.active !== false;
+  const active = s.active !== false;
   return `
-    <div class="service-admin-card ${isActive?'':'inactive'}" id="scard${s.id}">
+    <div class="service-admin-card ${active ? '' : 'inactive'}" id="scard${s.id}">
       <div class="sac-top">
-        <span class="sac-num">SERVICE 0${s.id < 10 ? '' : ''}${s.id}</span>
+        <span class="sac-num">SERVICE ${String(s.id).padStart(2,'0')}</span>
         <div class="toggle-wrap">
-          <span class="toggle-label">${isActive?'Active':'Off'}</span>
+          <span class="toggle-label">${active ? 'Active' : 'Off'}</span>
           <label class="toggle">
-            <input type="checkbox" ${isActive?'checked':''} onchange="toggleActive(${s.id},this)">
+            <input type="checkbox" ${active ? 'checked' : ''} onchange="toggleActive(${s.id},this)">
             <div class="toggle-track"></div>
             <div class="toggle-thumb"></div>
           </label>
@@ -336,8 +587,8 @@ function renderServiceCard(s) {
         <span class="price-symbol">$</span>
         <input type="number" class="price-input" id="price${s.id}" value="${s.price}" min="0" step="50" oninput="markDirty()">
         <select class="type-select" id="type${s.id}" onchange="markDirty()">
-          <option value="one-time" ${s.type==='one-time'?'selected':''}>one-time</option>
-          <option value="monthly" ${s.type==='monthly'?'selected':''}>/ month</option>
+          <option value="one-time" ${s.type === 'one-time' ? 'selected' : ''}>one-time</option>
+          <option value="monthly" ${s.type === 'monthly' ? 'selected' : ''}>/ month</option>
         </select>
       </div>
       <textarea class="desc-input" id="desc${s.id}" rows="2" oninput="markDirty()">${s.description}</textarea>
@@ -345,78 +596,358 @@ function renderServiceCard(s) {
   `;
 }
 
-/* ─── Active toggle ─── */
 function toggleActive(id, checkbox) {
-  const card = document.getElementById('scard'+id);
-  if(checkbox.checked) card.classList.remove('inactive');
-  else card.classList.add('inactive');
-  const lbl = checkbox.closest('.toggle-wrap').querySelector('.toggle-label');
-  lbl.textContent = checkbox.checked ? 'Active' : 'Off';
+  const card = document.getElementById('scard' + id);
+  card.classList.toggle('inactive', !checkbox.checked);
+  checkbox.closest('.toggle-wrap').querySelector('.toggle-label').textContent = checkbox.checked ? 'Active' : 'Off';
   markDirty();
 }
 
-/* ─── Dirty state ─── */
-let isDirty = false;
 function markDirty() {
-  if(!isDirty) {
+  if (!isDirty) {
     isDirty = true;
     document.getElementById('saveBtn').textContent = '↓ Download prices.json ●';
   }
 }
 
-/* ─── Collect current values ─── */
-function collectValues() {
+function collectServices() {
   return services.map(s => {
-    const priceEl = document.getElementById('price'+s.id);
-    const typeEl  = document.getElementById('type'+s.id);
-    const descEl  = document.getElementById('desc'+s.id);
-    const card    = document.getElementById('scard'+s.id);
-    const checkbox = card ? card.querySelector('input[type="checkbox"]') : null;
+    const card = document.getElementById('scard' + s.id);
     return {
       ...s,
-      price:    priceEl  ? parseFloat(priceEl.value)||0 : s.price,
-      type:     typeEl   ? typeEl.value : s.type,
-      description: descEl ? descEl.value.trim() : s.description,
-      active:   checkbox ? checkbox.checked : s.active,
+      price:       parseFloat(document.getElementById('price' + s.id)?.value) || s.price,
+      type:        document.getElementById('type' + s.id)?.value || s.type,
+      description: document.getElementById('desc' + s.id)?.value?.trim() || s.description,
+      active:      card?.querySelector('input[type="checkbox"]')?.checked ?? s.active,
     };
   });
 }
 
-/* ─── Download prices.json ─── */
-function saveAll() {
-  const btn = document.getElementById('saveBtn');
-  const updatedServices = collectValues();
-  const payload = {
-    currency: '$',
-    lastUpdated: new Date().toISOString().slice(0,10),
-    services: updatedServices,
-  };
+/* ══════════════════════════════════════════════════════════════════════════
+   SAVE (topbar button)
+══════════════════════════════════════════════════════════════════════════ */
+async function handleSave() {
+  const updated = collectServices();
+  const payload = { currency: '$', lastUpdated: new Date().toISOString().slice(0,10), services: updated };
+
+  if (db) {
+    try {
+      await db.collection('catalog').doc('services').set({ items: updated, lastUpdated: payload.lastUpdated });
+      services = updated;
+      isDirty = false;
+      document.getElementById('saveBtn').textContent = '↓ Download prices.json';
+      showToast('✓ Saved to cloud', 'success');
+      return;
+    } catch(e) {
+      showToast('Cloud save failed — downloading locally', 'error');
+    }
+  }
+
+  // Download fallback
   const json = JSON.stringify(payload, null, 2);
-  const blob = new Blob([json], {type: 'application/json'});
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href = url; a.download = 'prices.json';
-  document.body.appendChild(a); a.click();
-  document.body.removeChild(a); URL.revokeObjectURL(url);
-  services = updatedServices;
-  isDirty  = false;
-  btn.textContent = '↓ Download prices.json';
-  showToast('✓ Downloaded! Upload prices.json to GitHub to go live.', 'success');
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([json], {type:'application/json'})),
+    download: 'prices.json'
+  });
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  services = updated;
+  isDirty = false;
+  document.getElementById('saveBtn').textContent = '↓ Download prices.json';
+  showToast('✓ Downloaded — upload to GitHub to go live', 'success');
 }
 
-/* ─── Toast ─── */
+/* ══════════════════════════════════════════════════════════════════════════
+   LOAD ALL SETTINGS
+══════════════════════════════════════════════════════════════════════════ */
+async function loadAllSettings() {
+  if (!db) return;
+  try {
+    const [companyDoc, pricingDoc, accessDoc] = await Promise.all([
+      db.collection('settings').doc('company').get(),
+      db.collection('settings').doc('pricing').get(),
+      db.collection('settings').doc('access').get(),
+    ]);
+
+    if (companyDoc.exists) populateCompanyForm(companyDoc.data());
+    if (pricingDoc.exists) populatePricingForm(pricingDoc.data());
+    if (accessDoc.exists) {
+      const d = accessDoc.data();
+      if (d.adminPassword) ADMIN_PASSWORD = d.adminPassword;
+      if (d.partnerLogins) renderPartnerRows(d.partnerLogins);
+    }
+  } catch(e) {
+    console.warn('Could not load settings:', e.message);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   COMPANY INFO
+══════════════════════════════════════════════════════════════════════════ */
+function populateCompanyForm(d) {
+  const set = (id, val) => { const el = document.getElementById(id); if(el) el.value = val || ''; };
+  set('s-name', d.name); set('s-tagline', d.tagline); set('s-logo', d.logo);
+  set('s-email', d.email); set('s-phone', d.phone); set('s-address', d.address);
+  set('s-linkedin', d.social?.linkedin); set('s-instagram', d.social?.instagram);
+  set('s-facebook', d.social?.facebook); set('s-tiktok', d.social?.tiktok);
+  set('s-twitter', d.social?.twitter); set('s-youtube', d.social?.youtube);
+}
+
+async function saveCompanyInfo() {
+  const val = id => document.getElementById(id).value.trim();
+  const data = {
+    name: val('s-name'), tagline: val('s-tagline'), logo: val('s-logo'),
+    email: val('s-email'), phone: val('s-phone'), address: val('s-address'),
+    social: {
+      linkedin: val('s-linkedin'), instagram: val('s-instagram'),
+      facebook: val('s-facebook'), tiktok: val('s-tiktok'),
+      twitter: val('s-twitter'), youtube: val('s-youtube'),
+    },
+    updatedAt: new Date().toISOString()
+  };
+  if (!db) { showToast('Connect Firebase first (☁ Firebase Setup tab)', 'error'); return; }
+  try {
+    await db.collection('settings').doc('company').set(data);
+    showToast('✓ Company info saved to cloud', 'success');
+  } catch(e) { showToast('Save failed: ' + e.message, 'error'); }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   PRICING & DISCOUNTS
+══════════════════════════════════════════════════════════════════════════ */
+function populatePricingForm(d) {
+  const set = (id, val) => { const el = document.getElementById(id); if(el) el.value = val ?? ''; };
+  set('s-currency', d.currency || '$');
+  set('s-tax', d.taxRate || 0);
+  set('s-bundle-discount', d.bundleDiscount || 0);
+  set('s-bundle-min', d.bundleMin || 5);
+  const container = document.getElementById('promoCodes');
+  container.innerHTML = '';
+  (d.promoCodes || []).forEach(p => addPromoRow(p));
+}
+
+function addPromoRow(data = {}) {
+  const row = document.createElement('div');
+  row.className = 'data-row';
+  row.innerHTML = `
+    <span class="row-hint">Code</span>
+    <input type="text"   placeholder="SAVE20"  value="${data.code || ''}" style="max-width:130px">
+    <span class="row-hint">Discount</span>
+    <input type="number" placeholder="20"       value="${data.discount || ''}" style="max-width:80px" min="0">
+    <select style="max-width:110px">
+      <option value="percent" ${data.type !== 'fixed' ? 'selected' : ''}>% off</option>
+      <option value="fixed"   ${data.type === 'fixed'  ? 'selected' : ''}>$ off</option>
+    </select>
+    <button class="del-btn" onclick="this.closest('.data-row').remove()">✕</button>
+  `;
+  document.getElementById('promoCodes').appendChild(row);
+}
+
+function collectPromoCodes() {
+  return Array.from(document.querySelectorAll('#promoCodes .data-row')).map(row => {
+    const inputs = row.querySelectorAll('input');
+    const sel = row.querySelector('select');
+    return { code: inputs[0].value.trim().toUpperCase(), discount: parseFloat(inputs[1].value) || 0, type: sel.value };
+  }).filter(p => p.code);
+}
+
+async function savePricingSettings() {
+  const data = {
+    currency: document.getElementById('s-currency').value.trim() || '$',
+    taxRate: parseFloat(document.getElementById('s-tax').value) || 0,
+    bundleDiscount: parseFloat(document.getElementById('s-bundle-discount').value) || 0,
+    bundleMin: parseInt(document.getElementById('s-bundle-min').value) || 5,
+    promoCodes: collectPromoCodes(),
+    updatedAt: new Date().toISOString()
+  };
+  if (!db) { showToast('Connect Firebase first', 'error'); return; }
+  try {
+    await db.collection('settings').doc('pricing').set(data);
+    showToast('✓ Pricing settings saved', 'success');
+  } catch(e) { showToast('Save failed: ' + e.message, 'error'); }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   SERVICES CATALOG (Settings tab)
+══════════════════════════════════════════════════════════════════════════ */
+function renderCatalogList() {
+  const current = collectServices();
+  const phaseLabels = {1:'Ph.1',2:'Ph.2',3:'Ph.3'};
+  document.getElementById('catalogList').innerHTML = current.map(s => `
+    <div class="catalog-service-row">
+      <span class="csr-phase">${phaseLabels[s.phase]}</span>
+      <span class="csr-name">${s.name}</span>
+      <span class="csr-price">$${s.price.toLocaleString()} ${s.type === 'monthly' ? '/mo' : ''}</span>
+      <button class="del-btn" onclick="deleteService(${s.id})">✕ Remove</button>
+    </div>
+  `).join('');
+}
+
+function deleteService(id) {
+  if (!confirm('Remove this service from the catalog?')) return;
+  services = collectServices().filter(s => s.id !== id);
+  renderAdmin();
+  renderCatalogList();
+  markDirty();
+  showToast('Service removed — save catalog to cloud to persist', '');
+}
+
+function addNewService() {
+  const name = document.getElementById('ns-name').value.trim();
+  if (!name) { showToast('Enter a service name', 'error'); return; }
+  const phaseMap = {1:'Brand & Authority', 2:'Growth & Traffic', 3:'Infrastructure & Scale'};
+  const phase = parseInt(document.getElementById('ns-phase').value);
+  const current = collectServices();
+  const newId = Math.max(...current.map(s => s.id), 0) + 1;
+  const newSvc = {
+    id: newId, phase, phaseLabel: phaseMap[phase],
+    name, description: document.getElementById('ns-desc').value.trim(),
+    price: parseFloat(document.getElementById('ns-price').value) || 0,
+    type: document.getElementById('ns-type').value,
+    active: true
+  };
+  services = [...current, newSvc];
+  renderAdmin();
+  renderCatalogList();
+  // reset form
+  ['ns-name','ns-desc'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('addServiceForm').style.display = 'none';
+  document.querySelector('.add-row-btn[onclick*=addServiceForm]').style.display = 'inline-flex';
+  markDirty();
+  showToast(`✓ "${name}" added — save catalog to cloud`, 'success');
+}
+
+async function saveCatalogToCloud() {
+  if (!db) { showToast('Connect Firebase first', 'error'); return; }
+  const updated = collectServices();
+  try {
+    await db.collection('catalog').doc('services').set({ items: updated, lastUpdated: new Date().toISOString().slice(0,10) });
+    services = updated;
+    isDirty = false;
+    showToast('✓ Catalog saved to cloud', 'success');
+  } catch(e) { showToast('Save failed: ' + e.message, 'error'); }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   USERS & ACCESS
+══════════════════════════════════════════════════════════════════════════ */
+function renderPartnerRows(list = []) {
+  const container = document.getElementById('partnerLogins');
+  container.innerHTML = '';
+  list.forEach(p => addPartnerRow(p));
+}
+
+function addPartnerRow(data = {}) {
+  const row = document.createElement('div');
+  row.className = 'data-row';
+  row.innerHTML = `
+    <input type="text"     placeholder="Partner Name"   value="${data.name || ''}"  style="max-width:150px">
+    <input type="email"    placeholder="email@co.com"   value="${data.email || ''}">
+    <input type="password" placeholder="password"       value="${data.password || ''}" style="max-width:130px">
+    <button class="del-btn" onclick="this.closest('.data-row').remove()">✕</button>
+  `;
+  document.getElementById('partnerLogins').appendChild(row);
+}
+
+function collectPartnerLogins() {
+  return Array.from(document.querySelectorAll('#partnerLogins .data-row')).map(row => {
+    const inputs = row.querySelectorAll('input');
+    return { name: inputs[0].value.trim(), email: inputs[1].value.trim(), password: inputs[2].value };
+  }).filter(p => p.email);
+}
+
+async function changeAdminPassword() {
+  const cur = document.getElementById('s-cur-pw').value;
+  const nw  = document.getElementById('s-new-pw').value;
+  const con = document.getElementById('s-con-pw').value;
+  if (cur !== ADMIN_PASSWORD)     { showToast('Current password is incorrect', 'error'); return; }
+  if (nw.length < 8)              { showToast('New password must be at least 8 characters', 'error'); return; }
+  if (nw !== con)                 { showToast('Passwords do not match', 'error'); return; }
+  ADMIN_PASSWORD = nw;
+  ['s-cur-pw','s-new-pw','s-con-pw'].forEach(id => document.getElementById(id).value = '');
+  if (db) {
+    try {
+      await db.collection('settings').doc('access').set({ adminPassword: nw }, { merge: true });
+      showToast('✓ Password updated and saved to cloud', 'success');
+    } catch(e) { showToast('Password changed locally only (cloud save failed)', ''); }
+  } else {
+    showToast('✓ Password changed for this session', 'success');
+  }
+}
+
+async function saveAccessSettings() {
+  if (!db) { showToast('Connect Firebase first', 'error'); return; }
+  try {
+    await db.collection('settings').doc('access').set({
+      adminPassword: ADMIN_PASSWORD,
+      partnerLogins: collectPartnerLogins(),
+      updatedAt: new Date().toISOString()
+    });
+    showToast('✓ Access settings saved to cloud', 'success');
+  } catch(e) { showToast('Save failed: ' + e.message, 'error'); }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   FIREBASE SETUP TAB
+══════════════════════════════════════════════════════════════════════════ */
+function populateSetupFields(cfg) {
+  if (!cfg) return;
+  const set = (id, val) => { const el = document.getElementById(id); if(el) el.value = val || ''; };
+  set('fb-apiKey', cfg.apiKey); set('fb-projectId', cfg.projectId);
+  set('fb-appId', cfg.appId); set('fb-messagingSenderId', cfg.messagingSenderId);
+  set('fb-authDomain', cfg.authDomain); set('fb-storageBucket', cfg.storageBucket);
+}
+
+async function connectFirebase() {
+  const cfg = {
+    apiKey:            document.getElementById('fb-apiKey').value.trim(),
+    projectId:         document.getElementById('fb-projectId').value.trim(),
+    appId:             document.getElementById('fb-appId').value.trim(),
+    messagingSenderId: document.getElementById('fb-messagingSenderId').value.trim(),
+    authDomain:        document.getElementById('fb-authDomain').value.trim() || document.getElementById('fb-projectId').value.trim() + '.firebaseapp.com',
+    storageBucket:     document.getElementById('fb-storageBucket').value.trim() || document.getElementById('fb-projectId').value.trim() + '.appspot.com',
+  };
+  if (!cfg.apiKey || !cfg.projectId) { showToast('Enter at least the API Key and Project ID', 'error'); return; }
+  const statusEl = document.getElementById('firebaseStatus');
+  statusEl.className = 'config-status not-configured';
+  statusEl.textContent = '… Connecting…';
+  const ok = await initFirebase(cfg);
+  if (ok) {
+    localStorage.setItem('fifteen_fb_config', JSON.stringify(cfg));
+    statusEl.className = 'config-status connected';
+    statusEl.textContent = '✓ Connected to Firebase — cloud sync is active';
+    setCloudBadge(true);
+    await loadAllSettings();
+    await loadServices();
+    showToast('✓ Firebase connected! All settings now sync to the cloud.', 'success');
+  } else {
+    statusEl.className = 'config-status not-configured';
+    statusEl.textContent = '✕ Connection failed — check your config values and Firestore rules';
+    showToast('Firebase connection failed', 'error');
+  }
+}
+
+function disconnectFirebase() {
+  if (!confirm('Disconnect Firebase? Settings will be local-only until reconnected.')) return;
+  localStorage.removeItem('fifteen_fb_config');
+  db = null;
+  setCloudBadge(false);
+  document.getElementById('firebaseStatus').className = 'config-status not-configured';
+  document.getElementById('firebaseStatus').textContent = '○ Not connected';
+  showToast('Firebase disconnected', '');
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════════════════════════════════════ */
 function showToast(msg, type) {
   const el = document.getElementById('toast');
   el.textContent = msg;
-  el.className   = 'toast show ' + (type||'');
+  el.className = 'toast show ' + (type || '');
   clearTimeout(el._t);
-  el._t = setTimeout(()=> el.classList.remove('show'), 3500);
+  el._t = setTimeout(() => el.classList.remove('show'), 3500);
 }
 
-/* Warn on unsaved leave */
-window.addEventListener('beforeunload', e => {
-  if(isDirty){ e.preventDefault(); e.returnValue = ''; }
-});
+window.addEventListener('beforeunload', e => { if (isDirty) { e.preventDefault(); e.returnValue = ''; } });
 </script>
 </body>
 </html>
