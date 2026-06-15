@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Build Your Plan — Fifteen</title>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -573,9 +575,27 @@ const DEFAULTS = [
   {id:15,phase:3,phaseLabel:"Infrastructure & Scale",name:"Analytics Dashboard",description:"Real-time KPI tracking and statistics dashboard",price:2500,type:"one-time",active:true}
 ];
 
+/* ─── Firebase helpers ─── */
+function getFbConfig() {
+  try { return JSON.parse(localStorage.getItem('fifteen_fb_config') || 'null'); } catch(e) { return null; }
+}
+async function tryFirestoreServices() {
+  const cfg = getFbConfig();
+  if (!cfg || !cfg.apiKey || cfg.apiKey === 'YOUR_API_KEY') return null;
+  try {
+    if (firebase.apps.length === 0) firebase.initializeApp(cfg);
+    const db = firebase.firestore();
+    const doc = await db.collection('catalog').doc('services').get();
+    if (doc.exists && doc.data().items) return doc.data().items.filter(s => s.active);
+  } catch(e) { /* fall through */ }
+  return null;
+}
+
 /* ─── Init ─── */
 async function init() {
   try {
+    const cloudServices = await tryFirestoreServices();
+    if (cloudServices) { SERVICES = cloudServices; renderShop(); return; }
     const res = await fetch('prices.json?v=' + Date.now());
     const data = await res.json();
     SERVICES = data.services.filter(s => s.active);
