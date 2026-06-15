@@ -185,7 +185,46 @@ body{
   color:var(--text-dim);
   border-top:1px solid rgba(0,0,0,0.09);
   letter-spacing:.02em;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
 }
+.admin-trigger{
+  background:none;border:none;padding:0;cursor:pointer;
+  color:var(--text-dim);opacity:.35;transition:opacity .2s;line-height:1;
+}
+.admin-trigger:hover{opacity:.8;}
+
+/* Admin modal */
+.admin-modal-overlay{
+  display:none;position:fixed;inset:0;z-index:9999;
+  background:rgba(0,0,0,.55);backdrop-filter:blur(4px);
+  align-items:center;justify-content:center;
+}
+.admin-modal-overlay.open{display:flex;}
+.admin-modal{
+  background:#fff;border-radius:14px;padding:32px 28px;
+  width:320px;box-shadow:0 20px 60px rgba(0,0,0,.25);
+}
+.admin-modal h3{margin:0 0 6px;font-size:15px;font-weight:700;color:#111;}
+.admin-modal p{margin:0 0 18px;font-size:12px;color:#888;}
+.admin-modal input{
+  width:100%;box-sizing:border-box;padding:10px 12px;
+  border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;
+  outline:none;transition:border-color .2s;
+}
+.admin-modal input:focus{border-color:#111;}
+.admin-modal-error{
+  display:none;color:#d04;font-size:11px;margin:6px 0 0;
+}
+.admin-modal-actions{display:flex;gap:8px;margin-top:16px;}
+.admin-modal-actions button{
+  flex:1;padding:10px;border-radius:8px;border:none;
+  font-size:13px;font-weight:600;cursor:pointer;transition:opacity .2s;
+}
+.admin-modal-actions .btn-cancel{background:#f0f0f0;color:#555;}
+.admin-modal-actions .btn-go{background:#111;color:#fff;}
+.admin-modal-actions button:hover{opacity:.8;}
 
 /* Mobile toggle */
 .sidebar-toggle{
@@ -664,8 +703,27 @@ body{
     </div>
 
   </div>
-  <div class="sidebar-footer">15fifteen15 &nbsp;·&nbsp; Business Acceleration</div>
+  <div class="sidebar-footer">
+    <span>15fifteen15 &nbsp;·&nbsp; Business Acceleration</span>
+    <button class="admin-trigger" onclick="openAdminModal()" title="Admin">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
+  </div>
 </aside>
+
+<!-- Admin login modal -->
+<div class="admin-modal-overlay" id="adminModalOverlay" onclick="closeAdminModal(event)">
+  <div class="admin-modal">
+    <h3>Admin Access</h3>
+    <p>Enter your admin password to continue.</p>
+    <input type="password" id="adminModalPw" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')submitAdminLogin()">
+    <p class="admin-modal-error" id="adminModalError">Incorrect password. Try again.</p>
+    <div class="admin-modal-actions">
+      <button class="btn-cancel" onclick="closeAdminModal()">Cancel</button>
+      <button class="btn-go" onclick="submitAdminLogin()">Enter</button>
+    </div>
+  </div>
+</div>
 
 <!-- Mobile toggle -->
 <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle menu">
@@ -937,6 +995,33 @@ sidebar.querySelectorAll('a[href^="#"]').forEach(a=>{
     overlay.classList.remove('open');
   });
 });
+
+/* Admin modal */
+const ADMIN_PW = 'fifteen2025';
+function openAdminModal(){
+  document.getElementById('adminModalOverlay').classList.add('open');
+  setTimeout(()=>document.getElementById('adminModalPw').focus(),80);
+}
+function closeAdminModal(e){
+  if(e && e.target!==document.getElementById('adminModalOverlay')) return;
+  document.getElementById('adminModalOverlay').classList.remove('open');
+  document.getElementById('adminModalPw').value='';
+  document.getElementById('adminModalError').style.display='none';
+}
+function submitAdminLogin(){
+  const pw=document.getElementById('adminModalPw').value;
+  if(pw===ADMIN_PW){
+    sessionStorage.setItem('fifteen_admin_auth','1');
+    window.location.href='admin.html';
+  } else {
+    const err=document.getElementById('adminModalError');
+    err.style.display='block';
+    document.getElementById('adminModalPw').value='';
+    document.getElementById('adminModalPw').focus();
+    setTimeout(()=>err.style.display='none',2400);
+  }
+}
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeAdminModal({target:document.getElementById('adminModalOverlay')}); });
 
 /* Portal login (visual mockup) */
 function handlePortalLogin(btn){

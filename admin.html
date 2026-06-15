@@ -272,13 +272,20 @@ const FILE_PATH      = 'prices.json';
 let services = [];
 
 /* ─── Login ─── */
+function showAdminPanel(){
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('adminPanel').style.display  = 'block';
+  loadPrices();
+  checkToken();
+}
+if(sessionStorage.getItem('fifteen_admin_auth') === '1'){
+  sessionStorage.removeItem('fifteen_admin_auth');
+  document.addEventListener('DOMContentLoaded', showAdminPanel);
+}
 function doLogin() {
   const pw = document.getElementById('adminPw').value;
   if(pw === ADMIN_PASSWORD) {
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('adminPanel').style.display  = 'block';
-    loadPrices();
-    checkToken();
+    showAdminPanel();
   } else {
     const err = document.getElementById('loginError');
     err.style.display = 'block';
