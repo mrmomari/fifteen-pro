@@ -69,8 +69,8 @@ body{
 .ext-arrow{margin-left:auto;opacity:0;font-size:10px;color:var(--green);transition:opacity .15s}
 .resource-link:hover .ext-arrow{opacity:1}
 .sidebar-footer{padding:16px 20px;font-size:10px;color:var(--text-dim);border-top:1px solid rgba(0,0,0,0.09);letter-spacing:.02em;display:flex;align-items:center;justify-content:space-between;}
-.admin-trigger{background:none;border:none;padding:0;cursor:pointer;color:var(--text-dim);opacity:.35;transition:opacity .2s;line-height:1;}
-.admin-trigger:hover{opacity:.8;}
+.admin-trigger{background:none;border:none;padding:4px 8px;cursor:pointer;color:var(--text-dim);opacity:.6;transition:opacity .2s;line-height:1;display:flex;align-items:center;gap:5px;font-size:11px;font-family:inherit;border-radius:6px;}
+.admin-trigger:hover{opacity:1;background:rgba(0,0,0,.06);}
 .admin-modal-overlay{display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);align-items:center;justify-content:center;}
 .admin-modal-overlay.open{display:flex;}
 .admin-modal{background:#fff;border-radius:14px;padding:32px 28px;width:320px;box-shadow:0 20px 60px rgba(0,0,0,.25);}
@@ -425,8 +425,9 @@ body{
   </div>
   <div class="sidebar-footer">
     <span>15fifteen15 · Business Acceleration</span>
-    <button class="admin-trigger" onclick="openAdminModal()" title="Admin">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    <button class="admin-trigger" onclick="openAdminModal()" title="Admin login">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      Admin
     </button>
   </div>
 </aside>
