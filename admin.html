@@ -151,22 +151,22 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
 .toggle input:checked ~ .toggle-thumb{transform:translateX(16px)}
 
 /* Price inputs */
-.price-row{display:flex;align-items:center;gap:8px;margin-top:10px}
-.price-symbol{font-size:16px;font-weight:800;color:var(--text-muted)}
+.price-row{display:flex;align-items:center;gap:8px;margin-top:10px;margin-bottom:10px}
+.price-symbol{font-size:16px;font-weight:800;color:var(--text-muted);flex-shrink:0}
 .price-input{
-  flex:1;padding:9px 11px;background:rgba(255,255,255,0.8);
+  flex:1;min-width:0;padding:9px 11px;background:rgba(255,255,255,0.8);
   border:1px solid rgba(0,0,0,0.12);border-radius:7px;
   font-size:15px;font-weight:700;font-family:inherit;color:var(--text);
   outline:none;transition:border-color .15s,box-shadow .15s;
 }
 .price-input:focus{border-color:rgba(38,145,94,.45);box-shadow:0 0 0 3px rgba(38,145,94,.08)}
 .type-select{
-  padding:9px 11px;background:rgba(255,255,255,0.8);
+  width:90px;flex-shrink:0;padding:9px 8px;background:rgba(255,255,255,0.8);
   border:1px solid rgba(0,0,0,0.12);border-radius:7px;
-  font-size:12px;font-weight:700;font-family:inherit;color:var(--text);
+  font-size:11px;font-weight:700;font-family:inherit;color:var(--text);
   outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23666' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;
+  background-repeat:no-repeat;background-position:right 8px center;padding-right:24px;
   transition:border-color .15s;
 }
 .type-select:focus{border-color:rgba(38,145,94,.45)}
@@ -248,8 +248,7 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
         <button class="token-clear-btn" onclick="clearToken()">Clear</button>
       </div>
       <p class="token-help">
-        Need a token? Go to <a href="https://github.com/settings/tokens/new" target="_blank">github.com/settings/tokens/new</a> →
-        select <strong>repo</strong> scope → Generate → paste here. Stored only in your browser.
+        This lets the admin panel save price changes directly to GitHub. To get one: go to <a href="https://github.com/settings/tokens/new" target="_blank">GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)</a>, check the <strong>repo</strong> scope, click Generate, then paste it here. It is stored only in your browser and never sent anywhere else.
       </p>
     </div>
 
