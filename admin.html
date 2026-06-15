@@ -13,7 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
-/* ── Base (same as index.html) ── */
+/* ── Base ── */
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
@@ -54,7 +54,7 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
 .resource-link svg{opacity:.55;flex-shrink:0}
 .ext-arrow{margin-left:auto;opacity:0;font-size:10px;color:var(--green);transition:opacity .15s}
 .resource-link:hover .ext-arrow{opacity:1}
-.sidebar-footer{padding:16px 20px;font-size:10px;color:var(--text-dim);border-top:1px solid rgba(0,0,0,0.09);letter-spacing:.02em;display:flex;align-items:center;justify-content:space-between}
+.sidebar-footer{padding:16px 20px;font-size:10px;color:var(--text-dim);border-top:1px solid rgba(0,0,0,.09);letter-spacing:.02em;display:flex;flex-direction:column;align-items:flex-start}
 .sidebar-toggle{display:none;position:fixed;top:14px;right:14px;z-index:200;background:var(--orange);color:#fff;border:none;border-radius:8px;width:44px;height:44px;cursor:pointer;align-items:center;justify-content:center;box-shadow:0 3px 14px rgba(227,108,68,.4)}
 .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.25);z-index:99;backdrop-filter:blur(2px)}
 .main-wrap{margin-left:var(--sidebar-w);flex:1;min-width:0}
@@ -85,7 +85,6 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
 .problem-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
 .prob-card{background:rgba(255,255,255,0.5);border:1px solid rgba(0,0,0,0.08);border-radius:var(--radius);padding:30px 24px;transition:all .25s;box-shadow:0 2px 8px rgba(0,0,0,0.04)}
 .prob-card:hover{background:rgba(255,255,255,0.72);transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,0.08)}
-.prob-icon{width:42px;height:42px;border-radius:9px;background:rgba(38,145,94,.09);border:1px solid rgba(38,145,94,.18);display:flex;align-items:center;justify-content:margin-bottom:18px}
 .prob-icon{display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:9px;background:rgba(38,145,94,.09);border:1px solid rgba(38,145,94,.18);margin-bottom:18px}
 .prob-title{font-size:15px;font-weight:800;color:var(--text);margin-bottom:9px;letter-spacing:-.01em}
 .prob-desc{font-size:13px;color:var(--text-muted);line-height:1.75}
@@ -114,20 +113,6 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
 .t-phase{font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--green);margin-bottom:7px}
 .t-title{font-size:21px;font-weight:900;color:var(--text);margin-bottom:9px;letter-spacing:-.02em}
 .t-body{font-size:14px;color:var(--text-muted);line-height:1.8}
-.pricing-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:720px;margin:0 auto}
-.price-card{background:rgba(255,255,255,0.52);border:1px solid rgba(0,0,0,0.09);border-radius:var(--radius-lg);padding:38px 34px;transition:all .25s;position:relative;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.05)}
-.price-card:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(0,0,0,0.1)}
-.price-card.featured{border-color:rgba(227,108,68,.35);background:rgba(255,255,255,0.72)}
-.featured-ribbon{position:absolute;top:20px;right:-36px;background:var(--orange);color:#fff;font-size:9px;font-weight:900;letter-spacing:.12em;padding:6px 48px;transform:rotate(45deg)}
-.price-tier{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:7px}
-.price-name{font-size:19px;font-weight:900;color:var(--text);margin-bottom:22px;letter-spacing:-.02em}
-.price-main{font-size:46px;font-weight:900;color:var(--text);line-height:1;letter-spacing:-.03em}
-.price-main sub{font-size:15px;color:var(--text-dim);font-weight:400;vertical-align:baseline;letter-spacing:0}
-.price-total{font-size:13px;color:var(--text-dim);margin-top:7px;margin-bottom:26px}
-.price-feats{list-style:none;margin-bottom:28px}
-.price-feats li{font-size:13px;color:var(--text-muted);padding:7px 0;border-bottom:1px solid rgba(0,0,0,0.06);display:flex;align-items:center;gap:10px}
-.price-feats li::before{content:'→';color:var(--green);font-size:12px;font-weight:700;flex-shrink:0}
-.price-feats li:last-child{border-bottom:none}
 .form-wrap{background:rgba(255,255,255,0.5);border:1px solid rgba(0,0,0,0.09);border-radius:var(--radius-lg);padding:48px 52px;max-width:660px;margin:0 auto;box-shadow:0 4px 22px rgba(0,0,0,0.06)}
 .availability-bar{background:rgba(38,145,94,.07);border:1px solid rgba(38,145,94,.15);border-radius:8px;padding:12px 18px;display:flex;align-items:center;gap:12px;margin-bottom:36px}
 .avail-text{font-size:12px;color:var(--text-muted);font-weight:500}
@@ -176,7 +161,6 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
 .sf-addr{font-size:9px;color:var(--text-dim);line-height:1.6;margin-bottom:7px;white-space:pre-line}
 .sf-contact{margin-top:10px;width:100%}
 .sf-top{display:flex;align-items:center;justify-content:space-between;width:100%}
-.sidebar-footer{flex-direction:column;align-items:flex-start}
 .ft-soc-row{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:14px 0 6px}
 .ft-soc-row .soc{width:36px;height:36px;font-size:15px}
 .footer-addr{font-size:11px;color:var(--text-dim);margin:4px 0 10px;line-height:1.7;white-space:pre-line}
@@ -184,119 +168,65 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
 .text-center{text-align:center}
 .mx-auto{margin-left:auto;margin-right:auto}
 
-/* ── Admin Overlay ── */
-#adminOverlay{position:fixed;inset:0;z-index:9990;background:rgba(28,36,22,.75);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center}
-#adminOverlay.hidden{display:none}
-.alc{background:rgba(255,255,255,.97);border-radius:20px;padding:44px 40px;width:360px;box-shadow:0 24px 80px rgba(0,0,0,.3);text-align:center}
-.alc-logo{font-size:26px;font-weight:900;letter-spacing:-.04em;margin-bottom:6px}
-.alc-logo span{color:var(--green)}
-.alc-sub{font-size:12px;color:var(--text-muted);margin-bottom:28px}
-.alc-input{width:100%;padding:12px 14px;border:1.5px solid rgba(0,0,0,.12);border-radius:9px;font-size:14px;font-family:inherit;color:var(--text);outline:none;margin-bottom:12px;transition:border-color .15s,box-shadow .15s}
-.alc-input:focus{border-color:rgba(38,145,94,.5);box-shadow:0 0 0 3px rgba(38,145,94,.1)}
-.alc-input:disabled{opacity:.5;cursor:not-allowed}
-.alc-btn{width:100%;padding:13px;background:var(--green);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:800;cursor:pointer;transition:background .15s;font-family:inherit}
-.alc-btn:hover{background:var(--green-dim)}
-.alc-btn:disabled{opacity:.5;cursor:not-allowed}
-.alc-msg{font-size:12px;margin-top:10px;display:none}
-.alc-msg.error{color:#c0392b}
-.alc-msg.warn{color:var(--orange)}
-
-/* ── Admin Toolbar ── */
-#adminToolbar{position:fixed;bottom:0;left:0;right:0;z-index:9980;background:rgba(28,36,22,.96);backdrop-filter:blur(12px);border-top:1px solid rgba(255,255,255,.08);padding:10px 24px;display:none;align-items:center;justify-content:space-between;gap:12px}
-body.admin-active{padding-bottom:58px}
-.at-left{display:flex;align-items:center;gap:10px;flex-shrink:0}
-.at-brand{font-size:13px;font-weight:900;color:#fff;letter-spacing:-.02em}
-.at-brand span{color:var(--green)}
-.at-sync{font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(38,145,94,.18);color:#9EE8BF;border:1px solid rgba(38,145,94,.3)}
-.at-sync.off{background:rgba(255,255,255,.07);color:rgba(255,255,255,.4);border-color:rgba(255,255,255,.1)}
-.at-center{display:flex;align-items:center;gap:7px}
-.at-btn{padding:8px 15px;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;letter-spacing:.01em}
-.at-edit{background:rgba(255,255,255,.1);color:#fff}
-.at-edit:hover,.at-edit.on{background:var(--green);color:#fff}
-.at-settings{background:rgba(255,255,255,.1);color:#fff}
-.at-settings:hover{background:rgba(255,255,255,.18)}
-.at-save{background:var(--orange);color:#fff;display:none;box-shadow:0 2px 10px rgba(227,108,68,.3)}
-.at-save:hover{background:#ec7850}
-.at-logout{background:none;color:rgba(255,255,255,.45)}
-.at-logout:hover{color:rgba(255,255,255,.8)}
-
-/* ── Edit Mode ── */
-.edit-mode [data-editable]{outline:2px dashed rgba(38,145,94,.3);outline-offset:3px;border-radius:3px;cursor:text;transition:outline-color .15s,background .15s}
-.edit-mode [data-editable]:hover{outline-color:rgba(38,145,94,.7);background:rgba(38,145,94,.04)}
-.edit-mode [data-editable]:focus{outline:2px solid var(--green);outline-offset:3px;background:rgba(38,145,94,.06)}
-
-/* ── Settings Drawer ── */
-#settingsDrawer{position:fixed;top:0;right:0;bottom:0;width:500px;max-width:100%;background:#E0E8CF;border-left:1px solid rgba(0,0,0,.1);z-index:9970;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;box-shadow:-8px 0 40px rgba(0,0,0,.12)}
-#settingsDrawer.open{transform:translateX(0)}
-.drawer-header{padding:18px 22px;background:var(--text);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.drawer-title{font-size:14px;font-weight:800;color:#fff;letter-spacing:-.01em}
-.drawer-close{width:30px;height:30px;border-radius:7px;background:rgba(255,255,255,.1);border:none;color:#fff;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
-.drawer-close:hover{background:rgba(255,255,255,.2)}
-.drawer-tabs{display:flex;padding:10px 14px 0;gap:3px;border-bottom:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.25);flex-shrink:0}
-.dt{padding:8px 13px;border:none;background:transparent;border-radius:7px 7px 0 0;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--text-muted);transition:all .15s;margin-bottom:-1px;border-bottom:2px solid transparent}
-.dt:hover{color:var(--text)}
-.dt.active{color:var(--green);border-bottom-color:var(--green);background:rgba(255,255,255,.4)}
-.drawer-body{flex:1;overflow-y:auto;padding:18px}
-.dp{display:none}
-.dp.active{display:block}
-.dsec{background:rgba(255,255,255,.52);border:1px solid rgba(0,0,0,.09);border-radius:12px;padding:18px;margin-bottom:12px}
-.dsec-title{font-size:12px;font-weight:800;color:var(--text);margin-bottom:3px}
-.dsec-desc{font-size:11px;color:var(--text-muted);margin-bottom:12px}
-.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
-.dgrid.single{grid-template-columns:1fr}
-.df{display:flex;flex-direction:column;gap:4px}
-.df.wide{grid-column:span 2}
-.dlbl{font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted)}
-.din{padding:8px 10px;background:rgba(255,255,255,.85);border:1px solid rgba(0,0,0,.12);border-radius:7px;font-size:12px;font-family:inherit;color:var(--text);outline:none;transition:border-color .15s,box-shadow .15s;width:100%}
-.din:focus{border-color:rgba(38,145,94,.45);box-shadow:0 0 0 3px rgba(38,145,94,.08)}
-textarea.din{resize:vertical;min-height:60px}
-select.din{cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23666' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center;padding-right:26px}
-.dsave{margin-top:12px;padding:9px 20px;background:var(--green);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;transition:all .15s;box-shadow:0 2px 8px rgba(38,145,94,.2)}
-.dsave:hover{background:var(--green-dim)}
-.logo-preview{width:100%;height:68px;border-radius:7px;border:1.5px dashed rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;overflow:hidden;background:rgba(255,255,255,.6);margin-top:7px}
-.logo-preview img{max-width:100%;max-height:58px;object-fit:contain}
-.logo-preview .nolgo{font-size:11px;color:var(--text-dim)}
-.logo-upload-lbl{display:inline-block;padding:7px 13px;background:rgba(255,255,255,.8);border:1px solid rgba(0,0,0,.12);border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;color:var(--text-muted);margin-top:7px;transition:all .15s}
-.logo-upload-lbl:hover{background:rgba(255,255,255,.95);color:var(--text)}
-
-/* Services table */
-.svc-table{border-radius:8px;overflow:hidden;border:1px solid rgba(0,0,0,.09)}
-.svc-head,.svc-row{display:grid;grid-template-columns:22px 1fr 36px 68px 56px 24px;gap:5px;padding:7px 10px;align-items:center}
-.svc-head{background:rgba(0,0,0,.06);font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted)}
-.svc-row{background:rgba(255,255,255,.55);border-top:1px solid rgba(0,0,0,.06)}
-.svc-row:hover{background:rgba(255,255,255,.8)}
-.svc-id{font-size:10px;font-weight:800;color:var(--green);font-family:monospace}
-.svc-name{font-size:11px;font-weight:600;color:var(--text)}
-.svc-ph{font-size:9px;font-weight:700;color:var(--text-muted)}
-.svc-pin{width:100%;padding:4px 6px;border:1px solid rgba(0,0,0,.12);border-radius:5px;font-size:11px;font-weight:700;font-family:inherit;color:var(--text);background:rgba(255,255,255,.9);outline:none}
-.svc-pin:focus{border-color:rgba(38,145,94,.4)}
-.svc-sel{width:100%;padding:4px 3px;border:1px solid rgba(0,0,0,.12);border-radius:5px;font-size:9px;font-family:inherit;color:var(--text);background:rgba(255,255,255,.9);outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;text-align:center}
-.svc-del{padding:3px 6px;background:rgba(220,50,50,.08);color:#c0392b;border:1px solid rgba(220,50,50,.15);border-radius:4px;font-size:10px;cursor:pointer;font-weight:700}
-.svc-del:hover{background:rgba(220,50,50,.2)}
-.add-svc-btn{width:100%;padding:8px;background:transparent;color:var(--green);border:1px dashed rgba(38,145,94,.4);border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;margin-top:7px;transition:all .15s;font-family:inherit}
-.add-svc-btn:hover{background:rgba(38,145,94,.06);border-color:rgba(38,145,94,.6)}
-.add-svc-form{display:none;margin-top:9px;padding:12px;background:rgba(38,145,94,.06);border-radius:8px;border:1px solid rgba(38,145,94,.18)}
-
-/* Promo & partner rows */
-.row-list{display:flex;flex-direction:column;gap:5px;margin-bottom:7px}
-.drow{display:flex;align-items:center;gap:5px;padding:7px 9px;background:rgba(255,255,255,.65);border:1px solid rgba(0,0,0,.09);border-radius:7px;flex-wrap:wrap}
-.drow input,.drow select{padding:5px 7px;background:rgba(255,255,255,.9);border:1px solid rgba(0,0,0,.12);border-radius:5px;font-size:11px;font-family:inherit;color:var(--text);outline:none;flex:1;min-width:70px}
-.drow input:focus,.drow select:focus{border-color:rgba(38,145,94,.4)}
-.drow-hint{font-size:9px;color:var(--text-dim);font-weight:700;white-space:nowrap;flex-shrink:0}
-.ddel{padding:4px 7px;background:rgba(220,50,50,.08);color:#c0392b;border:1px solid rgba(220,50,50,.15);border-radius:5px;font-size:10px;cursor:pointer;font-weight:700;flex-shrink:0}
-.ddel:hover{background:rgba(220,50,50,.15)}
-.dadd{padding:6px 12px;background:transparent;color:var(--green);border:1px dashed rgba(38,145,94,.4);border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;font-family:inherit;margin-top:5px}
-.dadd:hover{background:rgba(38,145,94,.06);border-color:rgba(38,145,94,.6)}
-
-/* Backdrop */
-#drawerBackdrop{display:none;position:fixed;inset:0;z-index:9960;background:rgba(0,0,0,.3);backdrop-filter:blur(2px)}
-#drawerBackdrop.open{display:block}
+/* ── Sidebar admin tabs ── */
+.as-tabs{display:flex;flex-direction:column;gap:2px;margin-bottom:12px}
+.as-tab{width:100%;padding:8px 12px;text-align:left;background:transparent;border:none;border-radius:8px;font-size:12px;font-weight:600;color:var(--text-muted);cursor:pointer;font-family:inherit;transition:all .15s}
+.as-tab:hover{background:rgba(0,0,0,.07);color:var(--text)}
+.as-tab.active{background:rgba(38,145,94,.1);color:var(--green)}
+.as-panel{display:none}
+.as-panel.active{display:block}
+.as-field{display:flex;flex-direction:column;gap:3px;margin-bottom:8px}
+.as-field label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim)}
+.as-field input,.as-field textarea,.as-field select{width:100%;padding:7px 10px;border:1.5px solid rgba(0,0,0,.1);border-radius:7px;font-size:12px;font-family:inherit;color:var(--text);background:#fff;outline:none;resize:vertical}
+.as-field input:focus,.as-field textarea:focus,.as-field select:focus{border-color:rgba(38,145,94,.4)}
+.as-sep{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:var(--text-dim);margin:12px 0 6px;padding-bottom:6px;border-bottom:1px solid rgba(0,0,0,.08)}
+.as-save{width:100%;padding:9px;margin-top:10px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .15s}
+.as-save:hover{background:var(--green-dim)}
+.as-add{width:100%;padding:7px;margin-top:6px;background:transparent;color:var(--green);border:1px dashed rgba(38,145,94,.4);border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit}
+.as-cancel{width:100%;padding:7px;margin-top:4px;background:transparent;color:var(--text-muted);border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:11px;cursor:pointer;font-family:inherit}
+.as-logout{background:transparent;border:none;color:var(--text-dim);font-size:10px;cursor:pointer;font-family:inherit;padding:0}
+.as-logout:hover{color:var(--orange)}
+.as-upload{display:block;width:100%;padding:7px;margin-top:6px;text-align:center;background:transparent;color:var(--green);border:1px dashed rgba(38,145,94,.4);border-radius:8px;font-size:11px;font-weight:600;cursor:pointer}
+/* Services table (narrow sidebar) */
+.svc-table{font-size:11px;margin-bottom:8px}
+.svc-head,.svc-row{display:grid;grid-template-columns:20px 1fr 26px 48px 34px 20px;gap:3px;padding:4px 0;align-items:center}
+.svc-head{border-bottom:1px solid rgba(0,0,0,.1);font-size:9px;font-weight:700;color:var(--text-dim);text-transform:uppercase}
+.svc-row{border-bottom:1px solid rgba(0,0,0,.05)}
+.svc-id{font-size:9px;color:var(--green);font-weight:700}
+.svc-name{font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.svc-ph{font-size:9px;color:var(--text-dim)}
+.svc-pin,.svc-sel{width:100%;padding:3px 4px;border:1px solid rgba(0,0,0,.1);border-radius:4px;font-size:10px;font-family:inherit}
+.svc-del{background:transparent;border:none;color:#dc3545;font-size:12px;cursor:pointer;padding:0}
+/* Promo/partner rows */
+.drow{display:flex;gap:4px;align-items:center;margin-bottom:6px;flex-wrap:wrap}
+.drow-hint{font-size:9px;color:var(--text-dim);white-space:nowrap}
+.drow input,.drow select{flex:1;min-width:0;padding:5px 6px;border:1.5px solid rgba(0,0,0,.1);border-radius:6px;font-size:11px;font-family:inherit}
+.ddel{background:transparent;border:none;color:#dc3545;cursor:pointer;font-size:13px;padding:0 2px}
+/* Logo / photo preview */
+.logo-preview{width:60px;height:60px;border-radius:8px;background:var(--cream-alt);border:1px solid rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center;margin:6px 0;overflow:hidden}
+.logo-preview img{width:100%;height:100%;object-fit:contain}
+.nolgo{font-size:9px;color:var(--text-dim)}
+.tp-preview{width:48px;height:48px;border-radius:50%;background:var(--cream-alt);border:2px solid rgba(0,0,0,.1);overflow:hidden;margin:5px 0}
+.tp-preview img{width:100%;height:100%;object-fit:cover}
+/* Login form in footer */
+.al-form{display:flex;gap:4px;margin-top:8px}
+.al-pw{flex:1;padding:7px 10px;border:1.5px solid rgba(0,0,0,.1);border-radius:7px;font-size:12px;font-family:inherit;outline:none;background:#fff}
+.al-pw:focus{border-color:rgba(38,145,94,.4)}
+.al-btn{padding:7px 12px;background:var(--green);color:#fff;border:none;border-radius:7px;font-size:14px;cursor:pointer;font-weight:700}
+.al-err,.al-lock{font-size:10px;color:#dc3545;margin-top:4px;display:none}
+.al-active-row{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+.al-status{font-size:10px;font-weight:700;color:var(--green)}
+.al-out-btn{background:transparent;border:none;color:var(--text-dim);font-size:10px;cursor:pointer;font-family:inherit}
+.al-out-btn:hover{color:var(--orange)}
+/* Add service form in sidebar */
+.add-svc-form{display:none;margin-top:6px;padding:10px;background:rgba(38,145,94,.06);border-radius:8px;border:1px solid rgba(38,145,94,.18)}
+.add-svc-btn{width:100%;padding:7px;margin-top:6px;background:transparent;color:var(--green);border:1px dashed rgba(38,145,94,.4);border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit}
 
 /* Toast */
-.t-toast{position:fixed;bottom:70px;right:24px;z-index:10000;background:var(--text);color:#fff;padding:11px 18px;border-radius:9px;font-size:12px;font-weight:600;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.2)}
-.t-toast.show{opacity:1;transform:none}
-.t-toast.success{background:var(--green)}
-.t-toast.error{background:#c0392b}
+.t-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:#1C2416;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;opacity:0;transition:all .3s;z-index:9999;pointer-events:none;white-space:nowrap}
+.t-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.t-toast.success{background:#26915E}
+.t-toast.error{background:#dc3545}
 
 @media(max-width:960px){
   .sidebar{transform:translateX(-100%);transition:transform .25s}
@@ -310,181 +240,19 @@ select.din{cursor:pointer;appearance:none;-webkit-appearance:none;background-ima
   .invest-grid{grid-template-columns:1fr}
   .invest-side:first-child{border-right:none;border-bottom:1px solid rgba(0,0,0,.08)}
   .invest-side{padding:32px 18px}
-  .pricing-grid{grid-template-columns:1fr;max-width:100%}
   .form-wrap{padding:28px 18px}
   .form-row{grid-template-columns:1fr}
   .hero{padding:60px 0 44px}
   .hero h1{font-size:28px}
   .hero-sub{font-size:15px}
   .stat-row{max-width:100%}
-  #settingsDrawer{width:100%}
-  .at-center{gap:5px}
-  .at-btn{padding:7px 10px;font-size:11px}
 }
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
 
-<!-- ═══ ADMIN LOGIN OVERLAY ═══ -->
-<div id="adminOverlay">
-  <div class="alc">
-    <div class="alc-logo">FIFTEEN<span>.</span></div>
-    <p class="alc-sub">Enter password to access admin edit mode</p>
-    <input type="password" id="adminPw" class="alc-input" placeholder="Admin password" autocomplete="current-password">
-    <button class="alc-btn" onclick="doAdminLogin()">Enter Admin Mode</button>
-    <p class="alc-msg error" id="alcErr">Incorrect password.</p>
-    <p class="alc-msg warn"  id="alcLock"></p>
-  </div>
-</div>
-
-<!-- ═══ ADMIN TOOLBAR (bottom) ═══ -->
-<div id="adminToolbar">
-  <div class="at-left">
-    <span class="at-brand">FIFTEEN<span>.</span></span>
-    <span class="at-sync" id="atSync">☁ Connected</span>
-  </div>
-  <div class="at-center">
-    <button class="at-btn at-edit" id="editBtn" onclick="toggleEdit()">✎ Edit Mode</button>
-    <button class="at-btn at-save" id="saveBtn"   onclick="savePageEdits()">✓ Save Edits</button>
-    <button class="at-btn at-settings"              onclick="openDrawer()">⚙ Settings</button>
-  </div>
-  <div class="at-left">
-    <button class="at-btn at-logout" onclick="adminLogout()">Logout</button>
-  </div>
-</div>
-
-<!-- ═══ SETTINGS DRAWER ═══ -->
-<div id="settingsDrawer">
-  <div class="drawer-header">
-    <span class="drawer-title">⚙ Settings</span>
-    <button class="drawer-close" onclick="closeDrawer()">✕</button>
-  </div>
-  <div class="drawer-tabs">
-    <button class="dt active" id="dt-company"  onclick="switchDT('company')">Company</button>
-    <button class="dt"        id="dt-pricing"  onclick="switchDT('pricing')">Pricing</button>
-    <button class="dt"        id="dt-services" onclick="switchDT('services')">Services</button>
-    <button class="dt"        id="dt-access"   onclick="switchDT('access')">Access</button>
-  </div>
-  <div class="drawer-body">
-
-    <!-- Company -->
-    <div class="dp active" id="dp-company">
-      <div class="dsec">
-        <div class="dsec-title">Company Info</div>
-        <div class="dsec-desc">Displayed across all public pages.</div>
-        <div class="dgrid">
-          <div class="df"><label class="dlbl">Company Name</label><input class="din" id="d-name" placeholder="Fifteen"></div>
-          <div class="df"><label class="dlbl">Tagline</label><input class="din" id="d-tagline" placeholder="15-Point Acceleration"></div>
-          <div class="df"><label class="dlbl">Email</label><input class="din" id="d-email" type="email" placeholder="hello@fifteen.pro"></div>
-          <div class="df"><label class="dlbl">Phone</label><input class="din" id="d-phone" placeholder="+1 ..."></div>
-          <div class="df wide"><label class="dlbl">Address</label><textarea class="din" id="d-address" rows="2" placeholder="City, Country"></textarea></div>
-        </div>
-      </div>
-      <div class="dsec">
-        <div class="dsec-title">Logo</div>
-        <div class="df"><label class="dlbl">Logo URL</label><input class="din" id="d-logo-url" type="url" placeholder="https://..." oninput="previewLogo()"></div>
-        <div class="logo-preview" id="logoPreview"><span class="nolgo">No logo set</span></div>
-        <label class="logo-upload-lbl">↑ Upload from device<input type="file" id="logoFile" accept="image/*" style="display:none" onchange="uploadLogoFile(this)"></label>
-      </div>
-      <div class="dsec">
-        <div class="dsec-title">Social Links</div>
-        <div class="dgrid">
-          <div class="df"><label class="dlbl">LinkedIn</label><input class="din" id="d-linkedin" type="url" placeholder="https://linkedin.com/..."></div>
-          <div class="df"><label class="dlbl">Instagram</label><input class="din" id="d-instagram" type="url" placeholder="https://instagram.com/..."></div>
-          <div class="df"><label class="dlbl">Facebook</label><input class="din" id="d-facebook" type="url" placeholder="https://facebook.com/..."></div>
-          <div class="df"><label class="dlbl">TikTok</label><input class="din" id="d-tiktok" type="url" placeholder="https://tiktok.com/@..."></div>
-          <div class="df"><label class="dlbl">Twitter / X</label><input class="din" id="d-twitter" type="url" placeholder="https://x.com/..."></div>
-          <div class="df"><label class="dlbl">YouTube</label><input class="din" id="d-youtube" type="url" placeholder="https://youtube.com/..."></div>
-          <div class="df"><label class="dlbl">WhatsApp</label><input class="din" id="d-whatsapp" type="url" placeholder="https://wa.me/..."></div>
-          <div class="df"><label class="dlbl">Snapchat</label><input class="din" id="d-snapchat" type="url" placeholder="https://snapchat.com/add/..."></div>
-        </div>
-        <button class="dsave" onclick="saveCompanyInfo()">Save Company Info</button>
-      </div>
-    </div>
-
-    <!-- Pricing -->
-    <div class="dp" id="dp-pricing">
-      <div class="dsec">
-        <div class="dsec-title">Global Pricing</div>
-        <div class="dgrid">
-          <div class="df"><label class="dlbl">Currency Symbol</label><input class="din" id="d-currency" value="$" maxlength="5"></div>
-          <div class="df"><label class="dlbl">Tax Rate (%)</label><input class="din" id="d-tax" type="number" value="0" min="0" max="100" step="0.5"></div>
-          <div class="df"><label class="dlbl">Bundle Discount (%)</label><input class="din" id="d-bdiscount" type="number" value="0" min="0" max="100"></div>
-          <div class="df"><label class="dlbl">Min Services for Bundle</label><input class="din" id="d-bmin" type="number" value="5" min="2" max="15"></div>
-        </div>
-      </div>
-      <div class="dsec">
-        <div class="dsec-title">Promo Codes</div>
-        <div id="promoList" class="row-list"></div>
-        <button class="dadd" onclick="addPromoRow()">+ Add Code</button>
-        <button class="dsave" onclick="savePricingSettings()">Save Pricing</button>
-      </div>
-    </div>
-
-    <!-- Services -->
-    <div class="dp" id="dp-services">
-      <div class="dsec">
-        <div class="dsec-title">Services Catalog</div>
-        <div class="dsec-desc">Edit prices inline. Toggle to enable/disable.</div>
-        <div class="svc-table">
-          <div class="svc-head"><span>#</span><span>Service</span><span>Ph.</span><span>Price ($)</span><span>Type</span><span></span></div>
-          <div id="svcBody"></div>
-        </div>
-        <button class="add-svc-btn" onclick="document.getElementById('addSvcForm').style.display='block';this.style.display='none'">+ Add New Service</button>
-        <div class="add-svc-form" id="addSvcForm">
-          <div class="dgrid">
-            <div class="df"><label class="dlbl">Name</label><input class="din" id="ns-name" placeholder="Service Name"></div>
-            <div class="df"><label class="dlbl">Phase</label>
-              <select class="din" id="ns-phase">
-                <option value="1">Phase 1 — Brand</option>
-                <option value="2">Phase 2 — Growth</option>
-                <option value="3">Phase 3 — Scale</option>
-              </select>
-            </div>
-            <div class="df"><label class="dlbl">Price ($)</label><input class="din" id="ns-price" type="number" value="500" min="0"></div>
-            <div class="df"><label class="dlbl">Type</label>
-              <select class="din" id="ns-type">
-                <option value="one-time">One-time</option>
-                <option value="monthly">Monthly</option>
-              </select>
-            </div>
-            <div class="df wide"><label class="dlbl">Description</label><input class="din" id="ns-desc" placeholder="Brief description"></div>
-          </div>
-          <div style="display:flex;gap:7px;margin-top:8px">
-            <button class="dsave" style="margin-top:0" onclick="addNewService()">Add Service</button>
-            <button onclick="document.getElementById('addSvcForm').style.display='none';document.querySelector('.add-svc-btn').style.display='block'" style="padding:9px 14px;background:transparent;border:1px solid rgba(0,0,0,.12);border-radius:7px;font-size:11px;cursor:pointer;font-family:inherit;color:var(--text-muted)">Cancel</button>
-          </div>
-        </div>
-        <button class="dsave" style="margin-top:12px;display:block;width:100%" onclick="saveServicesToCloud()">☁ Save All to Cloud</button>
-      </div>
-    </div>
-
-    <!-- Access -->
-    <div class="dp" id="dp-access">
-      <div class="dsec">
-        <div class="dsec-title">Change Admin Password</div>
-        <div class="dgrid single">
-          <div class="df"><label class="dlbl">Current Password</label><input class="din" id="d-cur-pw" type="password" placeholder="Current password"></div>
-          <div class="df"><label class="dlbl">New Password</label><input class="din" id="d-new-pw" type="password" placeholder="New password (min 8 chars)"></div>
-          <div class="df"><label class="dlbl">Confirm New Password</label><input class="din" id="d-con-pw" type="password" placeholder="Confirm new password"></div>
-        </div>
-        <button class="dsave" onclick="changePassword()">Update Password</button>
-      </div>
-      <div class="dsec">
-        <div class="dsec-title">Partner Logins</div>
-        <div class="dsec-desc">Partners log in from the public page.</div>
-        <div id="partnerList" class="row-list"></div>
-        <button class="dadd" onclick="addPartnerRow()">+ Add Partner</button>
-        <button class="dsave" onclick="saveAccessSettings()">Save Access</button>
-      </div>
-    </div>
-
-  </div>
-</div>
-<div id="drawerBackdrop" onclick="closeDrawer()"></div>
-
-<!-- ═══ PAGE (mirrors index.html) ═══ -->
+<!-- ═══ PAGE LAYOUT ═══ -->
 <div class="app-layout">
 
 <aside class="sidebar" id="sidebar">
@@ -529,11 +297,155 @@ select.din{cursor:pointer;appearance:none;-webkit-appearance:none;background-ima
         Bundle Flyer<span class="ext-arrow">↗</span>
       </a>
     </div>
-  </div>
+
+    <!-- Admin Settings Panel (hidden until logged in) -->
+    <div id="adminSidePanel" style="display:none">
+      <div class="sidebar-divider"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:0 2px">
+        <span class="sidebar-section-label" style="margin:0">Admin Settings</span>
+        <button class="as-logout" onclick="adminLogout()">Logout</button>
+      </div>
+      <div class="as-tabs">
+        <button class="as-tab active" id="ast-company"  onclick="switchATab('company')">Company</button>
+        <button class="as-tab"        id="ast-pricing"  onclick="switchATab('pricing')">Pricing</button>
+        <button class="as-tab"        id="ast-services" onclick="switchATab('services')">Services</button>
+        <button class="as-tab"        id="ast-access"   onclick="switchATab('access')">Access</button>
+        <button class="as-tab"        id="ast-expertise" onclick="switchATab('expertise')">Our Expertise</button>
+      </div>
+
+      <!-- Company Panel -->
+      <div class="as-panel active" id="asp-company">
+        <div class="as-sep">Company Info</div>
+        <div class="as-field"><label>Company Name</label><input id="d-name" placeholder="Fifteen"></div>
+        <div class="as-field"><label>Tagline</label><input id="d-tagline" placeholder="15-Point Acceleration"></div>
+        <div class="as-field"><label>Email</label><input id="d-email" type="email" placeholder="hello@fifteen.pro"></div>
+        <div class="as-field"><label>Phone</label><input id="d-phone" placeholder="+1 ..."></div>
+        <div class="as-field"><label>Address</label><textarea id="d-address" rows="2" placeholder="City, Country"></textarea></div>
+        <div class="as-sep">Logo</div>
+        <div class="as-field"><label>Logo URL</label><input id="d-logo-url" type="url" placeholder="https://..." oninput="previewLogo()"></div>
+        <div class="logo-preview" id="logoPreview"><span class="nolgo">No logo</span></div>
+        <label class="as-upload">↑ Upload Logo<input type="file" id="logoFile" accept="image/*" style="display:none" onchange="uploadLogoFile(this)"></label>
+        <div class="as-sep">Social Links</div>
+        <div class="as-field"><label>LinkedIn</label><input id="d-linkedin" type="url" placeholder="https://linkedin.com/..."></div>
+        <div class="as-field"><label>Instagram</label><input id="d-instagram" type="url" placeholder="https://instagram.com/..."></div>
+        <div class="as-field"><label>Facebook</label><input id="d-facebook" type="url" placeholder="https://facebook.com/..."></div>
+        <div class="as-field"><label>TikTok</label><input id="d-tiktok" type="url" placeholder="https://tiktok.com/@..."></div>
+        <div class="as-field"><label>Twitter / X</label><input id="d-twitter" type="url" placeholder="https://x.com/..."></div>
+        <div class="as-field"><label>YouTube</label><input id="d-youtube" type="url" placeholder="https://youtube.com/..."></div>
+        <div class="as-field"><label>WhatsApp</label><input id="d-whatsapp" type="url" placeholder="https://wa.me/..."></div>
+        <div class="as-field"><label>Snapchat</label><input id="d-snapchat" type="url" placeholder="https://snapchat.com/add/..."></div>
+        <button class="as-save" onclick="saveCompanyInfo()">Save Company Info</button>
+      </div>
+
+      <!-- Pricing Panel -->
+      <div class="as-panel" id="asp-pricing">
+        <div class="as-sep">Global Pricing</div>
+        <div class="as-field"><label>Currency Symbol</label><input id="d-currency" value="$" maxlength="5"></div>
+        <div class="as-field"><label>Tax Rate (%)</label><input id="d-tax" type="number" value="0" min="0" max="100" step="0.5"></div>
+        <div class="as-field"><label>Bundle Discount (%)</label><input id="d-bdiscount" type="number" value="0" min="0" max="100"></div>
+        <div class="as-field"><label>Min Services for Bundle</label><input id="d-bmin" type="number" value="5" min="2" max="15"></div>
+        <div class="as-sep">Promo Codes</div>
+        <div id="promoList"></div>
+        <button class="as-add" onclick="addPromoRow()">+ Add Code</button>
+        <button class="as-save" onclick="savePricingSettings()">Save Pricing</button>
+      </div>
+
+      <!-- Services Panel -->
+      <div class="as-panel" id="asp-services">
+        <div class="as-sep">Services Catalog</div>
+        <div class="svc-table">
+          <div class="svc-head"><span>#</span><span>Service</span><span>Ph</span><span>Price</span><span>Type</span><span></span></div>
+          <div id="svcBody"></div>
+        </div>
+        <button class="add-svc-btn" onclick="showAddSvcForm()">+ Add New Service</button>
+        <div class="add-svc-form" id="addSvcForm">
+          <div class="as-field"><label>Name</label><input id="ns-name" placeholder="Service Name"></div>
+          <div class="as-field"><label>Phase</label>
+            <select id="ns-phase">
+              <option value="1">Phase 1 — Brand</option>
+              <option value="2">Phase 2 — Growth</option>
+              <option value="3">Phase 3 — Scale</option>
+            </select>
+          </div>
+          <div class="as-field"><label>Price ($)</label><input id="ns-price" type="number" value="500" min="0"></div>
+          <div class="as-field"><label>Type</label>
+            <select id="ns-type">
+              <option value="one-time">One-time</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </div>
+          <div class="as-field"><label>Description</label><input id="ns-desc" placeholder="Brief description"></div>
+          <button class="as-save" onclick="addNewService()">Add Service</button>
+          <button class="as-cancel" onclick="hideAddSvcForm()">Cancel</button>
+        </div>
+        <button class="as-save" onclick="saveServicesToCloud()" style="margin-top:8px">☁ Save All to Cloud</button>
+      </div>
+
+      <!-- Access Panel -->
+      <div class="as-panel" id="asp-access">
+        <div class="as-sep">Change Admin Password</div>
+        <div class="as-field"><label>Current Password</label><input id="d-cur-pw" type="password" placeholder="Current password"></div>
+        <div class="as-field"><label>New Password</label><input id="d-new-pw" type="password" placeholder="New password (min 8 chars)"></div>
+        <div class="as-field"><label>Confirm New Password</label><input id="d-con-pw" type="password" placeholder="Confirm new password"></div>
+        <button class="as-save" onclick="changePassword()">Update Password</button>
+        <div class="as-sep" style="margin-top:14px">Partner Logins</div>
+        <div id="partnerList"></div>
+        <button class="as-add" onclick="addPartnerRow()">+ Add Partner</button>
+        <button class="as-save" onclick="saveAccessSettings()">Save Access</button>
+      </div>
+
+      <!-- Our Expertise Panel -->
+      <div class="as-panel" id="asp-expertise">
+        <div class="as-sep">Team Member 1</div>
+        <div class="tp-preview" id="tp0"><img id="tp0img" src="" alt="" style="display:none"></div>
+        <div class="as-field"><label>Name</label><input id="tm0-name" placeholder="Full Name"></div>
+        <div class="as-field"><label>Role</label><input id="tm0-role" placeholder="Co-Founder &amp; Managing Director"></div>
+        <div class="as-field"><label>Bio</label><textarea id="tm0-bio" rows="3" placeholder="Background and experience..."></textarea></div>
+        <div class="as-field"><label>Photo URL</label><input id="tm0-photo" type="url" placeholder="https://..." oninput="previewTeamPhoto(0)"></div>
+        <label class="as-upload">↑ Upload Photo<input type="file" accept="image/*" style="display:none" onchange="uploadTeamPhoto(this,0)"></label>
+        <div class="as-sep">Team Member 2</div>
+        <div class="tp-preview" id="tp1"><img id="tp1img" src="" alt="" style="display:none"></div>
+        <div class="as-field"><label>Name</label><input id="tm1-name" placeholder="Full Name"></div>
+        <div class="as-field"><label>Role</label><input id="tm1-role" placeholder="Head of Digital Strategy"></div>
+        <div class="as-field"><label>Bio</label><textarea id="tm1-bio" rows="3" placeholder="Background and experience..."></textarea></div>
+        <div class="as-field"><label>Photo URL</label><input id="tm1-photo" type="url" placeholder="https://..." oninput="previewTeamPhoto(1)"></div>
+        <label class="as-upload">↑ Upload Photo<input type="file" accept="image/*" style="display:none" onchange="uploadTeamPhoto(this,1)"></label>
+        <div class="as-sep">Team Member 3</div>
+        <div class="tp-preview" id="tp2"><img id="tp2img" src="" alt="" style="display:none"></div>
+        <div class="as-field"><label>Name</label><input id="tm2-name" placeholder="Full Name"></div>
+        <div class="as-field"><label>Role</label><input id="tm2-role" placeholder="Business Transformation Lead"></div>
+        <div class="as-field"><label>Bio</label><textarea id="tm2-bio" rows="3" placeholder="Background and experience..."></textarea></div>
+        <div class="as-field"><label>Photo URL</label><input id="tm2-photo" type="url" placeholder="https://..." oninput="previewTeamPhoto(2)"></div>
+        <label class="as-upload">↑ Upload Photo<input type="file" accept="image/*" style="display:none" onchange="uploadTeamPhoto(this,2)"></label>
+        <button class="as-save" onclick="saveExpertise()">Save Our Expertise</button>
+      </div>
+    </div><!-- /adminSidePanel -->
+
+  </div><!-- /sidebar-inner -->
+
   <div class="sidebar-footer">
     <div class="sf-top">
       <span id="footerBrand">15fifteen15 · Business Acceleration</span>
     </div>
+
+    <!-- Admin login section (shown when logged out) -->
+    <div id="adminLoginSection" style="width:100%">
+      <div class="al-form">
+        <input type="password" id="adminPw" class="al-pw" placeholder="Admin password" autocomplete="current-password">
+        <button class="al-btn" onclick="doAdminLogin()">→</button>
+      </div>
+      <div class="al-err" id="alcErr">Incorrect password.</div>
+      <div class="al-lock" id="alcLock"></div>
+    </div>
+
+    <!-- Admin active section (shown when logged in) -->
+    <div id="adminLogoutSection" style="display:none;width:100%">
+      <div class="al-active-row">
+        <span class="al-status">✓ Admin Active</span>
+        <button class="al-out-btn" onclick="adminLogout()">Logout</button>
+      </div>
+    </div>
+
     <div id="sfContact" style="display:none">
       <div id="sfAddr" class="sf-addr"></div>
       <div class="sf-soc-row">
@@ -547,7 +459,7 @@ select.din{cursor:pointer;appearance:none;-webkit-appearance:none;background-ima
         <a class="soc sc" id="sf-sc" href="#" target="_blank" rel="noopener" style="display:none" title="Snapchat"><i class="fa-brands fa-snapchat"></i></a>
       </div>
     </div>
-  </div>
+  </div><!-- /sidebar-footer -->
 </aside>
 
 <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle menu">
@@ -580,26 +492,26 @@ select.din{cursor:pointer;appearance:none;-webkit-appearance:none;background-ima
 <!-- HERO -->
 <section class="hero">
   <div class="container">
-    <div class="badge" data-editable="hero.badge">15fifteen15 &nbsp;·&nbsp; By Application Only</div>
-    <h1 data-editable="hero.title">Your Business Has Potential.<br>We Have The <span class="highlight">15-Point Blueprint</span><br>To Unlock It.</h1>
-    <p class="hero-sub" data-editable="hero.subtitle">We run deep due diligence, inject capital for operational renovation, and deploy a precise 15-point digital solution engine to scale established businesses to the next level.</p>
-    <a href="#apply" class="glow-btn" data-editable="hero.cta">Apply For Your 15-Point Audit</a>
+    <div class="badge">15fifteen15 &nbsp;·&nbsp; By Application Only</div>
+    <h1>Your Business Has Potential.<br>We Have The <span class="highlight">15-Point Blueprint</span><br>To Unlock It.</h1>
+    <p class="hero-sub">We run deep due diligence, inject capital for operational renovation, and deploy a precise 15-point digital solution engine to scale established businesses to the next level.</p>
+    <a href="#apply" class="glow-btn">Apply For Your 15-Point Audit</a>
     <div class="urgency">
       <span class="pulse-dot"></span>
-      <span data-editable="hero.urgency">Strictly Limited — We legally lock out your competitors. We only partner with ONE business per industry sector.</span>
+      <span>Strictly Limited — We legally lock out your competitors. We only partner with ONE business per industry sector.</span>
     </div>
     <div class="stat-row">
       <div class="stat">
-        <div class="stat-num" data-editable="stats.0.num">15</div>
-        <div class="stat-label" data-editable="stats.0.label">Solution Products</div>
+        <div class="stat-num">15</div>
+        <div class="stat-label">Solution Products</div>
       </div>
       <div class="stat">
-        <div class="stat-num" data-editable="stats.1.num">3</div>
-        <div class="stat-label" data-editable="stats.1.label">Elite Phases</div>
+        <div class="stat-num">3</div>
+        <div class="stat-label">Elite Phases</div>
       </div>
       <div class="stat">
-        <div class="stat-num" data-editable="stats.2.num">1</div>
-        <div class="stat-label" data-editable="stats.2.label">Partner Per Sector</div>
+        <div class="stat-num">1</div>
+        <div class="stat-label">Partner Per Sector</div>
       </div>
     </div>
   </div>
@@ -609,23 +521,23 @@ select.din{cursor:pointer;appearance:none;-webkit-appearance:none;background-ima
 <section class="section">
   <div class="container">
     <div class="badge">The Problem</div>
-    <h2 class="section-title" data-editable="problem.title">Why Do Good Businesses<br>Hit a Growth Ceiling?</h2>
-    <p class="section-sub" data-editable="problem.subtitle">Most established companies plateau not from lack of effort, but because friction is hiding in plain sight across three critical zones.</p>
+    <h2 class="section-title">Why Do Good Businesses<br>Hit a Growth Ceiling?</h2>
+    <p class="section-sub">Most established companies plateau not from lack of effort, but because friction is hiding in plain sight across three critical zones.</p>
     <div class="problem-grid">
       <div class="prob-card">
         <div class="prob-icon"><svg class="icon" width="19" height="19" viewBox="0 0 24 24" style="stroke:var(--green)"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20M12 2a10 10 0 0 0 0 20M2 12h20"/></svg></div>
-        <div class="prob-title" data-editable="problem.c1.title">Weak Brand Authority</div>
-        <p class="prob-desc" data-editable="problem.c1.desc">Broken messaging and an outdated visual window to the market. Your audience doesn't know why you're different — so they don't convert.</p>
+        <div class="prob-title">Weak Brand Authority</div>
+        <p class="prob-desc">Broken messaging and an outdated visual window to the market. Your audience doesn't know why you're different — so they don't convert.</p>
       </div>
       <div class="prob-card">
         <div class="prob-icon"><svg class="icon" width="19" height="19" viewBox="0 0 24 24" style="stroke:var(--green)"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
-        <div class="prob-title" data-editable="problem.c2.title">Stagnant Client Reach</div>
-        <p class="prob-desc" data-editable="problem.c2.desc">Inefficient ad spend, poor traffic, and manual customer acquisition paths. You're paying compounding money to stay completely still.</p>
+        <div class="prob-title">Stagnant Client Reach</div>
+        <p class="prob-desc">Inefficient ad spend, poor traffic, and manual customer acquisition paths. You're paying compounding money to stay completely still.</p>
       </div>
       <div class="prob-card">
         <div class="prob-icon"><svg class="icon" width="19" height="19" viewBox="0 0 24 24" style="stroke:var(--green)"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
-        <div class="prob-title" data-editable="problem.c3.title">Operational Chaos</div>
-        <p class="prob-desc" data-editable="problem.c3.desc">Fragmented backend infrastructure, data blindness, and waste. Your systems don't scale — they create compounding drag every quarter.</p>
+        <div class="prob-title">Operational Chaos</div>
+        <p class="prob-desc">Fragmented backend infrastructure, data blindness, and waste. Your systems don't scale — they create compounding drag every quarter.</p>
       </div>
     </div>
   </div>
@@ -635,8 +547,8 @@ select.din{cursor:pointer;appearance:none;-webkit-appearance:none;background-ima
 <section class="section alt-section" id="solutions">
   <div class="container">
     <div class="badge">The Engine</div>
-    <h2 class="section-title" data-editable="solution.title">15 Products. Zero Friction.<br>Total Scale.</h2>
-    <p class="section-sub" data-editable="solution.subtitle">Our signature engine tackles every angle of corporate growth, broken into 3 elite phases that build on each other with precision.</p>
+    <h2 class="section-title">15 Products. Zero Friction.<br>Total Scale.</h2>
+    <p class="section-sub">Our signature engine tackles every angle of corporate growth, broken into 3 elite phases that build on each other with precision.</p>
     <div class="sol-grid" id="solGrid">
       <div class="sol-col">
         <div class="phase-header"><svg class="icon" width="13" height="13" viewBox="0 0 24 24" style="stroke:var(--green)"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>Phase 01 — Brand &amp; Authority</div>
@@ -660,15 +572,15 @@ select.din{cursor:pointer;appearance:none;-webkit-appearance:none;background-ima
     <div class="invest-grid">
       <div class="invest-side">
         <div class="invest-label"><svg class="icon" width="12" height="12" viewBox="0 0 24 24" style="stroke:var(--green)"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>Due Diligence</div>
-        <h3 class="invest-title" data-editable="process.l.title">We Don't Just<br><span class="green">Consult. We Invest.</span></h3>
+        <h3 class="invest-title">We Don't Just<br><span class="green">Consult. We Invest.</span></h3>
         <div class="divider"></div>
-        <p class="invest-body" data-editable="process.l.body">We map your operational mechanics, analyze competitor threats, and audit financial leaks to find exactly where your revenue is draining — before we touch a single deliverable. No assumptions. No generic audits. Deep, business-specific diagnosis.</p>
+        <p class="invest-body">We map your operational mechanics, analyze competitor threats, and audit financial leaks to find exactly where your revenue is draining — before we touch a single deliverable. No assumptions. No generic audits. Deep, business-specific diagnosis.</p>
       </div>
       <div class="invest-side">
         <div class="invest-label"><svg class="icon" width="12" height="12" viewBox="0 0 24 24" style="stroke:var(--green)"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Capital &amp; Infrastructure</div>
-        <h3 class="invest-title" data-editable="process.r.title">A To-Do List Is<br><span class="green">Not Our Deliverable.</span></h3>
+        <h3 class="invest-title">A To-Do List Is<br><span class="green">Not Our Deliverable.</span></h3>
         <div class="divider"></div>
-        <p class="invest-body" data-editable="process.r.body">For high-potential established brands, we supply the strategic capital and engineering resources to completely renovate your e-commerce ecosystems and backend ERP hubs from scratch. We build. You scale.</p>
+        <p class="invest-body">For high-potential established brands, we supply the strategic capital and engineering resources to completely renovate your e-commerce ecosystems and backend ERP hubs from scratch. We build. You scale.</p>
       </div>
     </div>
   </div>
@@ -678,20 +590,20 @@ select.din{cursor:pointer;appearance:none;-webkit-appearance:none;background-ima
 <section class="section">
   <div class="container">
     <div class="badge">The Roadmap</div>
-    <h2 class="section-title" data-editable="timeline.title">Engineered For Certainty:<br>The 15-Month Roadmap</h2>
-    <p class="section-sub" data-editable="timeline.subtitle">Two phases. One clear trajectory. No guesswork, no pivots mid-engagement.</p>
+    <h2 class="section-title">Engineered For Certainty:<br>The 15-Month Roadmap</h2>
+    <p class="section-sub">Two phases. One clear trajectory. No guesswork, no pivots mid-engagement.</p>
     <div class="timeline">
       <div class="t-item">
         <div class="t-dot"></div>
         <div class="t-phase">Phase 1 &nbsp;·&nbsp; Months 1–3</div>
-        <div class="t-title" data-editable="timeline.p1.title">Rapid Optimization</div>
-        <p class="t-body" data-editable="timeline.p1.body">We audit and aggressively optimize your Audience, Content, and Budgets to unlock rapid cash flow and immediate proof-of-concept. You'll see measurable results before Phase 2 begins — this phase exists to validate and fund the next.</p>
+        <div class="t-title">Rapid Optimization</div>
+        <p class="t-body">We audit and aggressively optimize your Audience, Content, and Budgets to unlock rapid cash flow and immediate proof-of-concept. You'll see measurable results before Phase 2 begins — this phase exists to validate and fund the next.</p>
       </div>
       <div class="t-item">
         <div class="t-dot"></div>
         <div class="t-phase">Phase 2 &nbsp;·&nbsp; Months 4–15</div>
-        <div class="t-title" data-editable="timeline.p2.title">Massive Scale</div>
-        <p class="t-body" data-editable="timeline.p2.body">We execute the deep operational renovations, deploy custom ERP automations, launch full scaling campaigns, and legally secure your long-term market dominance. This is where compounding begins and competitors get locked out permanently.</p>
+        <div class="t-title">Massive Scale</div>
+        <p class="t-body">We execute the deep operational renovations, deploy custom ERP automations, launch full scaling campaigns, and legally secure your long-term market dominance. This is where compounding begins and competitors get locked out permanently.</p>
       </div>
     </div>
   </div>
@@ -700,36 +612,36 @@ select.din{cursor:pointer;appearance:none;-webkit-appearance:none;background-ima
 <!-- OUR EXPERTISE -->
 <section class="section alt-section" id="expertise">
   <div class="container">
-    <div class="badge" data-editable="expertise.badge">The Team</div>
-    <div class="section-title" data-editable="expertise.title">Our <span class="green">Expertise</span></div>
-    <p class="section-sub" data-editable="expertise.sub">Three decades of combined experience transforming businesses across the MENA region and beyond.</p>
+    <div class="badge">The Team</div>
+    <div class="section-title">Our <span class="green">Expertise</span></div>
+    <p class="section-sub">Three decades of combined experience transforming businesses across the MENA region and beyond.</p>
     <div class="team-grid">
 
       <div class="team-card">
-        <div class="team-photo" style="background:linear-gradient(135deg,#26915E,#1d7a4c)">
-          <span class="team-photo-initials" data-editable="team.0.initials">01</span>
+        <div class="team-photo" id="tmPhoto0" style="background:linear-gradient(135deg,#26915E,#1d7a4c)">
+          <span class="team-photo-initials">01</span>
         </div>
-        <div class="team-name" data-editable="team.0.name">Team Member Name</div>
-        <div class="team-role" data-editable="team.0.role">Co-Founder &amp; Managing Director</div>
-        <div class="team-bio" data-editable="team.0.bio">Add this person's background, industry experience, and key achievements here. Click Edit Mode in admin to update this text.</div>
+        <div class="team-name" id="tmName0">Team Member Name</div>
+        <div class="team-role" id="tmRole0">Co-Founder &amp; Managing Director</div>
+        <div class="team-bio" id="tmBio0">Add this person's background, industry experience, and key achievements here.</div>
       </div>
 
       <div class="team-card">
-        <div class="team-photo" style="background:linear-gradient(135deg,#E36C44,#c95a34)">
-          <span class="team-photo-initials" data-editable="team.1.initials">02</span>
+        <div class="team-photo" id="tmPhoto1" style="background:linear-gradient(135deg,#E36C44,#c95a34)">
+          <span class="team-photo-initials">02</span>
         </div>
-        <div class="team-name" data-editable="team.1.name">Team Member Name</div>
-        <div class="team-role" data-editable="team.1.role">Head of Digital Strategy</div>
-        <div class="team-bio" data-editable="team.1.bio">Add this person's background, industry experience, and key achievements here. Click Edit Mode in admin to update this text.</div>
+        <div class="team-name" id="tmName1">Team Member Name</div>
+        <div class="team-role" id="tmRole1">Head of Digital Strategy</div>
+        <div class="team-bio" id="tmBio1">Add this person's background, industry experience, and key achievements here.</div>
       </div>
 
       <div class="team-card">
-        <div class="team-photo" style="background:linear-gradient(135deg,#2d6a9f,#1a5480)">
-          <span class="team-photo-initials" data-editable="team.2.initials">03</span>
+        <div class="team-photo" id="tmPhoto2" style="background:linear-gradient(135deg,#2d6a9f,#1a5480)">
+          <span class="team-photo-initials">03</span>
         </div>
-        <div class="team-name" data-editable="team.2.name">Team Member Name</div>
-        <div class="team-role" data-editable="team.2.role">Business Transformation Lead</div>
-        <div class="team-bio" data-editable="team.2.bio">Add this person's background, industry experience, and key achievements here. Click Edit Mode in admin to update this text.</div>
+        <div class="team-name" id="tmName2">Team Member Name</div>
+        <div class="team-role" id="tmRole2">Business Transformation Lead</div>
+        <div class="team-bio" id="tmBio2">Add this person's background, industry experience, and key achievements here.</div>
       </div>
 
     </div>
@@ -740,10 +652,10 @@ select.din{cursor:pointer;appearance:none;-webkit-appearance:none;background-ima
 <section class="section" id="apply">
   <div class="container">
     <div class="badge text-center mx-auto" style="display:block;width:fit-content">Industry Lockout</div>
-    <h2 class="section-title text-center" data-editable="apply.title">Is Your Industry<br>Still Available?</h2>
-    <p class="section-sub text-center mx-auto" style="display:block" data-editable="apply.subtitle">One sector. One partner. We legally lock out your competition the moment you're confirmed.</p>
+    <h2 class="section-title text-center">Is Your Industry<br>Still Available?</h2>
+    <p class="section-sub text-center mx-auto" style="display:block">One sector. One partner. We legally lock out your competition the moment you're confirmed.</p>
     <div class="form-wrap">
-      <div class="availability-bar"><span class="pulse-dot"></span><span class="avail-text" data-editable="apply.avail">We are actively reviewing new applications — industry sectors are filling fast.</span></div>
+      <div class="availability-bar"><span class="pulse-dot"></span><span class="avail-text">We are actively reviewing new applications — industry sectors are filling fast.</span></div>
       <div class="form-row">
         <div class="field"><label for="fn">Full Name</label><input type="text" id="fn" placeholder="Your full name" autocomplete="name"></div>
         <div class="field"><label for="fe">Business Email</label><input type="email" id="fe" placeholder="you@company.com" autocomplete="email"></div>
@@ -765,7 +677,7 @@ select.din{cursor:pointer;appearance:none;-webkit-appearance:none;background-ima
         </div>
       </div>
       <button type="button" class="glow-btn form-submit" onclick="handleApply()">Check Industry Availability &amp; Apply</button>
-      <div class="form-sub" data-editable="apply.sub">Jeeh, Jeeh! &nbsp;·&nbsp; Applications reviewed within 48 hours. Strictly confidential.</div>
+      <div class="form-sub">Jeeh, Jeeh! &nbsp;·&nbsp; Applications reviewed within 48 hours. Strictly confidential.</div>
     </div>
   </div>
 </section>
@@ -843,8 +755,8 @@ select.din{cursor:pointer;appearance:none;-webkit-appearance:none;background-ima
       <a class="soc sc" id="ft-sc" href="#" target="_blank" rel="noopener" style="display:none" title="Snapchat"><i class="fa-brands fa-snapchat"></i></a>
     </div>
     <div class="footer-addr" id="ftAddr" style="display:none"></div>
-    <div class="footer-copy" data-editable="footer.copy1">15fifteen15 &nbsp;·&nbsp; Business Acceleration &amp; Digital Solutions</div>
-    <div class="footer-copy" data-editable="footer.copy2">© 2025 Fifteen. All rights reserved. One partner per industry sector.</div>
+    <div class="footer-copy">15fifteen15 &nbsp;·&nbsp; Business Acceleration &amp; Digital Solutions</div>
+    <div class="footer-copy">© 2025 Fifteen. All rights reserved. One partner per industry sector.</div>
   </div>
 </footer>
 
@@ -860,9 +772,6 @@ select.din{cursor:pointer;appearance:none;-webkit-appearance:none;background-ima
 let db = null, storage = null;
 let ADMIN_PASSWORD = 'fifteen2025';
 let services = [];
-let editMode = false;
-let contentDirty = false;
-let servicesDirty = false;
 
 /* ══════════════════════════════════════════════
    FIREBASE
@@ -923,36 +832,40 @@ function isLocked() { return getAttempts().lock > Date.now(); }
 function lockMins() { return Math.ceil((getAttempts().lock - Date.now()) / 60000); }
 
 /* ══════════════════════════════════════════════
-   AUTH
+   AUTH STATE
 ══════════════════════════════════════════════ */
-window.addEventListener('pageshow', function(e) {
-  if (e.persisted && !getSession()) showOverlay();
-});
+function showLoginState() {
+  document.getElementById('adminLoginSection').style.display = 'block';
+  document.getElementById('adminLogoutSection').style.display = 'none';
+  document.getElementById('adminSidePanel').style.display = 'none';
+  setTimeout(() => {
+    const el = document.getElementById('adminPw');
+    if (el && !el.disabled) el.focus();
+  }, 80);
+}
 
-document.addEventListener('DOMContentLoaded', async () => {
-  const fbOk = await initFirebase();
-  document.getElementById('atSync').textContent  = fbOk ? '☁ Connected' : '○ Local only';
-  document.getElementById('atSync').className     = 'at-sync' + (fbOk ? '' : ' off');
-
-  if (getSession()) {
-    await enterAdmin();
+async function enterAdmin() {
+  document.getElementById('adminLoginSection').style.display = 'none';
+  document.getElementById('adminLogoutSection').style.display = 'block';
+  document.getElementById('adminSidePanel').style.display = 'block';
+  if (db) {
+    await loadAllSettings();
+    await loadServices();
   } else {
-    showOverlay();
+    await loadServicesLocal();
   }
+  renderSolGrid();
+  renderSvcTable();
+}
 
-  if (isLocked()) applyLockout();
-});
-
-function showOverlay() {
-  document.getElementById('adminOverlay').classList.remove('hidden');
-  document.getElementById('adminToolbar').style.display = 'none';
-  document.body.classList.remove('admin-active', 'edit-mode');
-  setTimeout(() => { const el = document.getElementById('adminPw'); if (el && !el.disabled) el.focus(); }, 80);
+function adminLogout() {
+  clearSession();
+  showLoginState();
 }
 
 function applyLockout() {
-  document.getElementById('adminPw').disabled = true;
-  document.querySelector('.alc-btn').disabled = true;
+  const pw = document.getElementById('adminPw');
+  if (pw) pw.disabled = true;
   const el = document.getElementById('alcLock');
   el.textContent = `Too many failed attempts. Try again in ${lockMins()} minute(s).`;
   el.style.display = 'block';
@@ -985,83 +898,23 @@ async function doAdminLogin() {
       const err = document.getElementById('alcErr');
       err.style.display = 'block';
       const rem = 5 - a.n;
-      err.textContent = `Incorrect password. ${rem} attempt(s) remaining.`;
-      setTimeout(() => err.style.display = 'none', 2800);
+      err.textContent = `Incorrect. ${rem} attempt(s) remaining.`;
+      setTimeout(() => { err.style.display = 'none'; }, 2800);
     }
   }
 }
 
-async function enterAdmin() {
-  document.getElementById('adminOverlay').classList.add('hidden');
-  document.getElementById('adminToolbar').style.display = 'flex';
-  document.body.classList.add('admin-active');
-
-  if (db) {
-    await loadAllSettings();
-    await loadServices();
-  } else {
-    await loadServicesLocal();
-  }
-  renderSolGrid();
-  renderSvcTable();
-}
-
-function adminLogout() {
-  clearSession();
-  exitEditMode();
-  showOverlay();
-}
-
-document.getElementById('adminPw').addEventListener('keydown', e => { if (e.key === 'Enter') doAdminLogin(); });
-
 /* ══════════════════════════════════════════════
-   EDIT MODE
+   ADMIN TABS
 ══════════════════════════════════════════════ */
-function toggleEdit() {
-  editMode = !editMode;
-  const btn = document.getElementById('editBtn');
-  if (editMode) {
-    document.body.classList.add('edit-mode');
-    btn.classList.add('on');
-    btn.textContent = '✎ Editing On';
-    document.querySelectorAll('[data-editable]').forEach(el => {
-      el.contentEditable = 'true';
-      el.addEventListener('input', markContentDirty);
-    });
-    toast('Click any highlighted text to edit it', '');
-  } else {
-    exitEditMode();
-  }
-}
-
-function exitEditMode() {
-  editMode = false;
-  document.body.classList.remove('edit-mode');
-  const btn = document.getElementById('editBtn');
-  if (btn) { btn.classList.remove('on'); btn.textContent = '✎ Edit Mode'; }
-  document.querySelectorAll('[data-editable]').forEach(el => {
-    el.contentEditable = 'false';
-    el.removeEventListener('input', markContentDirty);
+function switchATab(name) {
+  ['company','pricing','services','access','expertise'].forEach(t => {
+    const btn = document.getElementById('ast-' + t);
+    const pnl = document.getElementById('asp-' + t);
+    if (btn) btn.classList.toggle('active', t === name);
+    if (pnl) pnl.classList.toggle('active', t === name);
   });
-}
-
-function markContentDirty() {
-  contentDirty = true;
-  document.getElementById('saveBtn').style.display = 'inline-block';
-}
-
-async function savePageEdits() {
-  if (!db) { toast('Connect Firebase to save edits to the cloud', 'error'); return; }
-  const content = {};
-  document.querySelectorAll('[data-editable]').forEach(el => {
-    content[el.dataset.editable] = el.innerHTML;
-  });
-  try {
-    await db.collection('content').doc('page').set({ ...content, updatedAt: new Date().toISOString() });
-    contentDirty = false;
-    document.getElementById('saveBtn').style.display = 'none';
-    toast('✓ Page content saved to cloud', 'success');
-  } catch(e) { toast('Save failed: ' + e.message, 'error'); }
+  if (name === 'services') renderSvcTable();
 }
 
 /* ══════════════════════════════════════════════
@@ -1069,11 +922,10 @@ async function savePageEdits() {
 ══════════════════════════════════════════════ */
 async function loadAllSettings() {
   try {
-    const [compDoc, pricDoc, accDoc, pageDoc] = await Promise.all([
+    const [compDoc, pricDoc, accDoc] = await Promise.all([
       db.collection('settings').doc('company').get(),
       db.collection('settings').doc('pricing').get(),
       db.collection('settings').doc('access').get(),
-      db.collection('content').doc('page').get(),
     ]);
     if (compDoc.exists) fillCompanyForm(compDoc.data());
     if (pricDoc.exists) fillPricingForm(pricDoc.data());
@@ -1082,15 +934,115 @@ async function loadAllSettings() {
       if (d.adminPassword) ADMIN_PASSWORD = d.adminPassword;
       if (d.partnerLogins) renderPartnerRows(d.partnerLogins);
     }
-    if (pageDoc.exists) applyPageContent(pageDoc.data());
+    await loadExpertise();
   } catch(e) { console.warn('Could not load settings:', e.message); }
 }
 
-function applyPageContent(data) {
-  document.querySelectorAll('[data-editable]').forEach(el => {
-    const key = el.dataset.editable;
-    if (data[key] !== undefined) el.innerHTML = data[key];
+/* ══════════════════════════════════════════════
+   EXPERTISE / TEAM
+══════════════════════════════════════════════ */
+async function loadExpertise() {
+  if (!db) return;
+  try {
+    const teamDoc = await db.collection('content').doc('team').get();
+    if (teamDoc.exists) fillExpertiseForm(teamDoc.data());
+  } catch(e) {}
+}
+
+function fillExpertiseForm(data) {
+  const members = data.members || [];
+  members.forEach((m, i) => {
+    const s = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+    s(`tm${i}-name`, m.name);
+    s(`tm${i}-role`, m.role);
+    s(`tm${i}-bio`,  m.bio);
+    s(`tm${i}-photo`, m.photo);
+    previewTeamPhoto(i);
+    applyTeamMember(i, m);
   });
+}
+
+function applyTeamMember(i, m) {
+  const photoDiv = document.getElementById('tmPhoto' + i);
+  const nameEl   = document.getElementById('tmName' + i);
+  const roleEl   = document.getElementById('tmRole' + i);
+  const bioEl    = document.getElementById('tmBio' + i);
+
+  if (nameEl) nameEl.textContent = m.name || nameEl.textContent;
+  if (roleEl) roleEl.textContent = m.role || roleEl.textContent;
+  if (bioEl)  bioEl.textContent  = m.bio  || bioEl.textContent;
+
+  if (photoDiv) {
+    const existing = photoDiv.querySelector('img');
+    if (m.photo) {
+      const initials = photoDiv.querySelector('.team-photo-initials');
+      if (initials) initials.style.display = 'none';
+      if (existing) {
+        existing.src = m.photo;
+        existing.style.display = 'block';
+      } else {
+        const img = document.createElement('img');
+        img.src = m.photo;
+        img.alt = m.name || '';
+        photoDiv.appendChild(img);
+      }
+    } else {
+      if (existing) existing.style.display = 'none';
+      const initials = photoDiv.querySelector('.team-photo-initials');
+      if (initials) initials.style.display = '';
+    }
+  }
+}
+
+function applyAllTeamMembers(data) {
+  const members = data.members || [];
+  members.forEach((m, i) => applyTeamMember(i, m));
+}
+
+function previewTeamPhoto(i) {
+  const url = (document.getElementById('tm' + i + '-photo') || {}).value || '';
+  const preview = document.getElementById('tp' + i);
+  if (!preview) return;
+  const img = document.getElementById('tp' + i + 'img');
+  if (url && img) {
+    img.src = url;
+    img.style.display = 'block';
+  } else if (img) {
+    img.style.display = 'none';
+  }
+}
+
+async function uploadTeamPhoto(input, i) {
+  if (!storage) { toast('Firebase Storage not connected', 'error'); return; }
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { toast('File too large (max 5MB)', 'error'); return; }
+  toast('Uploading photo…', '');
+  try {
+    const ext = file.name.split('.').pop();
+    const ref = storage.ref(`team/member${i}.${ext}`);
+    await ref.put(file);
+    const url = await ref.getDownloadURL();
+    const photoInput = document.getElementById('tm' + i + '-photo');
+    if (photoInput) photoInput.value = url;
+    previewTeamPhoto(i);
+    toast('✓ Photo uploaded', 'success');
+  } catch(e) { toast('Upload failed: ' + e.message, 'error'); }
+}
+
+async function saveExpertise() {
+  if (!db) { toast('Connect Firebase first', 'error'); return; }
+  const members = [0, 1, 2].map(i => ({
+    name:  (document.getElementById('tm' + i + '-name')  || {}).value || '',
+    role:  (document.getElementById('tm' + i + '-role')  || {}).value || '',
+    bio:   (document.getElementById('tm' + i + '-bio')   || {}).value || '',
+    photo: (document.getElementById('tm' + i + '-photo') || {}).value || '',
+  }));
+  try {
+    await db.collection('content').doc('team').set({ members, updatedAt: new Date().toISOString() });
+    members.forEach((m, i) => applyTeamMember(i, m));
+    toast('✓ Expertise saved', 'success');
+  } catch(e) { toast('Save failed: ' + e.message, 'error'); }
 }
 
 /* ══════════════════════════════════════════════
@@ -1147,9 +1099,9 @@ function renderSvcTable() {
     <div class="svc-row" id="sr${s.id}">
       <span class="svc-id">${String(s.id).padStart(2,'0')}</span>
       <span class="svc-name">${s.name}</span>
-      <span class="svc-ph">Ph.${s.phase}</span>
-      <input class="svc-pin" type="number" value="${s.price}" min="0" step="50" onchange="markSvcDirty()">
-      <select class="svc-sel" onchange="markSvcDirty()">
+      <span class="svc-ph">P${s.phase}</span>
+      <input class="svc-pin" type="number" value="${s.price}" min="0" step="50">
+      <select class="svc-sel">
         <option value="one-time" ${s.type==='one-time'?'selected':''}>1x</option>
         <option value="monthly"  ${s.type==='monthly'?'selected':''}>/mo</option>
       </select>
@@ -1158,19 +1110,21 @@ function renderSvcTable() {
   `).join('');
 }
 
-function markSvcDirty() { servicesDirty = true; }
-
 function deleteService(id) {
   if (!confirm('Remove this service?')) return;
   services = services.filter(s => s.id !== id);
   renderSolGrid();
   renderSvcTable();
-  markSvcDirty();
 }
 
 function showAddSvcForm() {
   document.getElementById('addSvcForm').style.display = 'block';
   document.querySelector('.add-svc-btn').style.display = 'none';
+}
+
+function hideAddSvcForm() {
+  document.getElementById('addSvcForm').style.display = 'none';
+  document.querySelector('.add-svc-btn').style.display = 'block';
 }
 
 function addNewService() {
@@ -1186,14 +1140,12 @@ function addNewService() {
   renderSolGrid(); renderSvcTable();
   document.getElementById('ns-name').value = '';
   document.getElementById('ns-desc').value = '';
-  document.getElementById('addSvcForm').style.display = 'none';
-  document.querySelector('.add-svc-btn').style.display = 'block';
-  markSvcDirty();
+  hideAddSvcForm();
   toast('✓ Service added — save to cloud', 'success');
 }
 
 function collectServices() {
-  return services.map((s, i) => {
+  return services.map(s => {
     const row = document.getElementById('sr' + s.id);
     if (!row) return s;
     const pin = row.querySelector('.svc-pin');
@@ -1208,7 +1160,6 @@ async function saveServicesToCloud() {
   try {
     await db.collection('catalog').doc('services').set({ items: updated, lastUpdated: new Date().toISOString().slice(0,10) });
     services = updated;
-    servicesDirty = false;
     renderSolGrid();
     toast('✓ Services saved to cloud', 'success');
   } catch(e) { toast('Save failed: ' + e.message, 'error'); }
@@ -1269,7 +1220,7 @@ function previewLogo() {
   if (url) {
     box.innerHTML = `<img src="${url}" alt="logo" onerror="this.parentElement.innerHTML='<span class=nolgo>Image not found</span>'">`;
   } else {
-    box.innerHTML = '<span class="nolgo">No logo set</span>';
+    box.innerHTML = '<span class="nolgo">No logo</span>';
   }
 }
 
@@ -1304,6 +1255,7 @@ async function saveCompanyInfo() {
   };
   try {
     await db.collection('settings').doc('company').set(data);
+    applyCompanyToPage(data);
     toast('✓ Company info saved', 'success');
   } catch(e) { toast('Save failed: ' + e.message, 'error'); }
 }
@@ -1324,12 +1276,12 @@ function addPromoRow(data = {}) {
   row.className = 'drow';
   row.innerHTML = `
     <span class="drow-hint">Code</span>
-    <input type="text" placeholder="SAVE20" value="${data.code || ''}" style="max-width:110px">
+    <input type="text" placeholder="SAVE20" value="${data.code || ''}" style="max-width:80px">
     <span class="drow-hint">Disc.</span>
-    <input type="number" placeholder="20" value="${data.discount || ''}" style="max-width:65px" min="0">
-    <select style="max-width:80px">
-      <option value="percent" ${data.type!=='fixed'?'selected':''}>% off</option>
-      <option value="fixed"   ${data.type==='fixed'?'selected':''}>$ off</option>
+    <input type="number" placeholder="20" value="${data.discount || ''}" style="max-width:48px" min="0">
+    <select style="max-width:60px">
+      <option value="percent" ${data.type!=='fixed'?'selected':''}>%</option>
+      <option value="fixed"   ${data.type==='fixed'?'selected':''}>$</option>
     </select>
     <button class="ddel" onclick="this.closest('.drow').remove()">✕</button>
   `;
@@ -1368,9 +1320,9 @@ function addPartnerRow(data = {}) {
   const row = document.createElement('div');
   row.className = 'drow';
   row.innerHTML = `
-    <input type="text"     placeholder="Name"     value="${data.name||''}"  style="max-width:120px">
+    <input type="text"     placeholder="Name"     value="${data.name||''}"  style="max-width:80px">
     <input type="email"    placeholder="email"    value="${data.email||''}">
-    <input type="password" placeholder="password" value="${data.password||''}" style="max-width:100px">
+    <input type="password" placeholder="password" value="${data.password||''}" style="max-width:70px">
     <button class="ddel" onclick="this.closest('.drow').remove()">✕</button>
   `;
   document.getElementById('partnerList').appendChild(row);
@@ -1412,25 +1364,6 @@ async function saveAccessSettings() {
 }
 
 /* ══════════════════════════════════════════════
-   DRAWER
-══════════════════════════════════════════════ */
-function openDrawer() {
-  document.getElementById('settingsDrawer').classList.add('open');
-  document.getElementById('drawerBackdrop').classList.add('open');
-}
-function closeDrawer() {
-  document.getElementById('settingsDrawer').classList.remove('open');
-  document.getElementById('drawerBackdrop').classList.remove('open');
-}
-function switchDT(name) {
-  ['company','pricing','services','access'].forEach(t => {
-    document.getElementById('dt-' + t).classList.toggle('active', t === name);
-    document.getElementById('dp-' + t).classList.toggle('active', t === name);
-  });
-  if (name === 'services') renderSvcTable();
-}
-
-/* ══════════════════════════════════════════════
    TOAST
 ══════════════════════════════════════════════ */
 function toast(msg, type) {
@@ -1442,7 +1375,7 @@ function toast(msg, type) {
 }
 
 /* ══════════════════════════════════════════════
-   INDEX.HTML JS (sidebar, partner modal, apply)
+   SIDEBAR, PARTNER MODAL, APPLY
 ══════════════════════════════════════════════ */
 const toggle = document.getElementById('sidebarToggle');
 const sidebar = document.getElementById('sidebar');
@@ -1471,7 +1404,41 @@ document.querySelectorAll('a[href^="#"]').forEach(a => a.addEventListener('click
 }));
 
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closePartnerModal({ target: document.getElementById('partnerModalOverlay') }); closeDrawer(); }
+  if (e.key === 'Escape') closePartnerModal({ target: document.getElementById('partnerModalOverlay') });
+});
+
+/* ══════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════ */
+window.addEventListener('pageshow', e => {
+  if (e.persisted && !getSession()) showLoginState();
+});
+
+document.addEventListener('DOMContentLoaded', async () => {
+  document.getElementById('adminPw').addEventListener('keydown', e => { if (e.key === 'Enter') doAdminLogin(); });
+
+  const fbOk = await initFirebase();
+
+  if (getSession()) {
+    await enterAdmin();
+  } else {
+    showLoginState();
+  }
+
+  if (isLocked()) applyLockout();
+
+  // Load public-visible data even before login
+  if (db) {
+    try {
+      const compDoc = await db.collection('settings').doc('company').get();
+      if (compDoc.exists) applyCompanyToPage(compDoc.data());
+      const teamDoc = await db.collection('content').doc('team').get();
+      if (teamDoc.exists) applyAllTeamMembers(teamDoc.data());
+      const svcDoc = await db.collection('catalog').doc('services').get();
+      if (svcDoc.exists && svcDoc.data().items) { services = svcDoc.data().items; renderSolGrid(); }
+    } catch(e) {}
+  }
+  if (!services.length) { await loadServicesLocal(); renderSolGrid(); }
 });
 </script>
 </body>

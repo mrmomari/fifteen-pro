@@ -1049,30 +1049,30 @@ body{
     <div class="team-grid">
 
       <div class="team-card">
-        <div class="team-photo" style="background:linear-gradient(135deg,#26915E,#1d7a4c)">
-          <span class="team-photo-initials">01</span>
+        <div class="team-photo" id="tmPhoto0" style="background:linear-gradient(135deg,#26915E,#1d7a4c)">
+          <span class="team-photo-initials" id="tmInit0">01</span>
         </div>
-        <div class="team-name">Team Member Name</div>
-        <div class="team-role">Co-Founder &amp; Managing Director</div>
-        <div class="team-bio">Add this person's background, industry experience, and key achievements here. Click Edit Mode in admin to update this text.</div>
+        <div class="team-name" id="tmName0">Team Member Name</div>
+        <div class="team-role" id="tmRole0">Co-Founder &amp; Managing Director</div>
+        <div class="team-bio" id="tmBio0">Add this person's background, industry experience, and key achievements here.</div>
       </div>
 
       <div class="team-card">
-        <div class="team-photo" style="background:linear-gradient(135deg,#E36C44,#c95a34)">
-          <span class="team-photo-initials">02</span>
+        <div class="team-photo" id="tmPhoto1" style="background:linear-gradient(135deg,#E36C44,#c95a34)">
+          <span class="team-photo-initials" id="tmInit1">02</span>
         </div>
-        <div class="team-name">Team Member Name</div>
-        <div class="team-role">Head of Digital Strategy</div>
-        <div class="team-bio">Add this person's background, industry experience, and key achievements here. Click Edit Mode in admin to update this text.</div>
+        <div class="team-name" id="tmName1">Team Member Name</div>
+        <div class="team-role" id="tmRole1">Head of Digital Strategy</div>
+        <div class="team-bio" id="tmBio1">Add this person's background, industry experience, and key achievements here.</div>
       </div>
 
       <div class="team-card">
-        <div class="team-photo" style="background:linear-gradient(135deg,#2d6a9f,#1a5480)">
-          <span class="team-photo-initials">03</span>
+        <div class="team-photo" id="tmPhoto2" style="background:linear-gradient(135deg,#2d6a9f,#1a5480)">
+          <span class="team-photo-initials" id="tmInit2">03</span>
         </div>
-        <div class="team-name">Team Member Name</div>
-        <div class="team-role">Business Transformation Lead</div>
-        <div class="team-bio">Add this person's background, industry experience, and key achievements here. Click Edit Mode in admin to update this text.</div>
+        <div class="team-name" id="tmName2">Team Member Name</div>
+        <div class="team-role" id="tmRole2">Business Transformation Lead</div>
+        <div class="team-bio" id="tmBio2">Add this person's background, industry experience, and key achievements here.</div>
       </div>
 
     </div>
@@ -1371,6 +1371,25 @@ document.querySelectorAll('a[href^="#"]').forEach(a=>{
       if (ftSocRow) ftSocRow.style.display = hasSocial ? 'flex' : 'none';
       const sfContact = document.getElementById('sfContact');
       if (sfContact) sfContact.style.display = (addr || hasSocial) ? 'block' : 'none';
+    }).catch(() => {});
+    db.collection('content').doc('team').get().then(doc => {
+      if (!doc.exists) return;
+      (doc.data().members || []).forEach((m, i) => {
+        const ph = document.getElementById('tmPhoto' + i);
+        const nm = document.getElementById('tmName' + i);
+        const rl = document.getElementById('tmRole' + i);
+        const bi = document.getElementById('tmBio' + i);
+        const ini = document.getElementById('tmInit' + i);
+        if (m.photo && ph) {
+          let img = ph.querySelector('img');
+          if (!img) { img = document.createElement('img'); ph.appendChild(img); }
+          img.src = m.photo;
+          if (ini) ini.style.display = 'none';
+        }
+        if (m.name && nm) nm.textContent = m.name;
+        if (m.role && rl) rl.textContent = m.role;
+        if (m.bio  && bi) bi.textContent = m.bio;
+      });
     }).catch(() => {});
   } catch(e) {}
 })();
