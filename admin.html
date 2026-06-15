@@ -439,15 +439,18 @@ async function initFirebase(config) {
 function setCloudBadge(connected) {
   const el = document.getElementById('cloudBadge');
   const banner = document.getElementById('firebaseBanner');
+  const btn = document.getElementById('saveBtn');
   if (connected) {
     el.textContent = '☁ Cloud sync on';
     el.className = 'cloud-badge';
     if (banner) banner.style.display = 'none';
     document.getElementById('syncStatus').textContent = 'changes sync to cloud automatically';
+    btn.textContent = '☁ Save to Cloud';
   } else {
     el.textContent = '○ Local only';
     el.className = 'cloud-badge disconnected';
     document.getElementById('syncStatus').textContent = 'download to publish changes';
+    btn.textContent = '↓ Download prices.json';
   }
 }
 
@@ -611,7 +614,8 @@ function toggleActive(id, checkbox) {
 function markDirty() {
   if (!isDirty) {
     isDirty = true;
-    document.getElementById('saveBtn').textContent = '↓ Download prices.json ●';
+    const btn = document.getElementById('saveBtn');
+    btn.textContent = btn.textContent.replace(' ●', '') + ' ●';
   }
 }
 
@@ -640,7 +644,7 @@ async function handleSave() {
       await db.collection('catalog').doc('services').set({ items: updated, lastUpdated: payload.lastUpdated });
       services = updated;
       isDirty = false;
-      document.getElementById('saveBtn').textContent = '↓ Download prices.json';
+      document.getElementById('saveBtn').textContent = '☁ Save to Cloud';
       showToast('✓ Saved to cloud', 'success');
       return;
     } catch(e) {
@@ -657,7 +661,7 @@ async function handleSave() {
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   services = updated;
   isDirty = false;
-  document.getElementById('saveBtn').textContent = '↓ Download prices.json';
+  document.getElementById('saveBtn').textContent = db ? '☁ Save to Cloud' : '↓ Download prices.json';
   showToast('✓ Downloaded — upload to GitHub to go live', 'success');
 }
 
