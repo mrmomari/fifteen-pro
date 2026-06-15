@@ -543,15 +543,29 @@ body{
   .sidebar-overlay.open{display:block}
   .sidebar-toggle{display:flex}
   .main-wrap{margin-left:0}
+  .container{padding:0 18px}
+  .section{padding:52px 0}
   .problem-grid,.sol-grid{grid-template-columns:1fr}
   .invest-grid{grid-template-columns:1fr}
   .invest-side:first-child{border-right:none;border-bottom:1px solid rgba(0,0,0,0.08)}
-  .invest-side{padding:40px 24px}
-  .pricing-grid{grid-template-columns:1fr;max-width:400px}
-  .form-wrap{padding:32px 22px}
+  .invest-side{padding:32px 18px}
+  .pricing-grid{grid-template-columns:1fr;max-width:100%}
+  .form-wrap{padding:28px 18px}
   .form-row{grid-template-columns:1fr}
-  .hero{padding:72px 0 48px}
+  .hero{padding:60px 0 44px}
   .hero h1{font-size:28px}
+  .hero-sub{font-size:15px}
+  .stat-row{max-width:100%}
+  .section-title{font-size:24px}
+  .t-title{font-size:19px}
+  .invest-title{font-size:21px}
+}
+@media(max-width:400px){
+  .container{padding:0 14px}
+  .hero h1{font-size:24px}
+  .stat-num{font-size:32px}
+  .sol-col,.prob-card{padding:18px 14px}
+  .form-wrap{padding:22px 14px}
 }
 @media(prefers-reduced-motion:reduce){
   *{animation:none!important;transition:none!important}
