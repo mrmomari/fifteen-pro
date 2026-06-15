@@ -6,957 +6,1342 @@
 <title>Admin — Fifteen</title>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 <script src="firebase-config.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
+/* ── Base (same as index.html) ── */
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased;min-height:100vh}
+html{scroll-behavior:smooth}
+body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
 :root{
   --green:#26915E;--green-dim:#1d7a4c;--orange:#E36C44;
-  --cream:#E0E8CF;--cream-alt:#D5DFBE;
+  --cream:#E0E8CF;--cream-sidebar:#C6D3A4;--cream-alt:#D5DFBE;
   --text:#1C2416;--text-muted:#5A6B4E;--text-dim:#7A8B6A;
-  --radius:10px;--radius-lg:14px;
+  --sidebar-w:268px;--radius:12px;--radius-lg:16px;
 }
+.app-layout{display:flex;min-height:100vh}
+.sidebar{width:var(--sidebar-w);height:100vh;background:var(--cream-sidebar);border-right:1px solid rgba(0,0,0,0.1);position:fixed;top:0;left:0;display:flex;flex-direction:column;z-index:100;overflow:hidden}
+.sidebar-inner{padding:28px 20px 20px;flex:1;overflow-y:auto;display:flex;flex-direction:column}
+.sidebar-logo{font-size:24px;font-weight:900;letter-spacing:-.04em;color:var(--text);text-decoration:none;display:block;margin-bottom:32px}
+.sidebar-logo span{color:var(--green)}
+.sidebar-section-label{font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;padding:0 8px}
+.sidebar-nav{display:flex;flex-direction:column;gap:2px;margin-bottom:24px}
+.sidebar-link{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;color:var(--text-muted);transition:all .15s}
+.sidebar-link:hover{background:rgba(0,0,0,0.07);color:var(--text)}
+.sidebar-link svg{opacity:.65;flex-shrink:0}
+.sidebar-divider{height:1px;background:rgba(0,0,0,0.1);margin:18px 0}
+.top-bar{display:flex;align-items:center;justify-content:flex-end;padding:10px 32px;border-bottom:1px solid rgba(0,0,0,0.07);background:#fff;position:sticky;top:0;z-index:50}
+.partner-login-btn{display:flex;align-items:center;gap:7px;padding:8px 16px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s}
+.partner-login-btn:hover{background:var(--green-dim)}
+.partner-modal-overlay{display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);align-items:center;justify-content:center}
+.partner-modal-overlay.open{display:flex}
+.partner-modal{background:#fff;border-radius:14px;padding:32px 28px;width:340px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.partner-modal h3{margin:0 0 4px;font-size:16px;font-weight:700;color:#111}
+.partner-modal p{margin:0 0 20px;font-size:12px;color:#888}
+.partner-modal-input{width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;outline:none;transition:border-color .2s;margin-bottom:10px;font-family:inherit}
+.partner-modal-input:focus{border-color:var(--green)}
+.partner-modal-actions{display:flex;gap:8px;margin-top:6px}
+.partner-modal-actions button{flex:1;padding:10px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+.partner-modal-actions .btn-cancel{background:#f0f0f0;color:#555}
+.partner-modal-actions .btn-go{background:var(--green);color:#fff}
+.sidebar-resources{display:flex;flex-direction:column;gap:2px;margin-bottom:20px}
+.resource-link{display:flex;align-items:center;gap:9px;padding:8px 12px;border-radius:8px;text-decoration:none;font-size:12px;font-weight:500;color:var(--text-muted);transition:all .15s}
+.resource-link:hover{background:rgba(0,0,0,0.07);color:var(--text)}
+.resource-link svg{opacity:.55;flex-shrink:0}
+.ext-arrow{margin-left:auto;opacity:0;font-size:10px;color:var(--green);transition:opacity .15s}
+.resource-link:hover .ext-arrow{opacity:1}
+.sidebar-footer{padding:16px 20px;font-size:10px;color:var(--text-dim);border-top:1px solid rgba(0,0,0,0.09);letter-spacing:.02em;display:flex;align-items:center;justify-content:space-between}
+.sidebar-toggle{display:none;position:fixed;top:14px;right:14px;z-index:200;background:var(--orange);color:#fff;border:none;border-radius:8px;width:44px;height:44px;cursor:pointer;align-items:center;justify-content:center;box-shadow:0 3px 14px rgba(227,108,68,.4)}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.25);z-index:99;backdrop-filter:blur(2px)}
+.main-wrap{margin-left:var(--sidebar-w);flex:1;min-width:0}
+.container{max-width:980px;margin:0 auto;padding:0 32px}
+.glow-btn{display:inline-block;background:var(--orange);color:#fff;border:none;padding:15px 34px;font-size:15px;font-weight:800;border-radius:8px;cursor:pointer;letter-spacing:.04em;text-decoration:none;transition:all .2s;box-shadow:0 4px 20px rgba(227,108,68,.32)}
+.glow-btn:hover{background:#ec7850;box-shadow:0 6px 28px rgba(227,108,68,.5);transform:translateY(-2px)}
+.outline-btn{display:inline-block;background:transparent;color:var(--green);border:1.5px solid var(--green);padding:13px 26px;font-size:14px;font-weight:600;border-radius:8px;cursor:pointer;text-decoration:none;transition:all .2s}
+.outline-btn:hover{background:rgba(38,145,94,.09)}
+.badge{display:inline-block;background:rgba(38,145,94,.1);color:var(--green);border:1px solid rgba(38,145,94,.22);padding:5px 15px;border-radius:20px;font-size:11px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;margin-bottom:20px}
+.hero{padding:96px 0 72px;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-80px;left:50%;transform:translateX(-50%);width:700px;height:500px;background:radial-gradient(ellipse at center,rgba(38,145,94,.07) 0%,transparent 68%);pointer-events:none}
+.hero h1{font-size:clamp(30px,4.2vw,56px);font-weight:900;line-height:1.07;letter-spacing:-.03em;color:var(--text);margin-bottom:22px;max-width:760px;margin-left:auto;margin-right:auto}
+.hero h1 .highlight{color:var(--orange)}
+.hero-sub{font-size:16px;color:var(--text-muted);max-width:560px;margin:0 auto 44px;line-height:1.82;font-weight:400}
+.urgency{margin-top:20px;font-size:12px;color:var(--text-dim);letter-spacing:.03em;display:flex;align-items:center;justify-content:center;gap:10px}
+.pulse-dot{width:7px;height:7px;border-radius:50%;background:var(--orange);flex-shrink:0;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(227,108,68,.4)}50%{opacity:.6;box-shadow:0 0 0 6px rgba(227,108,68,0)}}
+.stat-row{display:flex;margin-top:56px;border:1px solid rgba(0,0,0,0.1);border-radius:var(--radius-lg);overflow:hidden;background:rgba(255,255,255,0.45);max-width:460px;margin-left:auto;margin-right:auto;box-shadow:0 2px 14px rgba(0,0,0,0.06)}
+.stat{flex:1;padding:26px 18px;text-align:center;border-right:1px solid rgba(0,0,0,0.08)}
+.stat:last-child{border-right:none}
+.stat-num{font-size:38px;font-weight:900;color:var(--orange);line-height:1;letter-spacing:-.03em}
+.stat-label{font-size:10px;color:var(--text-dim);margin-top:7px;text-transform:uppercase;letter-spacing:.1em;font-weight:600}
+.section{padding:80px 0}
+.section-title{font-size:clamp(24px,3vw,38px);font-weight:900;line-height:1.1;letter-spacing:-.025em;margin-bottom:14px;color:var(--text)}
+.section-sub{font-size:15px;color:var(--text-muted);max-width:500px;margin-bottom:48px;line-height:1.82}
+.green{color:var(--green)}
+.alt-section{background:var(--cream-alt);border-top:1px solid rgba(0,0,0,0.07);border-bottom:1px solid rgba(0,0,0,0.07)}
+.problem-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.prob-card{background:rgba(255,255,255,0.5);border:1px solid rgba(0,0,0,0.08);border-radius:var(--radius);padding:30px 24px;transition:all .25s;box-shadow:0 2px 8px rgba(0,0,0,0.04)}
+.prob-card:hover{background:rgba(255,255,255,0.72);transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,0.08)}
+.prob-icon{width:42px;height:42px;border-radius:9px;background:rgba(38,145,94,.09);border:1px solid rgba(38,145,94,.18);display:flex;align-items:center;justify-content:margin-bottom:18px}
+.prob-icon{display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:9px;background:rgba(38,145,94,.09);border:1px solid rgba(38,145,94,.18);margin-bottom:18px}
+.prob-title{font-size:15px;font-weight:800;color:var(--text);margin-bottom:9px;letter-spacing:-.01em}
+.prob-desc{font-size:13px;color:var(--text-muted);line-height:1.75}
+.sol-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.sol-col{background:rgba(255,255,255,0.42);border:1px solid rgba(0,0,0,0.08);border-radius:var(--radius);padding:22px 18px;box-shadow:0 2px 6px rgba(0,0,0,0.04)}
+.phase-header{font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--green);margin-bottom:16px;padding-bottom:11px;border-bottom:1px solid rgba(38,145,94,.15);display:flex;align-items:center;gap:8px}
+.product-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(0,0,0,0.05);cursor:default;transition:all .15s}
+.product-item:last-child{border-bottom:none}
+.product-item:hover .prod-name{color:var(--green)}
+.prod-num{font-size:10px;font-weight:800;color:var(--green);min-width:20px;font-family:monospace;letter-spacing:.05em}
+.prod-name{font-size:13px;color:var(--text-muted);font-weight:500;transition:color .15s;flex:1}
+.prod-arrow{opacity:0;color:var(--green);font-size:12px;transition:all .15s;font-weight:700}
+.product-item:hover .prod-arrow{opacity:1}
+.invest-grid{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.invest-side{padding:60px 50px}
+.invest-side:first-child{border-right:1px solid rgba(0,0,0,0.08)}
+.invest-label{font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--green);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.invest-title{font-size:24px;font-weight:900;color:var(--text);margin-bottom:14px;line-height:1.25;letter-spacing:-.02em}
+.divider{width:34px;height:1.5px;background:var(--green);opacity:.35;margin:14px 0}
+.invest-body{font-size:14px;color:var(--text-muted);line-height:1.85}
+.timeline{position:relative;padding-left:36px;max-width:580px}
+.timeline::before{content:'';position:absolute;left:11px;top:14px;bottom:14px;width:1px;background:linear-gradient(to bottom,rgba(38,145,94,.65),rgba(38,145,94,.04))}
+.t-item{position:relative;margin-bottom:52px}
+.t-item:last-child{margin-bottom:0}
+.t-dot{position:absolute;left:-30px;top:7px;width:12px;height:12px;border-radius:50%;background:var(--green);border:2.5px solid var(--cream);box-shadow:0 0 0 3px rgba(38,145,94,.2)}
+.t-phase{font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--green);margin-bottom:7px}
+.t-title{font-size:21px;font-weight:900;color:var(--text);margin-bottom:9px;letter-spacing:-.02em}
+.t-body{font-size:14px;color:var(--text-muted);line-height:1.8}
+.pricing-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:720px;margin:0 auto}
+.price-card{background:rgba(255,255,255,0.52);border:1px solid rgba(0,0,0,0.09);border-radius:var(--radius-lg);padding:38px 34px;transition:all .25s;position:relative;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.05)}
+.price-card:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(0,0,0,0.1)}
+.price-card.featured{border-color:rgba(227,108,68,.35);background:rgba(255,255,255,0.72)}
+.featured-ribbon{position:absolute;top:20px;right:-36px;background:var(--orange);color:#fff;font-size:9px;font-weight:900;letter-spacing:.12em;padding:6px 48px;transform:rotate(45deg)}
+.price-tier{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-dim);margin-bottom:7px}
+.price-name{font-size:19px;font-weight:900;color:var(--text);margin-bottom:22px;letter-spacing:-.02em}
+.price-main{font-size:46px;font-weight:900;color:var(--text);line-height:1;letter-spacing:-.03em}
+.price-main sub{font-size:15px;color:var(--text-dim);font-weight:400;vertical-align:baseline;letter-spacing:0}
+.price-total{font-size:13px;color:var(--text-dim);margin-top:7px;margin-bottom:26px}
+.price-feats{list-style:none;margin-bottom:28px}
+.price-feats li{font-size:13px;color:var(--text-muted);padding:7px 0;border-bottom:1px solid rgba(0,0,0,0.06);display:flex;align-items:center;gap:10px}
+.price-feats li::before{content:'→';color:var(--green);font-size:12px;font-weight:700;flex-shrink:0}
+.price-feats li:last-child{border-bottom:none}
+.form-wrap{background:rgba(255,255,255,0.5);border:1px solid rgba(0,0,0,0.09);border-radius:var(--radius-lg);padding:48px 52px;max-width:660px;margin:0 auto;box-shadow:0 4px 22px rgba(0,0,0,0.06)}
+.availability-bar{background:rgba(38,145,94,.07);border:1px solid rgba(38,145,94,.15);border-radius:8px;padding:12px 18px;display:flex;align-items:center;gap:12px;margin-bottom:36px}
+.avail-text{font-size:12px;color:var(--text-muted);font-weight:500}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:0}
+.form-row.single{grid-template-columns:1fr}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+.field label{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted)}
+.field input,.field select{background:rgba(255,255,255,0.8);border:1px solid rgba(0,0,0,0.12);border-radius:8px;padding:11px 14px;color:var(--text);font-size:14px;font-family:inherit;transition:border-color .15s,box-shadow .15s;outline:none;appearance:none;-webkit-appearance:none;width:100%}
+.field input:focus,.field select:focus{border-color:rgba(38,145,94,.4);box-shadow:0 0 0 3px rgba(38,145,94,.08)}
+.field input::placeholder{color:var(--text-dim)}
+.field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23666' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;background-color:rgba(255,255,255,0.8);padding-right:40px;cursor:pointer}
+.field select option{background:#fff;color:var(--text)}
+.form-submit{width:100%;padding:15px;font-size:15px;margin-top:6px}
+.form-sub{text-align:center;margin-top:18px;font-size:12px;color:var(--text-dim)}
+.partners-strip{padding:48px 0 44px;background:#fff;border-top:1px solid rgba(0,0,0,0.07);border-bottom:1px solid rgba(0,0,0,0.07);overflow:hidden}
+.partners-heading{text-align:center;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:28px}
+.partners-track-wrap{position:relative;overflow:hidden}
+.partners-track-wrap::before,.partners-track-wrap::after{content:'';position:absolute;top:0;bottom:0;width:80px;z-index:2;pointer-events:none}
+.partners-track-wrap::before{left:0;background:linear-gradient(to right,#fff,transparent)}
+.partners-track-wrap::after{right:0;background:linear-gradient(to left,#fff,transparent)}
+.partners-track{display:flex;flex-wrap:nowrap;gap:16px;animation:marquee 38s linear infinite;will-change:transform}
+.partners-track:hover{animation-play-state:paused}
+@keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.partner-card{display:flex;align-items:center;justify-content:center;min-width:130px;height:72px;padding:10px 16px;background:#fff;border:1.5px solid rgba(0,0,0,0.08);border-radius:12px;flex-shrink:0;transition:border-color .2s,box-shadow .2s}
+.partner-card:hover{border-color:rgba(38,145,94,.3);box-shadow:0 3px 16px rgba(0,0,0,0.07)}
+.partner-card-name{font-size:11px;font-weight:700;color:var(--text-muted);text-align:center;line-height:1.3;letter-spacing:-.01em}
+.footer{padding:40px 0;border-top:1px solid rgba(0,0,0,0.08);text-align:center;background:var(--cream-alt)}
+.footer-logo{font-size:26px;font-weight:900;letter-spacing:-.04em;color:var(--text);margin-bottom:8px}
+.footer-logo span{color:var(--green)}
+.footer-copy{font-size:12px;color:var(--text-dim);line-height:1.8}
+.icon{display:inline-block;vertical-align:middle;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.text-center{text-align:center}
+.mx-auto{margin-left:auto;margin-right:auto}
 
-/* ── Login ── */
-#loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
-.login-box{background:rgba(255,255,255,.55);border:1px solid rgba(0,0,0,.1);border-radius:20px;padding:48px 44px;width:100%;max-width:380px;box-shadow:0 8px 40px rgba(0,0,0,.1);text-align:center}
-.login-logo{font-size:28px;font-weight:900;letter-spacing:-.04em;margin-bottom:6px}
-.login-logo span{color:var(--green)}
-.login-sub{font-size:13px;color:var(--text-muted);margin-bottom:36px}
-.login-label{display:block;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);text-align:left;margin-bottom:6px}
-.login-input{width:100%;padding:12px 14px;background:rgba(255,255,255,.8);border:1px solid rgba(0,0,0,.12);border-radius:8px;font-size:14px;font-family:inherit;color:var(--text);outline:none;margin-bottom:14px;transition:border-color .15s,box-shadow .15s}
-.login-input:focus{border-color:rgba(38,145,94,.4);box-shadow:0 0 0 3px rgba(38,145,94,.08)}
-.login-btn{width:100%;padding:13px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.04em;transition:background .15s}
-.login-btn:hover{background:var(--green-dim)}
-.login-error{font-size:12px;color:#c0392b;margin-top:10px;display:none}
+/* ── Admin Overlay ── */
+#adminOverlay{position:fixed;inset:0;z-index:9990;background:rgba(28,36,22,.75);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center}
+#adminOverlay.hidden{display:none}
+.alc{background:rgba(255,255,255,.97);border-radius:20px;padding:44px 40px;width:360px;box-shadow:0 24px 80px rgba(0,0,0,.3);text-align:center}
+.alc-logo{font-size:26px;font-weight:900;letter-spacing:-.04em;margin-bottom:6px}
+.alc-logo span{color:var(--green)}
+.alc-sub{font-size:12px;color:var(--text-muted);margin-bottom:28px}
+.alc-input{width:100%;padding:12px 14px;border:1.5px solid rgba(0,0,0,.12);border-radius:9px;font-size:14px;font-family:inherit;color:var(--text);outline:none;margin-bottom:12px;transition:border-color .15s,box-shadow .15s}
+.alc-input:focus{border-color:rgba(38,145,94,.5);box-shadow:0 0 0 3px rgba(38,145,94,.1)}
+.alc-input:disabled{opacity:.5;cursor:not-allowed}
+.alc-btn{width:100%;padding:13px;background:var(--green);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:800;cursor:pointer;transition:background .15s;font-family:inherit}
+.alc-btn:hover{background:var(--green-dim)}
+.alc-btn:disabled{opacity:.5;cursor:not-allowed}
+.alc-msg{font-size:12px;margin-top:10px;display:none}
+.alc-msg.error{color:#c0392b}
+.alc-msg.warn{color:var(--orange)}
 
-/* ── Admin panel ── */
-#adminPanel{display:none;padding-bottom:80px}
+/* ── Admin Toolbar ── */
+#adminToolbar{position:fixed;bottom:0;left:0;right:0;z-index:9980;background:rgba(28,36,22,.96);backdrop-filter:blur(12px);border-top:1px solid rgba(255,255,255,.08);padding:10px 24px;display:none;align-items:center;justify-content:space-between;gap:12px}
+body.admin-active{padding-bottom:58px}
+.at-left{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.at-brand{font-size:13px;font-weight:900;color:#fff;letter-spacing:-.02em}
+.at-brand span{color:var(--green)}
+.at-sync{font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(38,145,94,.18);color:#9EE8BF;border:1px solid rgba(38,145,94,.3)}
+.at-sync.off{background:rgba(255,255,255,.07);color:rgba(255,255,255,.4);border-color:rgba(255,255,255,.1)}
+.at-center{display:flex;align-items:center;gap:7px}
+.at-btn{padding:8px 15px;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s;letter-spacing:.01em}
+.at-edit{background:rgba(255,255,255,.1);color:#fff}
+.at-edit:hover,.at-edit.on{background:var(--green);color:#fff}
+.at-settings{background:rgba(255,255,255,.1);color:#fff}
+.at-settings:hover{background:rgba(255,255,255,.18)}
+.at-save{background:var(--orange);color:#fff;display:none;box-shadow:0 2px 10px rgba(227,108,68,.3)}
+.at-save:hover{background:#ec7850}
+.at-logout{background:none;color:rgba(255,255,255,.45)}
+.at-logout:hover{color:rgba(255,255,255,.8)}
 
-.admin-topbar{background:var(--text);padding:14px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
-.admin-logo{font-size:18px;font-weight:900;letter-spacing:-.03em;color:#fff}
-.admin-logo span{color:var(--green)}
-.topbar-label{font-size:11px;font-weight:500;color:rgba(255,255,255,.45);margin-left:8px}
-.topbar-right{display:flex;align-items:center;gap:12px}
-.admin-save-btn{padding:9px 22px;background:var(--orange);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:800;cursor:pointer;letter-spacing:.03em;transition:all .2s;box-shadow:0 3px 12px rgba(227,108,68,.35)}
-.admin-save-btn:hover{background:#ec7850;transform:translateY(-1px)}
-.admin-save-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
-.cloud-badge{font-size:11px;font-weight:700;padding:5px 12px;background:rgba(38,145,94,.18);color:#9EE8BF;border:1px solid rgba(38,145,94,.3);border-radius:20px;letter-spacing:.02em}
-.cloud-badge.disconnected{background:rgba(255,255,255,.07);color:rgba(255,255,255,.4);border-color:rgba(255,255,255,.1)}
-.admin-logout{font-size:12px;color:rgba(255,255,255,.5);background:none;border:none;cursor:pointer;text-decoration:underline;transition:color .15s}
-.admin-logout:hover{color:rgba(255,255,255,.8)}
+/* ── Edit Mode ── */
+.edit-mode [data-editable]{outline:2px dashed rgba(38,145,94,.3);outline-offset:3px;border-radius:3px;cursor:text;transition:outline-color .15s,background .15s}
+.edit-mode [data-editable]:hover{outline-color:rgba(38,145,94,.7);background:rgba(38,145,94,.04)}
+.edit-mode [data-editable]:focus{outline:2px solid var(--green);outline-offset:3px;background:rgba(38,145,94,.06)}
 
-/* ── Tab navigation ── */
-.admin-tabs{background:rgba(0,0,0,.06);border-bottom:1px solid rgba(0,0,0,.1);padding:0 32px}
-.admin-tabs-inner{display:flex;gap:0;max-width:900px;margin:0 auto}
-.admin-tab{padding:13px 22px;border:none;background:none;font-size:13px;font-weight:700;color:var(--text-muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;letter-spacing:.01em;transition:all .15s}
-.admin-tab:hover{color:var(--text)}
-.admin-tab.active{color:var(--green);border-bottom-color:var(--green)}
+/* ── Settings Drawer ── */
+#settingsDrawer{position:fixed;top:0;right:0;bottom:0;width:500px;max-width:100%;background:#E0E8CF;border-left:1px solid rgba(0,0,0,.1);z-index:9970;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;box-shadow:-8px 0 40px rgba(0,0,0,.12)}
+#settingsDrawer.open{transform:translateX(0)}
+.drawer-header{padding:18px 22px;background:var(--text);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.drawer-title{font-size:14px;font-weight:800;color:#fff;letter-spacing:-.01em}
+.drawer-close{width:30px;height:30px;border-radius:7px;background:rgba(255,255,255,.1);border:none;color:#fff;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
+.drawer-close:hover{background:rgba(255,255,255,.2)}
+.drawer-tabs{display:flex;padding:10px 14px 0;gap:3px;border-bottom:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.25);flex-shrink:0}
+.dt{padding:8px 13px;border:none;background:transparent;border-radius:7px 7px 0 0;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--text-muted);transition:all .15s;margin-bottom:-1px;border-bottom:2px solid transparent}
+.dt:hover{color:var(--text)}
+.dt.active{color:var(--green);border-bottom-color:var(--green);background:rgba(255,255,255,.4)}
+.drawer-body{flex:1;overflow-y:auto;padding:18px}
+.dp{display:none}
+.dp.active{display:block}
+.dsec{background:rgba(255,255,255,.52);border:1px solid rgba(0,0,0,.09);border-radius:12px;padding:18px;margin-bottom:12px}
+.dsec-title{font-size:12px;font-weight:800;color:var(--text);margin-bottom:3px}
+.dsec-desc{font-size:11px;color:var(--text-muted);margin-bottom:12px}
+.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.dgrid.single{grid-template-columns:1fr}
+.df{display:flex;flex-direction:column;gap:4px}
+.df.wide{grid-column:span 2}
+.dlbl{font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted)}
+.din{padding:8px 10px;background:rgba(255,255,255,.85);border:1px solid rgba(0,0,0,.12);border-radius:7px;font-size:12px;font-family:inherit;color:var(--text);outline:none;transition:border-color .15s,box-shadow .15s;width:100%}
+.din:focus{border-color:rgba(38,145,94,.45);box-shadow:0 0 0 3px rgba(38,145,94,.08)}
+textarea.din{resize:vertical;min-height:60px}
+select.din{cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23666' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center;padding-right:26px}
+.dsave{margin-top:12px;padding:9px 20px;background:var(--green);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;transition:all .15s;box-shadow:0 2px 8px rgba(38,145,94,.2)}
+.dsave:hover{background:var(--green-dim)}
+.logo-preview{width:100%;height:68px;border-radius:7px;border:1.5px dashed rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;overflow:hidden;background:rgba(255,255,255,.6);margin-top:7px}
+.logo-preview img{max-width:100%;max-height:58px;object-fit:contain}
+.logo-preview .nolgo{font-size:11px;color:var(--text-dim)}
+.logo-upload-lbl{display:inline-block;padding:7px 13px;background:rgba(255,255,255,.8);border:1px solid rgba(0,0,0,.12);border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;color:var(--text-muted);margin-top:7px;transition:all .15s}
+.logo-upload-lbl:hover{background:rgba(255,255,255,.95);color:var(--text)}
 
-/* ── Admin body ── */
-.admin-body{max-width:900px;margin:0 auto;padding:36px 24px}
+/* Services table */
+.svc-table{border-radius:8px;overflow:hidden;border:1px solid rgba(0,0,0,.09)}
+.svc-head,.svc-row{display:grid;grid-template-columns:22px 1fr 36px 68px 56px 24px;gap:5px;padding:7px 10px;align-items:center}
+.svc-head{background:rgba(0,0,0,.06);font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted)}
+.svc-row{background:rgba(255,255,255,.55);border-top:1px solid rgba(0,0,0,.06)}
+.svc-row:hover{background:rgba(255,255,255,.8)}
+.svc-id{font-size:10px;font-weight:800;color:var(--green);font-family:monospace}
+.svc-name{font-size:11px;font-weight:600;color:var(--text)}
+.svc-ph{font-size:9px;font-weight:700;color:var(--text-muted)}
+.svc-pin{width:100%;padding:4px 6px;border:1px solid rgba(0,0,0,.12);border-radius:5px;font-size:11px;font-weight:700;font-family:inherit;color:var(--text);background:rgba(255,255,255,.9);outline:none}
+.svc-pin:focus{border-color:rgba(38,145,94,.4)}
+.svc-sel{width:100%;padding:4px 3px;border:1px solid rgba(0,0,0,.12);border-radius:5px;font-size:9px;font-family:inherit;color:var(--text);background:rgba(255,255,255,.9);outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;text-align:center}
+.svc-del{padding:3px 6px;background:rgba(220,50,50,.08);color:#c0392b;border:1px solid rgba(220,50,50,.15);border-radius:4px;font-size:10px;cursor:pointer;font-weight:700}
+.svc-del:hover{background:rgba(220,50,50,.2)}
+.add-svc-btn{width:100%;padding:8px;background:transparent;color:var(--green);border:1px dashed rgba(38,145,94,.4);border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;margin-top:7px;transition:all .15s;font-family:inherit}
+.add-svc-btn:hover{background:rgba(38,145,94,.06);border-color:rgba(38,145,94,.6)}
+.add-svc-form{display:none;margin-top:9px;padding:12px;background:rgba(38,145,94,.06);border-radius:8px;border:1px solid rgba(38,145,94,.18)}
 
-/* ── Firebase banner ── */
-.firebase-banner{display:flex;align-items:center;gap:14px;background:rgba(38,145,94,.07);border:1px solid rgba(38,145,94,.18);border-radius:var(--radius);padding:14px 18px;margin-bottom:20px}
-.fb-title{font-size:13px;font-weight:700;color:var(--text)}
-.fb-desc{font-size:12px;color:var(--text-muted)}
-.fb-desc a{color:var(--green);font-weight:600;cursor:pointer;text-decoration:none}
-.fb-desc a:hover{text-decoration:underline}
-.fb-close{margin-left:auto;background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:16px;line-height:1;padding:4px}
+/* Promo & partner rows */
+.row-list{display:flex;flex-direction:column;gap:5px;margin-bottom:7px}
+.drow{display:flex;align-items:center;gap:5px;padding:7px 9px;background:rgba(255,255,255,.65);border:1px solid rgba(0,0,0,.09);border-radius:7px;flex-wrap:wrap}
+.drow input,.drow select{padding:5px 7px;background:rgba(255,255,255,.9);border:1px solid rgba(0,0,0,.12);border-radius:5px;font-size:11px;font-family:inherit;color:var(--text);outline:none;flex:1;min-width:70px}
+.drow input:focus,.drow select:focus{border-color:rgba(38,145,94,.4)}
+.drow-hint{font-size:9px;color:var(--text-dim);font-weight:700;white-space:nowrap;flex-shrink:0}
+.ddel{padding:4px 7px;background:rgba(220,50,50,.08);color:#c0392b;border:1px solid rgba(220,50,50,.15);border-radius:5px;font-size:10px;cursor:pointer;font-weight:700;flex-shrink:0}
+.ddel:hover{background:rgba(220,50,50,.15)}
+.dadd{padding:6px 12px;background:transparent;color:var(--green);border:1px dashed rgba(38,145,94,.4);border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;font-family:inherit;margin-top:5px}
+.dadd:hover{background:rgba(38,145,94,.06);border-color:rgba(38,145,94,.6)}
 
-/* ── Status bar ── */
-.status-bar{display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.5);border:1px solid rgba(0,0,0,.09);border-radius:10px;padding:14px 20px;margin-bottom:28px}
-.status-left{font-size:13px;color:var(--text-muted)}
-.status-left strong{color:var(--text)}
-.status-badge{font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px}
-.status-badge.ok{background:rgba(38,145,94,.12);color:var(--green);border:1px solid rgba(38,145,94,.2)}
-.status-badge.warn{background:rgba(227,108,68,.1);color:var(--orange);border:1px solid rgba(227,108,68,.2)}
+/* Backdrop */
+#drawerBackdrop{display:none;position:fixed;inset:0;z-index:9960;background:rgba(0,0,0,.3);backdrop-filter:blur(2px)}
+#drawerBackdrop.open{display:block}
 
-/* ── Service cards ── */
-.section-heading{display:flex;align-items:center;gap:10px;margin-bottom:16px}
-.section-heading h2{font-size:15px;font-weight:800;color:var(--text)}
-.phase-pill{font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--green);background:rgba(38,145,94,.1);border:1px solid rgba(38,145,94,.18);padding:3px 10px;border-radius:6px}
-.services-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:36px}
-.service-admin-card{background:rgba(255,255,255,.52);border:1px solid rgba(0,0,0,.09);border-radius:var(--radius);padding:18px 16px;transition:box-shadow .2s}
-.service-admin-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.08)}
-.sac-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.sac-num{font-size:10px;font-weight:900;color:var(--green);font-family:monospace;letter-spacing:.06em}
-.sac-name{font-size:14px;font-weight:800;color:var(--text);margin-bottom:6px;letter-spacing:-.01em}
-.service-admin-card.inactive{opacity:.55}
-.toggle-wrap{display:flex;align-items:center;gap:7px}
-.toggle-label{font-size:10px;font-weight:700;color:var(--text-muted)}
-.toggle{position:relative;width:34px;height:18px;cursor:pointer}
-.toggle input{opacity:0;width:0;height:0;position:absolute}
-.toggle-track{position:absolute;inset:0;border-radius:9px;background:rgba(0,0,0,.15);transition:background .2s}
-.toggle input:checked + .toggle-track{background:var(--green)}
-.toggle-thumb{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 4px rgba(0,0,0,.2)}
-.toggle input:checked ~ .toggle-thumb{transform:translateX(16px)}
-.price-row{display:flex;align-items:center;gap:8px;margin-top:10px;margin-bottom:10px}
-.price-symbol{font-size:16px;font-weight:800;color:var(--text-muted);flex-shrink:0}
-.price-input{flex:1;min-width:0;padding:9px 11px;background:rgba(255,255,255,.8);border:1px solid rgba(0,0,0,.12);border-radius:7px;font-size:15px;font-weight:700;font-family:inherit;color:var(--text);outline:none;transition:border-color .15s,box-shadow .15s}
-.price-input:focus{border-color:rgba(38,145,94,.45);box-shadow:0 0 0 3px rgba(38,145,94,.08)}
-.type-select{width:90px;flex-shrink:0;padding:9px 8px;background:rgba(255,255,255,.8);border:1px solid rgba(0,0,0,.12);border-radius:7px;font-size:11px;font-weight:700;font-family:inherit;color:var(--text);outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23666' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;padding-right:24px;transition:border-color .15s}
-.type-select:focus{border-color:rgba(38,145,94,.45)}
-.desc-input{width:100%;margin-top:8px;padding:8px 11px;background:rgba(255,255,255,.8);border:1px solid rgba(0,0,0,.1);border-radius:7px;font-size:12px;font-family:inherit;color:var(--text);outline:none;resize:none;transition:border-color .15s}
-.desc-input:focus{border-color:rgba(38,145,94,.4)}
+/* Toast */
+.t-toast{position:fixed;bottom:70px;right:24px;z-index:10000;background:var(--text);color:#fff;padding:11px 18px;border-radius:9px;font-size:12px;font-weight:600;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.2)}
+.t-toast.show{opacity:1;transform:none}
+.t-toast.success{background:var(--green)}
+.t-toast.error{background:#c0392b}
 
-/* ── Settings tabs ── */
-.settings-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:28px}
-.st-tab{padding:8px 18px;border:1px solid rgba(0,0,0,.12);background:rgba(255,255,255,.45);border-radius:8px;font-size:12px;font-weight:700;color:var(--text-muted);cursor:pointer;transition:all .15s;letter-spacing:.01em}
-.st-tab:hover{background:rgba(255,255,255,.7);color:var(--text)}
-.st-tab.active{background:var(--text);color:#fff;border-color:var(--text)}
-.settings-panel{display:none}
-.settings-panel.active{display:block}
-
-/* ── Settings forms ── */
-.settings-section{background:rgba(255,255,255,.5);border:1px solid rgba(0,0,0,.09);border-radius:var(--radius-lg);padding:28px;margin-bottom:20px}
-.settings-section-title{font-size:15px;font-weight:800;color:var(--text);margin-bottom:6px}
-.settings-section-subtitle{font-size:12px;font-weight:800;color:var(--text-muted);margin-top:24px;margin-bottom:12px;text-transform:uppercase;letter-spacing:.08em}
-.settings-desc{font-size:12px;color:var(--text-muted);margin-bottom:20px}
-.settings-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
-.sf{display:flex;flex-direction:column;gap:5px}
-.sf.full{grid-column:1/-1}
-.sf-label{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted)}
-.sf-input{padding:10px 12px;background:rgba(255,255,255,.8);border:1px solid rgba(0,0,0,.12);border-radius:8px;font-size:13px;font-family:inherit;color:var(--text);outline:none;transition:border-color .15s,box-shadow .15s;width:100%}
-.sf-input:focus{border-color:rgba(38,145,94,.45);box-shadow:0 0 0 3px rgba(38,145,94,.08)}
-.sf-input::placeholder{color:var(--text-dim)}
-textarea.sf-input{resize:vertical;min-height:72px}
-select.sf-input{cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23666' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
-
-.settings-save-btn{margin-top:22px;padding:11px 26px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;letter-spacing:.03em;transition:all .2s;box-shadow:0 3px 12px rgba(38,145,94,.25)}
-.settings-save-btn:hover{background:var(--green-dim);transform:translateY(-1px)}
-.cancel-btn{margin-top:22px;padding:11px 20px;background:transparent;color:var(--text-muted);border:1px solid rgba(0,0,0,.15);border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s}
-.cancel-btn:hover{background:rgba(0,0,0,.04)}
-
-/* ── Promo codes & partner logins ── */
-.row-table{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
-.data-row{display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(255,255,255,.65);border:1px solid rgba(0,0,0,.09);border-radius:8px;flex-wrap:wrap}
-.data-row input,.data-row select{padding:7px 10px;background:rgba(255,255,255,.9);border:1px solid rgba(0,0,0,.12);border-radius:6px;font-size:12px;font-family:inherit;color:var(--text);outline:none;flex:1;min-width:90px}
-.data-row input:focus,.data-row select:focus{border-color:rgba(38,145,94,.4)}
-.del-btn{padding:6px 10px;background:rgba(220,50,50,.08);color:#c0392b;border:1px solid rgba(220,50,50,.15);border-radius:6px;font-size:12px;cursor:pointer;flex-shrink:0;transition:all .15s;font-weight:700}
-.del-btn:hover{background:rgba(220,50,50,.15)}
-.add-row-btn{padding:9px 18px;background:transparent;color:var(--green);border:1px dashed rgba(38,145,94,.4);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px;margin-top:8px}
-.add-row-btn:hover{background:rgba(38,145,94,.06);border-color:rgba(38,145,94,.6)}
-.row-hint{font-size:10px;color:var(--text-dim);font-weight:600;white-space:nowrap;flex-shrink:0}
-
-/* ── Catalog list ── */
-.catalog-service-row{display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(255,255,255,.55);border:1px solid rgba(0,0,0,.09);border-radius:8px;margin-bottom:8px}
-.csr-phase{font-size:9px;font-weight:800;color:var(--green);background:rgba(38,145,94,.1);border-radius:4px;padding:2px 7px;flex-shrink:0;letter-spacing:.06em}
-.csr-name{font-size:13px;font-weight:700;color:var(--text);flex:1}
-.csr-price{font-size:12px;font-weight:600;color:var(--text-muted);flex-shrink:0}
-
-/* ── Firebase setup ── */
-.setup-step{display:flex;gap:14px;align-items:flex-start;margin-bottom:18px}
-.setup-num{width:26px;height:26px;border-radius:50%;background:var(--green);color:#fff;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
-.setup-step-text{font-size:13px;color:var(--text-muted);line-height:1.6}
-.setup-step-text strong{color:var(--text);font-weight:700}
-.setup-step-text a{color:var(--green);font-weight:600;text-decoration:none}
-.setup-step-text a:hover{text-decoration:underline}
-.config-status{padding:10px 16px;border-radius:8px;font-size:12px;font-weight:600;margin-top:16px}
-.config-status.connected{background:rgba(38,145,94,.1);color:var(--green);border:1px solid rgba(38,145,94,.2)}
-.config-status.not-configured{background:rgba(227,108,68,.08);color:var(--orange);border:1px solid rgba(227,108,68,.2)}
-.config-actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
-
-/* ── Add service form ── */
-.add-service-form{background:rgba(38,145,94,.05);border:1px solid rgba(38,145,94,.18);border-radius:var(--radius);padding:20px;margin-top:16px}
-.add-service-form h4{font-size:13px;font-weight:800;color:var(--green);margin-bottom:16px;letter-spacing:.02em}
-
-/* ── Toast ── */
-.toast{position:fixed;bottom:28px;right:28px;z-index:200;background:var(--text);color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;opacity:0;transform:translateY(12px);transition:all .3s;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.2)}
-.toast.show{opacity:1;transform:none}
-.toast.success{background:var(--green)}
-.toast.error{background:#c0392b}
-
-@media(max-width:600px){
-  .services-grid,.settings-grid{grid-template-columns:1fr}
-  .admin-body{padding:24px 14px}
-  .admin-topbar{padding:12px 16px}
-  .admin-tabs{padding:0 14px}
-  .status-bar{flex-direction:column;align-items:flex-start;gap:8px}
-  .data-row{flex-wrap:wrap}
+@media(max-width:960px){
+  .sidebar{transform:translateX(-100%);transition:transform .25s}
+  .sidebar.open{transform:translateX(0)}
+  .sidebar-overlay.open{display:block}
+  .sidebar-toggle{display:flex}
+  .main-wrap{margin-left:0}
+  .container{padding:0 18px}
+  .section{padding:52px 0}
+  .problem-grid,.sol-grid{grid-template-columns:1fr}
+  .invest-grid{grid-template-columns:1fr}
+  .invest-side:first-child{border-right:none;border-bottom:1px solid rgba(0,0,0,.08)}
+  .invest-side{padding:32px 18px}
+  .pricing-grid{grid-template-columns:1fr;max-width:100%}
+  .form-wrap{padding:28px 18px}
+  .form-row{grid-template-columns:1fr}
+  .hero{padding:60px 0 44px}
+  .hero h1{font-size:28px}
+  .hero-sub{font-size:15px}
+  .stat-row{max-width:100%}
+  #settingsDrawer{width:100%}
+  .at-center{gap:5px}
+  .at-btn{padding:7px 10px;font-size:11px}
 }
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
 
-<!-- ═══ LOGIN ═══ -->
-<div id="loginScreen">
-  <div class="login-box">
-    <div class="login-logo">FIFTEEN<span>.</span></div>
-    <p class="login-sub">Admin Panel</p>
-    <label class="login-label" for="adminPw">Admin Password</label>
-    <input type="password" id="adminPw" class="login-input" placeholder="Enter password" autocomplete="current-password">
-    <button class="login-btn" onclick="doLogin()">Access Panel</button>
-    <p class="login-error" id="loginError">Incorrect password. Try again.</p>
+<!-- ═══ ADMIN LOGIN OVERLAY ═══ -->
+<div id="adminOverlay">
+  <div class="alc">
+    <div class="alc-logo">FIFTEEN<span>.</span></div>
+    <p class="alc-sub">Enter password to access admin edit mode</p>
+    <input type="password" id="adminPw" class="alc-input" placeholder="Admin password" autocomplete="current-password">
+    <button class="alc-btn" onclick="doAdminLogin()">Enter Admin Mode</button>
+    <p class="alc-msg error" id="alcErr">Incorrect password.</p>
+    <p class="alc-msg warn"  id="alcLock"></p>
   </div>
 </div>
 
-<!-- ═══ ADMIN PANEL ═══ -->
-<div id="adminPanel">
-
-  <!-- Topbar -->
-  <div class="admin-topbar">
-    <div class="admin-logo">FIFTEEN<span>.</span><span class="topbar-label" id="topbarLabel">Pricing Admin</span></div>
-    <div class="topbar-right">
-      <span class="cloud-badge disconnected" id="cloudBadge">○ Local only</span>
-      <button class="admin-save-btn" id="saveBtn" onclick="handleSave()">↓ Download prices.json</button>
-      <button class="admin-logout" onclick="logout()">Log out</button>
-    </div>
+<!-- ═══ ADMIN TOOLBAR (bottom) ═══ -->
+<div id="adminToolbar">
+  <div class="at-left">
+    <span class="at-brand">FIFTEEN<span>.</span></span>
+    <span class="at-sync" id="atSync">☁ Connected</span>
   </div>
-
-  <!-- Tab navigation -->
-  <div class="admin-tabs">
-    <div class="admin-tabs-inner">
-      <button class="admin-tab active" id="tab-btn-services" onclick="switchTab('services')">Services</button>
-      <button class="admin-tab" id="tab-btn-settings" onclick="switchTab('settings')">⚙ Settings</button>
-    </div>
+  <div class="at-center">
+    <button class="at-btn at-edit" id="editBtn" onclick="toggleEdit()">✎ Edit Mode</button>
+    <button class="at-btn at-save" id="saveBtn"   onclick="savePageEdits()">✓ Save Edits</button>
+    <button class="at-btn at-settings"              onclick="openDrawer()">⚙ Settings</button>
   </div>
+  <div class="at-left">
+    <button class="at-btn at-logout" onclick="adminLogout()">Logout</button>
+  </div>
+</div>
 
-  <!-- ── SERVICES TAB ── -->
-  <div id="tab-services" class="admin-body">
+<!-- ═══ SETTINGS DRAWER ═══ -->
+<div id="settingsDrawer">
+  <div class="drawer-header">
+    <span class="drawer-title">⚙ Settings</span>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-tabs">
+    <button class="dt active" id="dt-company"  onclick="switchDT('company')">Company</button>
+    <button class="dt"        id="dt-pricing"  onclick="switchDT('pricing')">Pricing</button>
+    <button class="dt"        id="dt-services" onclick="switchDT('services')">Services</button>
+    <button class="dt"        id="dt-access"   onclick="switchDT('access')">Access</button>
+  </div>
+  <div class="drawer-body">
 
-    <div class="firebase-banner" id="firebaseBanner">
-      <div>
-        <div class="fb-title">☁ Connect Firebase for cloud sync</div>
-        <div class="fb-desc">Settings are local-only. <a onclick="switchTab('settings');switchSettingsTab('setup')">Set up Firebase →</a></div>
+    <!-- Company -->
+    <div class="dp active" id="dp-company">
+      <div class="dsec">
+        <div class="dsec-title">Company Info</div>
+        <div class="dsec-desc">Displayed across all public pages.</div>
+        <div class="dgrid">
+          <div class="df"><label class="dlbl">Company Name</label><input class="din" id="d-name" placeholder="Fifteen"></div>
+          <div class="df"><label class="dlbl">Tagline</label><input class="din" id="d-tagline" placeholder="15-Point Acceleration"></div>
+          <div class="df"><label class="dlbl">Email</label><input class="din" id="d-email" type="email" placeholder="hello@fifteen.pro"></div>
+          <div class="df"><label class="dlbl">Phone</label><input class="din" id="d-phone" placeholder="+1 ..."></div>
+          <div class="df wide"><label class="dlbl">Address</label><textarea class="din" id="d-address" rows="2" placeholder="City, Country"></textarea></div>
+        </div>
       </div>
-      <button class="fb-close" onclick="this.parentElement.style.display='none'">✕</button>
-    </div>
-
-    <div class="status-bar">
-      <div class="status-left">Managing <strong id="serviceCount">15 services</strong> across 3 phases · <span id="syncStatus">download to publish changes</span></div>
-      <div class="status-badge ok" id="statusBadge">✓ Loaded</div>
-    </div>
-
-    <div id="adminContent"></div>
-  </div>
-
-  <!-- ── SETTINGS TAB ── -->
-  <div id="tab-settings" class="admin-body" style="display:none">
-
-    <div class="settings-tabs">
-      <button class="st-tab active" id="st-btn-company"  onclick="switchSettingsTab('company')">Company Info</button>
-      <button class="st-tab"        id="st-btn-pricing"  onclick="switchSettingsTab('pricing')">Pricing & Discounts</button>
-      <button class="st-tab"        id="st-btn-catalog"  onclick="switchSettingsTab('catalog')">Services Catalog</button>
-      <button class="st-tab"        id="st-btn-access"   onclick="switchSettingsTab('access')">Users & Access</button>
-      <button class="st-tab"        id="st-btn-setup"    onclick="switchSettingsTab('setup')">☁ Firebase Setup</button>
-    </div>
-
-    <!-- Company Info -->
-    <div id="st-company" class="settings-panel active">
-      <div class="settings-section">
-        <div class="settings-section-title">Company Information</div>
-        <p class="settings-desc">Displayed across all public pages. Changes save to the cloud and reflect live.</p>
-        <div class="settings-grid">
-          <div class="sf"><label class="sf-label">Company Name</label><input class="sf-input" id="s-name" type="text" placeholder="Fifteen"></div>
-          <div class="sf"><label class="sf-label">Tagline</label><input class="sf-input" id="s-tagline" type="text" placeholder="15-Point Business Acceleration Engine"></div>
-          <div class="sf"><label class="sf-label">Logo URL</label><input class="sf-input" id="s-logo" type="url" placeholder="https://..."></div>
-          <div class="sf"><label class="sf-label">Contact Email</label><input class="sf-input" id="s-email" type="email" placeholder="hello@fifteen.pro"></div>
-          <div class="sf"><label class="sf-label">Phone</label><input class="sf-input" id="s-phone" type="text" placeholder="+1 ..."></div>
-          <div class="sf full"><label class="sf-label">Address</label><textarea class="sf-input" id="s-address" rows="2" placeholder="123 Street, City, Country"></textarea></div>
+      <div class="dsec">
+        <div class="dsec-title">Logo</div>
+        <div class="df"><label class="dlbl">Logo URL</label><input class="din" id="d-logo-url" type="url" placeholder="https://..." oninput="previewLogo()"></div>
+        <div class="logo-preview" id="logoPreview"><span class="nolgo">No logo set</span></div>
+        <label class="logo-upload-lbl">↑ Upload from device<input type="file" id="logoFile" accept="image/*" style="display:none" onchange="uploadLogoFile(this)"></label>
+      </div>
+      <div class="dsec">
+        <div class="dsec-title">Social Links</div>
+        <div class="dgrid">
+          <div class="df"><label class="dlbl">LinkedIn</label><input class="din" id="d-linkedin" type="url" placeholder="https://linkedin.com/..."></div>
+          <div class="df"><label class="dlbl">Instagram</label><input class="din" id="d-instagram" type="url" placeholder="https://instagram.com/..."></div>
+          <div class="df"><label class="dlbl">Facebook</label><input class="din" id="d-facebook" type="url" placeholder="https://facebook.com/..."></div>
+          <div class="df"><label class="dlbl">TikTok</label><input class="din" id="d-tiktok" type="url" placeholder="https://tiktok.com/@..."></div>
+          <div class="df"><label class="dlbl">Twitter / X</label><input class="din" id="d-twitter" type="url" placeholder="https://x.com/..."></div>
+          <div class="df"><label class="dlbl">YouTube</label><input class="din" id="d-youtube" type="url" placeholder="https://youtube.com/..."></div>
         </div>
-        <div class="settings-section-subtitle">Social Links</div>
-        <div class="settings-grid">
-          <div class="sf"><label class="sf-label">LinkedIn</label><input class="sf-input" id="s-linkedin" type="url" placeholder="https://linkedin.com/company/..."></div>
-          <div class="sf"><label class="sf-label">Instagram</label><input class="sf-input" id="s-instagram" type="url" placeholder="https://instagram.com/..."></div>
-          <div class="sf"><label class="sf-label">Facebook</label><input class="sf-input" id="s-facebook" type="url" placeholder="https://facebook.com/..."></div>
-          <div class="sf"><label class="sf-label">TikTok</label><input class="sf-input" id="s-tiktok" type="url" placeholder="https://tiktok.com/@..."></div>
-          <div class="sf"><label class="sf-label">Twitter / X</label><input class="sf-input" id="s-twitter" type="url" placeholder="https://x.com/..."></div>
-          <div class="sf"><label class="sf-label">YouTube</label><input class="sf-input" id="s-youtube" type="url" placeholder="https://youtube.com/@..."></div>
-        </div>
-        <button class="settings-save-btn" onclick="saveCompanyInfo()">Save Company Info</button>
+        <button class="dsave" onclick="saveCompanyInfo()">Save Company Info</button>
       </div>
     </div>
 
-    <!-- Pricing & Discounts -->
-    <div id="st-pricing" class="settings-panel">
-      <div class="settings-section">
-        <div class="settings-section-title">Global Pricing Settings</div>
-        <p class="settings-desc">These apply across the shop and all service quotes.</p>
-        <div class="settings-grid">
-          <div class="sf"><label class="sf-label">Currency Symbol</label><input class="sf-input" id="s-currency" type="text" value="$" maxlength="5" style="width:80px"></div>
-          <div class="sf"><label class="sf-label">Tax Rate (%)</label><input class="sf-input" id="s-tax" type="number" value="0" min="0" max="100" step="0.5"></div>
-          <div class="sf"><label class="sf-label">Bundle Discount (%)</label><input class="sf-input" id="s-bundle-discount" type="number" value="0" min="0" max="100" step="1"></div>
-          <div class="sf"><label class="sf-label">Min Services for Bundle</label><input class="sf-input" id="s-bundle-min" type="number" value="5" min="2" max="15" step="1"></div>
+    <!-- Pricing -->
+    <div class="dp" id="dp-pricing">
+      <div class="dsec">
+        <div class="dsec-title">Global Pricing</div>
+        <div class="dgrid">
+          <div class="df"><label class="dlbl">Currency Symbol</label><input class="din" id="d-currency" value="$" maxlength="5"></div>
+          <div class="df"><label class="dlbl">Tax Rate (%)</label><input class="din" id="d-tax" type="number" value="0" min="0" max="100" step="0.5"></div>
+          <div class="df"><label class="dlbl">Bundle Discount (%)</label><input class="din" id="d-bdiscount" type="number" value="0" min="0" max="100"></div>
+          <div class="df"><label class="dlbl">Min Services for Bundle</label><input class="din" id="d-bmin" type="number" value="5" min="2" max="15"></div>
         </div>
-        <div class="settings-section-subtitle">Promo Codes</div>
-        <div id="promoCodes" class="row-table"></div>
-        <button class="add-row-btn" onclick="addPromoRow()">+ Add Promo Code</button>
-        <button class="settings-save-btn" onclick="savePricingSettings()">Save Pricing Settings</button>
+      </div>
+      <div class="dsec">
+        <div class="dsec-title">Promo Codes</div>
+        <div id="promoList" class="row-list"></div>
+        <button class="dadd" onclick="addPromoRow()">+ Add Code</button>
+        <button class="dsave" onclick="savePricingSettings()">Save Pricing</button>
       </div>
     </div>
 
-    <!-- Services Catalog -->
-    <div id="st-catalog" class="settings-panel">
-      <div class="settings-section">
-        <div class="settings-section-title">Services Catalog</div>
-        <p class="settings-desc">Add or remove services. Edit prices and descriptions in the Services tab.</p>
-        <div id="catalogList"></div>
-        <button class="add-row-btn" style="margin-top:12px" onclick="document.getElementById('addServiceForm').style.display='block';this.style.display='none'">+ Add New Service</button>
-        <div id="addServiceForm" style="display:none" class="add-service-form">
-          <h4>New Service</h4>
-          <div class="settings-grid">
-            <div class="sf"><label class="sf-label">Name</label><input class="sf-input" id="ns-name" type="text" placeholder="Service Name"></div>
-            <div class="sf"><label class="sf-label">Phase</label>
-              <select class="sf-input" id="ns-phase">
-                <option value="1">Phase 1 — Brand & Authority</option>
-                <option value="2">Phase 2 — Growth & Traffic</option>
-                <option value="3">Phase 3 — Infrastructure & Scale</option>
+    <!-- Services -->
+    <div class="dp" id="dp-services">
+      <div class="dsec">
+        <div class="dsec-title">Services Catalog</div>
+        <div class="dsec-desc">Edit prices inline. Toggle to enable/disable.</div>
+        <div class="svc-table">
+          <div class="svc-head"><span>#</span><span>Service</span><span>Ph.</span><span>Price ($)</span><span>Type</span><span></span></div>
+          <div id="svcBody"></div>
+        </div>
+        <button class="add-svc-btn" onclick="document.getElementById('addSvcForm').style.display='block';this.style.display='none'">+ Add New Service</button>
+        <div class="add-svc-form" id="addSvcForm">
+          <div class="dgrid">
+            <div class="df"><label class="dlbl">Name</label><input class="din" id="ns-name" placeholder="Service Name"></div>
+            <div class="df"><label class="dlbl">Phase</label>
+              <select class="din" id="ns-phase">
+                <option value="1">Phase 1 — Brand</option>
+                <option value="2">Phase 2 — Growth</option>
+                <option value="3">Phase 3 — Scale</option>
               </select>
             </div>
-            <div class="sf"><label class="sf-label">Price ($)</label><input class="sf-input" id="ns-price" type="number" value="500" min="0"></div>
-            <div class="sf"><label class="sf-label">Billing</label>
-              <select class="sf-input" id="ns-type">
+            <div class="df"><label class="dlbl">Price ($)</label><input class="din" id="ns-price" type="number" value="500" min="0"></div>
+            <div class="df"><label class="dlbl">Type</label>
+              <select class="din" id="ns-type">
                 <option value="one-time">One-time</option>
                 <option value="monthly">Monthly</option>
               </select>
             </div>
-            <div class="sf full"><label class="sf-label">Description</label><input class="sf-input" id="ns-desc" type="text" placeholder="Brief description of this service"></div>
+            <div class="df wide"><label class="dlbl">Description</label><input class="din" id="ns-desc" placeholder="Brief description"></div>
           </div>
-          <div style="display:flex;gap:10px">
-            <button class="settings-save-btn" onclick="addNewService()">Add Service</button>
-            <button class="cancel-btn" onclick="document.getElementById('addServiceForm').style.display='none';document.querySelector('.add-row-btn[onclick*=addServiceForm]').style.display='inline-flex'">Cancel</button>
+          <div style="display:flex;gap:7px;margin-top:8px">
+            <button class="dsave" style="margin-top:0" onclick="addNewService()">Add Service</button>
+            <button onclick="document.getElementById('addSvcForm').style.display='none';document.querySelector('.add-svc-btn').style.display='block'" style="padding:9px 14px;background:transparent;border:1px solid rgba(0,0,0,.12);border-radius:7px;font-size:11px;cursor:pointer;font-family:inherit;color:var(--text-muted)">Cancel</button>
           </div>
         </div>
-        <button class="settings-save-btn" style="margin-top:24px;display:block" onclick="saveCatalogToCloud()">☁ Save Catalog to Cloud</button>
+        <button class="dsave" style="margin-top:12px;display:block;width:100%" onclick="saveServicesToCloud()">☁ Save All to Cloud</button>
       </div>
     </div>
 
-    <!-- Users & Access -->
-    <div id="st-access" class="settings-panel">
-      <div class="settings-section">
-        <div class="settings-section-title">Admin Password</div>
-        <div class="settings-grid">
-          <div class="sf"><label class="sf-label">Current Password</label><input class="sf-input" id="s-cur-pw" type="password" placeholder="Current password"></div>
-          <div class="sf"><label class="sf-label">New Password</label><input class="sf-input" id="s-new-pw" type="password" placeholder="New password (min 8 chars)"></div>
-          <div class="sf"><label class="sf-label">Confirm New Password</label><input class="sf-input" id="s-con-pw" type="password" placeholder="Confirm new password"></div>
+    <!-- Access -->
+    <div class="dp" id="dp-access">
+      <div class="dsec">
+        <div class="dsec-title">Change Admin Password</div>
+        <div class="dgrid single">
+          <div class="df"><label class="dlbl">Current Password</label><input class="din" id="d-cur-pw" type="password" placeholder="Current password"></div>
+          <div class="df"><label class="dlbl">New Password</label><input class="din" id="d-new-pw" type="password" placeholder="New password (min 8 chars)"></div>
+          <div class="df"><label class="dlbl">Confirm New Password</label><input class="din" id="d-con-pw" type="password" placeholder="Confirm new password"></div>
         </div>
-        <button class="settings-save-btn" onclick="changeAdminPassword()">Update Password</button>
+        <button class="dsave" onclick="changePassword()">Update Password</button>
       </div>
-      <div class="settings-section">
-        <div class="settings-section-title">Partner Logins</div>
-        <p class="settings-desc">Partners log in from the main page to access their portal.</p>
-        <div id="partnerLogins" class="row-table"></div>
-        <button class="add-row-btn" onclick="addPartnerRow()">+ Add Partner</button>
-        <button class="settings-save-btn" onclick="saveAccessSettings()">Save Access Settings</button>
-      </div>
-    </div>
-
-    <!-- Firebase Setup -->
-    <div id="st-setup" class="settings-panel">
-      <div class="settings-section">
-        <div class="settings-section-title">Firebase Cloud Setup</div>
-        <p class="settings-desc">Connect Firebase to store all settings in the cloud — safe, persistent, and accessible from any device.</p>
-
-        <div class="setup-step">
-          <div class="setup-num">1</div>
-          <div class="setup-step-text">Go to <a href="https://console.firebase.google.com/" target="_blank">console.firebase.google.com</a> and click <strong>Add project</strong>. Name it something like <strong>fifteen-pro</strong>.</div>
-        </div>
-        <div class="setup-step">
-          <div class="setup-num">2</div>
-          <div class="setup-step-text">Inside the project go to <strong>Build → Firestore Database → Create database</strong>. Choose <strong>Start in test mode</strong>.</div>
-        </div>
-        <div class="setup-step">
-          <div class="setup-num">3</div>
-          <div class="setup-step-text">Go to <strong>Project settings</strong> (gear icon) → <strong>Your apps</strong> → click the <strong>&lt;/&gt; Web</strong> icon to add a web app. Copy the <code>firebaseConfig</code> values.</div>
-        </div>
-        <div class="setup-step">
-          <div class="setup-num">4</div>
-          <div class="setup-step-text">Paste each value in the fields below and click <strong>Connect Firebase</strong>.</div>
-        </div>
-
-        <div class="settings-grid" style="margin-top:20px">
-          <div class="sf"><label class="sf-label">API Key</label><input class="sf-input" id="fb-apiKey" type="text" placeholder="AIzaSy..."></div>
-          <div class="sf"><label class="sf-label">Project ID</label><input class="sf-input" id="fb-projectId" type="text" placeholder="fifteen-pro"></div>
-          <div class="sf"><label class="sf-label">App ID</label><input class="sf-input" id="fb-appId" type="text" placeholder="1:123:web:abc"></div>
-          <div class="sf"><label class="sf-label">Messaging Sender ID</label><input class="sf-input" id="fb-messagingSenderId" type="text" placeholder="1234567890"></div>
-          <div class="sf"><label class="sf-label">Auth Domain</label><input class="sf-input" id="fb-authDomain" type="text" placeholder="fifteen-pro.firebaseapp.com"></div>
-          <div class="sf"><label class="sf-label">Storage Bucket</label><input class="sf-input" id="fb-storageBucket" type="text" placeholder="fifteen-pro.appspot.com"></div>
-        </div>
-
-        <div id="firebaseStatus" class="config-status not-configured" style="margin-top:16px">
-          ○ Not connected — enter your config values above
-        </div>
-
-        <div class="config-actions">
-          <button class="settings-save-btn" style="margin-top:0" onclick="connectFirebase()">Connect Firebase</button>
-          <button class="cancel-btn" style="margin-top:0" onclick="disconnectFirebase()">Disconnect</button>
-        </div>
+      <div class="dsec">
+        <div class="dsec-title">Partner Logins</div>
+        <div class="dsec-desc">Partners log in from the public page.</div>
+        <div id="partnerList" class="row-list"></div>
+        <button class="dadd" onclick="addPartnerRow()">+ Add Partner</button>
+        <button class="dsave" onclick="saveAccessSettings()">Save Access</button>
       </div>
     </div>
 
-  </div><!-- /tab-settings -->
-</div><!-- /adminPanel -->
+  </div>
+</div>
+<div id="drawerBackdrop" onclick="closeDrawer()"></div>
 
-<!-- Toast -->
-<div class="toast" id="toast"></div>
+<!-- ═══ PAGE (mirrors index.html) ═══ -->
+<div class="app-layout">
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-inner">
+    <a href="#" class="sidebar-logo">FIFTEEN<span>.</span></a>
+    <div class="sidebar-section-label">Navigate</div>
+    <nav class="sidebar-nav">
+      <a href="#solutions" class="sidebar-link">
+        <svg class="icon" width="15" height="15" viewBox="0 0 24 24" style="stroke:var(--green)"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        Solutions
+      </a>
+      <a href="#process" class="sidebar-link">
+        <svg class="icon" width="15" height="15" viewBox="0 0 24 24" style="stroke:var(--green)"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        Process
+      </a>
+      <a href="shop.html" class="sidebar-link">
+        <svg class="icon" width="15" height="15" viewBox="0 0 24 24" style="stroke:var(--green)"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        Build Your Plan
+      </a>
+      <a href="#apply" class="sidebar-link">
+        <svg class="icon" width="15" height="15" viewBox="0 0 24 24" style="stroke:var(--orange)"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        Apply Now
+      </a>
+    </nav>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section-label">Resources</div>
+    <div class="sidebar-resources">
+      <a href="Products Guide.pdf" target="_blank" rel="noopener" class="resource-link">
+        <svg class="icon" width="13" height="13" viewBox="0 0 24 24" style="stroke:var(--green)"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Products Guide<span class="ext-arrow">↗</span>
+      </a>
+      <a href="Ultimate Guide.pdf" target="_blank" rel="noopener" class="resource-link">
+        <svg class="icon" width="13" height="13" viewBox="0 0 24 24" style="stroke:var(--green)"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Ultimate Guide<span class="ext-arrow">↗</span>
+      </a>
+      <a href="fifteen---bundle-flyer1.1.pdf" target="_blank" rel="noopener" class="resource-link">
+        <svg class="icon" width="13" height="13" viewBox="0 0 24 24" style="stroke:var(--orange)"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Bundle Flyer<span class="ext-arrow">↗</span>
+      </a>
+    </div>
+  </div>
+  <div class="sidebar-footer">
+    <span id="footerBrand">15fifteen15 · Business Acceleration</span>
+  </div>
+</aside>
+
+<button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle menu">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+</button>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<div class="main-wrap">
+
+<div class="top-bar">
+  <button class="partner-login-btn" onclick="openPartnerModal()">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    Partner Login
+  </button>
+</div>
+
+<div class="partner-modal-overlay" id="partnerModalOverlay" onclick="closePartnerModal(event)">
+  <div class="partner-modal">
+    <h3>Partner Access</h3>
+    <p>Sign in to your partner portal.</p>
+    <input type="email" class="partner-modal-input" id="partnerEmail" placeholder="Partner email" autocomplete="email">
+    <input type="password" class="partner-modal-input" id="partnerPw" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')submitPartnerLogin()">
+    <div class="partner-modal-actions">
+      <button class="btn-cancel" onclick="closePartnerModal()">Cancel</button>
+      <button class="btn-go" onclick="submitPartnerLogin()">Access Portal</button>
+    </div>
+  </div>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="badge" data-editable="hero.badge">15fifteen15 &nbsp;·&nbsp; By Application Only</div>
+    <h1 data-editable="hero.title">Your Business Has Potential.<br>We Have The <span class="highlight">15-Point Blueprint</span><br>To Unlock It.</h1>
+    <p class="hero-sub" data-editable="hero.subtitle">We run deep due diligence, inject capital for operational renovation, and deploy a precise 15-point digital solution engine to scale established businesses to the next level.</p>
+    <a href="#apply" class="glow-btn" data-editable="hero.cta">Apply For Your 15-Point Audit</a>
+    <div class="urgency">
+      <span class="pulse-dot"></span>
+      <span data-editable="hero.urgency">Strictly Limited — We legally lock out your competitors. We only partner with ONE business per industry sector.</span>
+    </div>
+    <div class="stat-row">
+      <div class="stat">
+        <div class="stat-num" data-editable="stats.0.num">15</div>
+        <div class="stat-label" data-editable="stats.0.label">Solution Products</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num" data-editable="stats.1.num">3</div>
+        <div class="stat-label" data-editable="stats.1.label">Elite Phases</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num" data-editable="stats.2.num">1</div>
+        <div class="stat-label" data-editable="stats.2.label">Partner Per Sector</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROBLEM -->
+<section class="section">
+  <div class="container">
+    <div class="badge">The Problem</div>
+    <h2 class="section-title" data-editable="problem.title">Why Do Good Businesses<br>Hit a Growth Ceiling?</h2>
+    <p class="section-sub" data-editable="problem.subtitle">Most established companies plateau not from lack of effort, but because friction is hiding in plain sight across three critical zones.</p>
+    <div class="problem-grid">
+      <div class="prob-card">
+        <div class="prob-icon"><svg class="icon" width="19" height="19" viewBox="0 0 24 24" style="stroke:var(--green)"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20M12 2a10 10 0 0 0 0 20M2 12h20"/></svg></div>
+        <div class="prob-title" data-editable="problem.c1.title">Weak Brand Authority</div>
+        <p class="prob-desc" data-editable="problem.c1.desc">Broken messaging and an outdated visual window to the market. Your audience doesn't know why you're different — so they don't convert.</p>
+      </div>
+      <div class="prob-card">
+        <div class="prob-icon"><svg class="icon" width="19" height="19" viewBox="0 0 24 24" style="stroke:var(--green)"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+        <div class="prob-title" data-editable="problem.c2.title">Stagnant Client Reach</div>
+        <p class="prob-desc" data-editable="problem.c2.desc">Inefficient ad spend, poor traffic, and manual customer acquisition paths. You're paying compounding money to stay completely still.</p>
+      </div>
+      <div class="prob-card">
+        <div class="prob-icon"><svg class="icon" width="19" height="19" viewBox="0 0 24 24" style="stroke:var(--green)"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
+        <div class="prob-title" data-editable="problem.c3.title">Operational Chaos</div>
+        <p class="prob-desc" data-editable="problem.c3.desc">Fragmented backend infrastructure, data blindness, and waste. Your systems don't scale — they create compounding drag every quarter.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SOLUTION -->
+<section class="section alt-section" id="solutions">
+  <div class="container">
+    <div class="badge">The Engine</div>
+    <h2 class="section-title" data-editable="solution.title">15 Products. Zero Friction.<br>Total Scale.</h2>
+    <p class="section-sub" data-editable="solution.subtitle">Our signature engine tackles every angle of corporate growth, broken into 3 elite phases that build on each other with precision.</p>
+    <div class="sol-grid" id="solGrid">
+      <div class="sol-col">
+        <div class="phase-header"><svg class="icon" width="13" height="13" viewBox="0 0 24 24" style="stroke:var(--green)"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>Phase 01 — Brand &amp; Authority</div>
+        <div id="ph1items"></div>
+      </div>
+      <div class="sol-col">
+        <div class="phase-header"><svg class="icon" width="13" height="13" viewBox="0 0 24 24" style="stroke:var(--green)"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>Phase 02 — Growth &amp; Traffic</div>
+        <div id="ph2items"></div>
+      </div>
+      <div class="sol-col">
+        <div class="phase-header"><svg class="icon" width="13" height="13" viewBox="0 0 24 24" style="stroke:var(--green)"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>Phase 03 — Infrastructure &amp; Scale</div>
+        <div id="ph3items"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROCESS -->
+<section class="alt-section" id="process" style="border-top:1px solid rgba(0,0,0,.07)">
+  <div class="container" style="padding-left:0;padding-right:0;max-width:980px">
+    <div class="invest-grid">
+      <div class="invest-side">
+        <div class="invest-label"><svg class="icon" width="12" height="12" viewBox="0 0 24 24" style="stroke:var(--green)"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>Due Diligence</div>
+        <h3 class="invest-title" data-editable="process.l.title">We Don't Just<br><span class="green">Consult. We Invest.</span></h3>
+        <div class="divider"></div>
+        <p class="invest-body" data-editable="process.l.body">We map your operational mechanics, analyze competitor threats, and audit financial leaks to find exactly where your revenue is draining — before we touch a single deliverable. No assumptions. No generic audits. Deep, business-specific diagnosis.</p>
+      </div>
+      <div class="invest-side">
+        <div class="invest-label"><svg class="icon" width="12" height="12" viewBox="0 0 24 24" style="stroke:var(--green)"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Capital &amp; Infrastructure</div>
+        <h3 class="invest-title" data-editable="process.r.title">A To-Do List Is<br><span class="green">Not Our Deliverable.</span></h3>
+        <div class="divider"></div>
+        <p class="invest-body" data-editable="process.r.body">For high-potential established brands, we supply the strategic capital and engineering resources to completely renovate your e-commerce ecosystems and backend ERP hubs from scratch. We build. You scale.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TIMELINE -->
+<section class="section">
+  <div class="container">
+    <div class="badge">The Roadmap</div>
+    <h2 class="section-title" data-editable="timeline.title">Engineered For Certainty:<br>The 15-Month Roadmap</h2>
+    <p class="section-sub" data-editable="timeline.subtitle">Two phases. One clear trajectory. No guesswork, no pivots mid-engagement.</p>
+    <div class="timeline">
+      <div class="t-item">
+        <div class="t-dot"></div>
+        <div class="t-phase">Phase 1 &nbsp;·&nbsp; Months 1–3</div>
+        <div class="t-title" data-editable="timeline.p1.title">Rapid Optimization</div>
+        <p class="t-body" data-editable="timeline.p1.body">We audit and aggressively optimize your Audience, Content, and Budgets to unlock rapid cash flow and immediate proof-of-concept. You'll see measurable results before Phase 2 begins — this phase exists to validate and fund the next.</p>
+      </div>
+      <div class="t-item">
+        <div class="t-dot"></div>
+        <div class="t-phase">Phase 2 &nbsp;·&nbsp; Months 4–15</div>
+        <div class="t-title" data-editable="timeline.p2.title">Massive Scale</div>
+        <p class="t-body" data-editable="timeline.p2.body">We execute the deep operational renovations, deploy custom ERP automations, launch full scaling campaigns, and legally secure your long-term market dominance. This is where compounding begins and competitors get locked out permanently.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- APPLY -->
+<section class="section" id="apply">
+  <div class="container">
+    <div class="badge text-center mx-auto" style="display:block;width:fit-content">Industry Lockout</div>
+    <h2 class="section-title text-center" data-editable="apply.title">Is Your Industry<br>Still Available?</h2>
+    <p class="section-sub text-center mx-auto" style="display:block" data-editable="apply.subtitle">One sector. One partner. We legally lock out your competition the moment you're confirmed.</p>
+    <div class="form-wrap">
+      <div class="availability-bar"><span class="pulse-dot"></span><span class="avail-text" data-editable="apply.avail">We are actively reviewing new applications — industry sectors are filling fast.</span></div>
+      <div class="form-row">
+        <div class="field"><label for="fn">Full Name</label><input type="text" id="fn" placeholder="Your full name" autocomplete="name"></div>
+        <div class="field"><label for="fe">Business Email</label><input type="email" id="fe" placeholder="you@company.com" autocomplete="email"></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label for="fp">Phone Number</label><input type="tel" id="fp" placeholder="+1 (000) 000-0000" autocomplete="tel"></div>
+        <div class="field"><label for="fw">Website</label><input type="url" id="fw" placeholder="https://yoursite.com" autocomplete="url"></div>
+      </div>
+      <div class="form-row single">
+        <div class="field"><label for="fi">Industry / Niche</label>
+          <select id="fi">
+            <option value="" disabled selected>Select your industry sector</option>
+            <option>E-commerce &amp; Retail</option><option>Real Estate</option><option>Health &amp; Wellness</option>
+            <option>Food &amp; Beverage</option><option>Professional Services</option><option>Automotive</option>
+            <option>Technology &amp; SaaS</option><option>Beauty &amp; Cosmetics</option><option>Finance &amp; Fintech</option>
+            <option>Education &amp; Training</option><option>Hospitality &amp; Tourism</option><option>Construction &amp; Contracting</option>
+            <option>Other</option>
+          </select>
+        </div>
+      </div>
+      <button type="button" class="glow-btn form-submit" onclick="handleApply()">Check Industry Availability &amp; Apply</button>
+      <div class="form-sub" data-editable="apply.sub">Jeeh, Jeeh! &nbsp;·&nbsp; Applications reviewed within 48 hours. Strictly confidential.</div>
+    </div>
+  </div>
+</section>
+
+<!-- PARTNERS -->
+<section class="partners-strip">
+  <div class="partners-heading">Our Partners</div>
+  <div class="partners-track-wrap">
+    <div class="partners-track" id="partnersTrack">
+      <div class="partner-card"><div class="partner-card-name">Mazzika</div></div>
+      <div class="partner-card"><div class="partner-card-name">Yuta</div></div>
+      <div class="partner-card"><div class="partner-card-name">Al-Omda Lounge</div></div>
+      <div class="partner-card"><div class="partner-card-name">Renolinx</div></div>
+      <div class="partner-card"><div class="partner-card-name">Tawseela Canada</div></div>
+      <div class="partner-card"><div class="partner-card-name">Doner Point</div></div>
+      <div class="partner-card"><div class="partner-card-name">AutoPlus Car Sales</div></div>
+      <div class="partner-card"><div class="partner-card-name">Khalid Felifel</div></div>
+      <div class="partner-card"><div class="partner-card-name">WikiTours</div></div>
+      <div class="partner-card"><div class="partner-card-name">S. Soliman Engineering</div></div>
+      <div class="partner-card"><div class="partner-card-name">Habibi Executive VVIP</div></div>
+      <div class="partner-card"><div class="partner-card-name">Goodman Elbassiouni</div></div>
+      <div class="partner-card"><div class="partner-card-name">Elegant Stars</div></div>
+      <div class="partner-card"><div class="partner-card-name">Talents &amp; Events</div></div>
+      <div class="partner-card"><div class="partner-card-name">Marine Cleaning Service</div></div>
+      <div class="partner-card"><div class="partner-card-name">Star of Elegance</div></div>
+      <div class="partner-card"><div class="partner-card-name">Suma's</div></div>
+      <div class="partner-card"><div class="partner-card-name">Mütlü</div></div>
+      <div class="partner-card"><div class="partner-card-name">The Lounge</div></div>
+      <div class="partner-card"><div class="partner-card-name">Care Pharma Group</div></div>
+      <div class="partner-card"><div class="partner-card-name">SmartFix Tech</div></div>
+      <div class="partner-card"><div class="partner-card-name">Shipway</div></div>
+      <div class="partner-card"><div class="partner-card-name">EgyCan</div></div>
+      <div class="partner-card"><div class="partner-card-name">Brownie's Club</div></div>
+      <div class="partner-card"><div class="partner-card-name">Nour Bakes Desserts</div></div>
+      <div class="partner-card"><div class="partner-card-name">Mazzika</div></div>
+      <div class="partner-card"><div class="partner-card-name">Yuta</div></div>
+      <div class="partner-card"><div class="partner-card-name">Al-Omda Lounge</div></div>
+      <div class="partner-card"><div class="partner-card-name">Renolinx</div></div>
+      <div class="partner-card"><div class="partner-card-name">Tawseela Canada</div></div>
+      <div class="partner-card"><div class="partner-card-name">Doner Point</div></div>
+      <div class="partner-card"><div class="partner-card-name">AutoPlus Car Sales</div></div>
+      <div class="partner-card"><div class="partner-card-name">Khalid Felifel</div></div>
+      <div class="partner-card"><div class="partner-card-name">WikiTours</div></div>
+      <div class="partner-card"><div class="partner-card-name">S. Soliman Engineering</div></div>
+      <div class="partner-card"><div class="partner-card-name">Habibi Executive VVIP</div></div>
+      <div class="partner-card"><div class="partner-card-name">Goodman Elbassiouni</div></div>
+      <div class="partner-card"><div class="partner-card-name">Elegant Stars</div></div>
+      <div class="partner-card"><div class="partner-card-name">Talents &amp; Events</div></div>
+      <div class="partner-card"><div class="partner-card-name">Marine Cleaning Service</div></div>
+      <div class="partner-card"><div class="partner-card-name">Star of Elegance</div></div>
+      <div class="partner-card"><div class="partner-card-name">Suma's</div></div>
+      <div class="partner-card"><div class="partner-card-name">Mütlü</div></div>
+      <div class="partner-card"><div class="partner-card-name">The Lounge</div></div>
+      <div class="partner-card"><div class="partner-card-name">Care Pharma Group</div></div>
+      <div class="partner-card"><div class="partner-card-name">SmartFix Tech</div></div>
+      <div class="partner-card"><div class="partner-card-name">Shipway</div></div>
+      <div class="partner-card"><div class="partner-card-name">EgyCan</div></div>
+      <div class="partner-card"><div class="partner-card-name">Brownie's Club</div></div>
+      <div class="partner-card"><div class="partner-card-name">Nour Bakes Desserts</div></div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-logo">FIFTEEN<span>.</span></div>
+    <div class="footer-copy" data-editable="footer.copy1">15fifteen15 &nbsp;·&nbsp; Business Acceleration &amp; Digital Solutions</div>
+    <div class="footer-copy" data-editable="footer.copy2">© 2025 Fifteen. All rights reserved. One partner per industry sector.</div>
+  </div>
+</footer>
+
+</div><!-- /main-wrap -->
+</div><!-- /app-layout -->
+
+<div class="t-toast" id="toast"></div>
 
 <script>
-/* ══════════════════════════════════════════════════════════════════════════
-   CONFIG & STATE
-══════════════════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════ */
+let db = null, storage = null;
 let ADMIN_PASSWORD = 'fifteen2025';
 let services = [];
-let db = null;
-let isDirty = false;
+let editMode = false;
+let contentDirty = false;
+let servicesDirty = false;
 
-/* ══════════════════════════════════════════════════════════════════════════
-   FIREBASE INIT
-══════════════════════════════════════════════════════════════════════════ */
-function getStoredFirebaseConfig() {
+/* ══════════════════════════════════════════════
+   FIREBASE
+══════════════════════════════════════════════ */
+function getFbConfig() {
   try {
-    const stored = JSON.parse(localStorage.getItem('fifteen_fb_config') || 'null');
-    if (stored && stored.apiKey && stored.apiKey !== 'YOUR_API_KEY') return stored;
+    const s = JSON.parse(localStorage.getItem('fifteen_fb_config') || 'null');
+    if (s && s.apiKey && s.apiKey !== 'YOUR_API_KEY') return s;
   } catch(e) {}
   if (typeof FIREBASE_CONFIG !== 'undefined' && FIREBASE_CONFIG.apiKey !== 'YOUR_API_KEY') return FIREBASE_CONFIG;
   return null;
 }
 
-function isPlaceholderConfig(cfg) {
-  return !cfg || !cfg.apiKey || cfg.apiKey === 'YOUR_API_KEY' || cfg.projectId === 'YOUR_PROJECT_ID';
-}
-
-async function initFirebase(config) {
-  if (!config || isPlaceholderConfig(config)) return false;
+async function initFirebase() {
+  const cfg = getFbConfig();
+  if (!cfg) return false;
   try {
-    if (firebase.apps.length === 0) {
-      firebase.initializeApp(config);
-    }
+    if (firebase.apps.length === 0) firebase.initializeApp(cfg);
     db = firebase.firestore();
-    // quick connectivity check
+    storage = firebase.storage();
     await db.collection('settings').doc('company').get();
     return true;
-  } catch(e) {
-    console.warn('Firebase init failed:', e.message);
-    db = null;
-    return false;
-  }
+  } catch(e) { db = null; storage = null; return false; }
 }
 
-function setCloudBadge(connected) {
-  const el = document.getElementById('cloudBadge');
-  const banner = document.getElementById('firebaseBanner');
-  const btn = document.getElementById('saveBtn');
-  if (connected) {
-    el.textContent = '☁ Cloud sync on';
-    el.className = 'cloud-badge';
-    if (banner) banner.style.display = 'none';
-    document.getElementById('syncStatus').textContent = 'changes sync to cloud automatically';
-    btn.textContent = '☁ Save to Cloud';
-  } else {
-    el.textContent = '○ Local only';
-    el.className = 'cloud-badge disconnected';
-    document.getElementById('syncStatus').textContent = 'download to publish changes';
-    btn.textContent = '↓ Download prices.json';
-  }
-}
+/* ══════════════════════════════════════════════
+   SECURITY — SESSION & BRUTE FORCE
+══════════════════════════════════════════════ */
+const SESSION_KEY  = 'fifteen_admin_sess';
+const ATTEMPTS_KEY = 'fifteen_admin_att';
 
-/* ══════════════════════════════════════════════════════════════════════════
-   LOGIN
-══════════════════════════════════════════════════════════════════════════ */
-async function showAdminPanel() {
-  document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('adminPanel').style.display = 'block';
-
-  // Try Firebase
-  const storedCfg = getStoredFirebaseConfig();
-  const connected = await initFirebase(storedCfg);
-  setCloudBadge(connected);
-
-  if (connected) {
-    await loadAllSettings();
-    populateSetupFields(storedCfg);
-    document.getElementById('firebaseStatus').className = 'config-status connected';
-    document.getElementById('firebaseStatus').textContent = '✓ Connected to Firebase';
-  } else if (storedCfg && !isPlaceholderConfig(storedCfg)) {
-    populateSetupFields(storedCfg);
-  }
-
-  await loadServices();
-}
-
-if (sessionStorage.getItem('fifteen_admin_auth') === '1') {
-  sessionStorage.removeItem('fifteen_admin_auth');
-  document.addEventListener('DOMContentLoaded', showAdminPanel);
-}
-
-function doLogin() {
-  const pw = document.getElementById('adminPw').value;
-  if (pw === ADMIN_PASSWORD) {
-    showAdminPanel();
-  } else {
-    const err = document.getElementById('loginError');
-    err.style.display = 'block';
-    setTimeout(() => err.style.display = 'none', 2400);
-  }
-}
-document.getElementById('adminPw').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
-
-function logout() {
-  document.getElementById('loginScreen').style.display = 'flex';
-  document.getElementById('adminPanel').style.display = 'none';
-  document.getElementById('adminPw').value = '';
-}
-
-/* ══════════════════════════════════════════════════════════════════════════
-   TAB NAVIGATION
-══════════════════════════════════════════════════════════════════════════ */
-function switchTab(name) {
-  ['services', 'settings'].forEach(t => {
-    document.getElementById('tab-' + t).style.display = t === name ? 'block' : 'none';
-    document.getElementById('tab-btn-' + t).classList.toggle('active', t === name);
-  });
-  const lbl = document.getElementById('topbarLabel');
-  const btn = document.getElementById('saveBtn');
-  if (name === 'services') {
-    lbl.textContent = 'Pricing Admin';
-    btn.style.display = 'inline-block';
-  } else {
-    lbl.textContent = 'Settings';
-    btn.style.display = 'none';
-    renderCatalogList();
-  }
-}
-
-function switchSettingsTab(name) {
-  ['company', 'pricing', 'catalog', 'access', 'setup'].forEach(t => {
-    document.getElementById('st-' + t).classList.toggle('active', t === name);
-    document.getElementById('st-btn-' + t).classList.toggle('active', t === name);
-  });
-  if (name === 'catalog') renderCatalogList();
-}
-
-/* ══════════════════════════════════════════════════════════════════════════
-   LOAD SERVICES
-══════════════════════════════════════════════════════════════════════════ */
-async function loadServices() {
+function getSession() {
   try {
-    if (db) {
-      const doc = await db.collection('catalog').doc('services').get();
-      if (doc.exists && doc.data().items) {
-        services = doc.data().items;
-        renderAdmin();
-        return;
-      }
-    }
-    // Fallback to prices.json
-    const res = await fetch('prices.json?v=' + Date.now());
-    const data = await res.json();
-    services = data.services;
-  } catch(e) {
-    showToast('Could not load services', 'error');
-    return;
+    const s = JSON.parse(localStorage.getItem(SESSION_KEY));
+    if (s && s.exp > Date.now()) return s;
+  } catch(e) {}
+  return null;
+}
+function setSession() {
+  const tok = (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now());
+  localStorage.setItem(SESSION_KEY, JSON.stringify({ tok, exp: Date.now() + 8 * 3600 * 1000 }));
+}
+function clearSession() { localStorage.removeItem(SESSION_KEY); }
+
+function getAttempts() {
+  try { return JSON.parse(localStorage.getItem(ATTEMPTS_KEY)) || { n: 0, lock: 0 }; }
+  catch(e) { return { n: 0, lock: 0 }; }
+}
+function recordFail() {
+  const a = getAttempts();
+  a.n++;
+  if (a.n >= 5) { a.lock = Date.now() + 15 * 60 * 1000; a.n = 0; }
+  localStorage.setItem(ATTEMPTS_KEY, JSON.stringify(a));
+  return a;
+}
+function clearAttempts() { localStorage.removeItem(ATTEMPTS_KEY); }
+function isLocked() { return getAttempts().lock > Date.now(); }
+function lockMins() { return Math.ceil((getAttempts().lock - Date.now()) / 60000); }
+
+/* ══════════════════════════════════════════════
+   AUTH
+══════════════════════════════════════════════ */
+window.addEventListener('pageshow', function(e) {
+  if (e.persisted && !getSession()) showOverlay();
+});
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const fbOk = await initFirebase();
+  document.getElementById('atSync').textContent  = fbOk ? '☁ Connected' : '○ Local only';
+  document.getElementById('atSync').className     = 'at-sync' + (fbOk ? '' : ' off');
+
+  if (getSession()) {
+    await enterAdmin();
+  } else {
+    showOverlay();
   }
-  renderAdmin();
+
+  if (isLocked()) applyLockout();
+});
+
+function showOverlay() {
+  document.getElementById('adminOverlay').classList.remove('hidden');
+  document.getElementById('adminToolbar').style.display = 'none';
+  document.body.classList.remove('admin-active', 'edit-mode');
+  setTimeout(() => { const el = document.getElementById('adminPw'); if (el && !el.disabled) el.focus(); }, 80);
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
-   RENDER SERVICES
-══════════════════════════════════════════════════════════════════════════ */
-function renderAdmin() {
-  document.getElementById('serviceCount').textContent = services.length + ' services';
-  const phases = [
-    {num:1, label:'Phase 01 — Brand & Authority'},
-    {num:2, label:'Phase 02 — Growth & Traffic'},
-    {num:3, label:'Phase 03 — Infrastructure & Scale'},
-  ];
-  document.getElementById('adminContent').innerHTML = phases.map(ph => {
-    const ph_svcs = services.filter(s => s.phase === ph.num);
-    return `
-      <div class="section-heading">
-        <div class="phase-pill">Phase 0${ph.num}</div>
-        <h2>${ph.label}</h2>
-      </div>
-      <div class="services-grid">${ph_svcs.map(s => renderServiceCard(s)).join('')}</div>
-    `;
-  }).join('');
+function applyLockout() {
+  document.getElementById('adminPw').disabled = true;
+  document.querySelector('.alc-btn').disabled = true;
+  const el = document.getElementById('alcLock');
+  el.textContent = `Too many failed attempts. Try again in ${lockMins()} minute(s).`;
+  el.style.display = 'block';
 }
 
-function renderServiceCard(s) {
-  const active = s.active !== false;
-  return `
-    <div class="service-admin-card ${active ? '' : 'inactive'}" id="scard${s.id}">
-      <div class="sac-top">
-        <span class="sac-num">SERVICE ${String(s.id).padStart(2,'0')}</span>
-        <div class="toggle-wrap">
-          <span class="toggle-label">${active ? 'Active' : 'Off'}</span>
-          <label class="toggle">
-            <input type="checkbox" ${active ? 'checked' : ''} onchange="toggleActive(${s.id},this)">
-            <div class="toggle-track"></div>
-            <div class="toggle-thumb"></div>
-          </label>
-        </div>
-      </div>
-      <div class="sac-name">${s.name}</div>
-      <div class="price-row">
-        <span class="price-symbol">$</span>
-        <input type="number" class="price-input" id="price${s.id}" value="${s.price}" min="0" step="50" oninput="markDirty()">
-        <select class="type-select" id="type${s.id}" onchange="markDirty()">
-          <option value="one-time" ${s.type === 'one-time' ? 'selected' : ''}>one-time</option>
-          <option value="monthly" ${s.type === 'monthly' ? 'selected' : ''}>/ month</option>
-        </select>
-      </div>
-      <textarea class="desc-input" id="desc${s.id}" rows="2" oninput="markDirty()">${s.description}</textarea>
-    </div>
-  `;
-}
+async function doAdminLogin() {
+  if (isLocked()) { applyLockout(); return; }
+  const pw = document.getElementById('adminPw').value;
 
-function toggleActive(id, checkbox) {
-  const card = document.getElementById('scard' + id);
-  card.classList.toggle('inactive', !checkbox.checked);
-  checkbox.closest('.toggle-wrap').querySelector('.toggle-label').textContent = checkbox.checked ? 'Active' : 'Off';
-  markDirty();
-}
-
-function markDirty() {
-  if (!isDirty) {
-    isDirty = true;
-    const btn = document.getElementById('saveBtn');
-    btn.textContent = btn.textContent.replace(' ●', '') + ' ●';
-  }
-}
-
-function collectServices() {
-  return services.map(s => {
-    const card = document.getElementById('scard' + s.id);
-    return {
-      ...s,
-      price:       parseFloat(document.getElementById('price' + s.id)?.value) || s.price,
-      type:        document.getElementById('type' + s.id)?.value || s.type,
-      description: document.getElementById('desc' + s.id)?.value?.trim() || s.description,
-      active:      card?.querySelector('input[type="checkbox"]')?.checked ?? s.active,
-    };
-  });
-}
-
-/* ══════════════════════════════════════════════════════════════════════════
-   SAVE (topbar button)
-══════════════════════════════════════════════════════════════════════════ */
-async function handleSave() {
-  const updated = collectServices();
-  const payload = { currency: '$', lastUpdated: new Date().toISOString().slice(0,10), services: updated };
-
+  let storedPw = ADMIN_PASSWORD;
   if (db) {
     try {
-      await db.collection('catalog').doc('services').set({ items: updated, lastUpdated: payload.lastUpdated });
-      services = updated;
-      isDirty = false;
-      document.getElementById('saveBtn').textContent = '☁ Save to Cloud';
-      showToast('✓ Saved to cloud', 'success');
-      return;
-    } catch(e) {
-      showToast('Cloud save failed — downloading locally', 'error');
-    }
+      const doc = await db.collection('settings').doc('access').get();
+      if (doc.exists && doc.data().adminPassword) storedPw = doc.data().adminPassword;
+    } catch(e) {}
   }
 
-  // Download fallback
-  const json = JSON.stringify(payload, null, 2);
-  const a = Object.assign(document.createElement('a'), {
-    href: URL.createObjectURL(new Blob([json], {type:'application/json'})),
-    download: 'prices.json'
-  });
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  services = updated;
-  isDirty = false;
-  document.getElementById('saveBtn').textContent = db ? '☁ Save to Cloud' : '↓ Download prices.json';
-  showToast('✓ Downloaded — upload to GitHub to go live', 'success');
+  if (pw === storedPw) {
+    clearAttempts();
+    setSession();
+    document.getElementById('adminPw').value = '';
+    await enterAdmin();
+  } else {
+    const a = recordFail();
+    document.getElementById('adminPw').value = '';
+    document.getElementById('adminPw').focus();
+    if (isLocked()) {
+      applyLockout();
+    } else {
+      const err = document.getElementById('alcErr');
+      err.style.display = 'block';
+      const rem = 5 - a.n;
+      err.textContent = `Incorrect password. ${rem} attempt(s) remaining.`;
+      setTimeout(() => err.style.display = 'none', 2800);
+    }
+  }
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
-   LOAD ALL SETTINGS
-══════════════════════════════════════════════════════════════════════════ */
-async function loadAllSettings() {
-  if (!db) return;
+async function enterAdmin() {
+  document.getElementById('adminOverlay').classList.add('hidden');
+  document.getElementById('adminToolbar').style.display = 'flex';
+  document.body.classList.add('admin-active');
+
+  if (db) {
+    await loadAllSettings();
+    await loadServices();
+  } else {
+    await loadServicesLocal();
+  }
+  renderSolGrid();
+  renderSvcTable();
+}
+
+function adminLogout() {
+  clearSession();
+  exitEditMode();
+  showOverlay();
+}
+
+document.getElementById('adminPw').addEventListener('keydown', e => { if (e.key === 'Enter') doAdminLogin(); });
+
+/* ══════════════════════════════════════════════
+   EDIT MODE
+══════════════════════════════════════════════ */
+function toggleEdit() {
+  editMode = !editMode;
+  const btn = document.getElementById('editBtn');
+  if (editMode) {
+    document.body.classList.add('edit-mode');
+    btn.classList.add('on');
+    btn.textContent = '✎ Editing On';
+    document.querySelectorAll('[data-editable]').forEach(el => {
+      el.contentEditable = 'true';
+      el.addEventListener('input', markContentDirty);
+    });
+    toast('Click any highlighted text to edit it', '');
+  } else {
+    exitEditMode();
+  }
+}
+
+function exitEditMode() {
+  editMode = false;
+  document.body.classList.remove('edit-mode');
+  const btn = document.getElementById('editBtn');
+  if (btn) { btn.classList.remove('on'); btn.textContent = '✎ Edit Mode'; }
+  document.querySelectorAll('[data-editable]').forEach(el => {
+    el.contentEditable = 'false';
+    el.removeEventListener('input', markContentDirty);
+  });
+}
+
+function markContentDirty() {
+  contentDirty = true;
+  document.getElementById('saveBtn').style.display = 'inline-block';
+}
+
+async function savePageEdits() {
+  if (!db) { toast('Connect Firebase to save edits to the cloud', 'error'); return; }
+  const content = {};
+  document.querySelectorAll('[data-editable]').forEach(el => {
+    content[el.dataset.editable] = el.innerHTML;
+  });
   try {
-    const [companyDoc, pricingDoc, accessDoc] = await Promise.all([
+    await db.collection('content').doc('page').set({ ...content, updatedAt: new Date().toISOString() });
+    contentDirty = false;
+    document.getElementById('saveBtn').style.display = 'none';
+    toast('✓ Page content saved to cloud', 'success');
+  } catch(e) { toast('Save failed: ' + e.message, 'error'); }
+}
+
+/* ══════════════════════════════════════════════
+   LOAD ALL SETTINGS FROM FIRESTORE
+══════════════════════════════════════════════ */
+async function loadAllSettings() {
+  try {
+    const [compDoc, pricDoc, accDoc, pageDoc] = await Promise.all([
       db.collection('settings').doc('company').get(),
       db.collection('settings').doc('pricing').get(),
       db.collection('settings').doc('access').get(),
+      db.collection('content').doc('page').get(),
     ]);
-
-    if (companyDoc.exists) populateCompanyForm(companyDoc.data());
-    if (pricingDoc.exists) populatePricingForm(pricingDoc.data());
-    if (accessDoc.exists) {
-      const d = accessDoc.data();
+    if (compDoc.exists) fillCompanyForm(compDoc.data());
+    if (pricDoc.exists) fillPricingForm(pricDoc.data());
+    if (accDoc.exists) {
+      const d = accDoc.data();
       if (d.adminPassword) ADMIN_PASSWORD = d.adminPassword;
       if (d.partnerLogins) renderPartnerRows(d.partnerLogins);
     }
-  } catch(e) {
-    console.warn('Could not load settings:', e.message);
+    if (pageDoc.exists) applyPageContent(pageDoc.data());
+  } catch(e) { console.warn('Could not load settings:', e.message); }
+}
+
+function applyPageContent(data) {
+  document.querySelectorAll('[data-editable]').forEach(el => {
+    const key = el.dataset.editable;
+    if (data[key] !== undefined) el.innerHTML = data[key];
+  });
+}
+
+/* ══════════════════════════════════════════════
+   SERVICES
+══════════════════════════════════════════════ */
+const DEFAULTS = [
+  {id:1,phase:1,phaseLabel:"Brand & Authority",name:"Brand Identity",description:"Logo, colors, typography & complete brand guidelines",price:1500,type:"one-time",active:true},
+  {id:2,phase:1,phaseLabel:"Brand & Authority",name:"Motion Video",description:"Professional motion graphics and brand video production",price:900,type:"one-time",active:true},
+  {id:3,phase:1,phaseLabel:"Brand & Authority",name:"Animations",description:"Custom digital animations for web and social media",price:700,type:"one-time",active:true},
+  {id:4,phase:1,phaseLabel:"Brand & Authority",name:"Digital Arts",description:"Bespoke digital artwork and visual content creation",price:500,type:"one-time",active:true},
+  {id:5,phase:1,phaseLabel:"Brand & Authority",name:"Editorial & Print",description:"Brochures, flyers, catalogs and print-ready materials",price:600,type:"one-time",active:true},
+  {id:6,phase:2,phaseLabel:"Growth & Traffic",name:"Branded Content",description:"Influencer partnerships and branded content strategy",price:350,type:"monthly",active:true},
+  {id:7,phase:2,phaseLabel:"Growth & Traffic",name:"Platform Management",description:"Full social media management across all platforms",price:280,type:"monthly",active:true},
+  {id:8,phase:2,phaseLabel:"Growth & Traffic",name:"Ranking Control / SEO",description:"Search engine domination and ranking optimization",price:450,type:"monthly",active:true},
+  {id:9,phase:2,phaseLabel:"Growth & Traffic",name:"Newsletters & SMS",description:"Email campaigns and high-impact SMS marketing automation",price:220,type:"monthly",active:true},
+  {id:10,phase:2,phaseLabel:"Growth & Traffic",name:"Performance Marketing",description:"Paid advertising and performance media buying",price:600,type:"monthly",active:true},
+  {id:11,phase:3,phaseLabel:"Infrastructure & Scale",name:"Website Creation",description:"Custom high-performance website design and development",price:3000,type:"one-time",active:true},
+  {id:12,phase:3,phaseLabel:"Infrastructure & Scale",name:"E-commerce Storefront",description:"Full e-commerce store setup, design and optimization",price:4000,type:"one-time",active:true},
+  {id:13,phase:3,phaseLabel:"Infrastructure & Scale",name:"Secure E-commerce",description:"Enterprise-grade secure e-commerce infrastructure",price:6000,type:"one-time",active:true},
+  {id:14,phase:3,phaseLabel:"Infrastructure & Scale",name:"Business Hub / ERP",description:"Custom ERP and business management system build",price:9500,type:"one-time",active:true},
+  {id:15,phase:3,phaseLabel:"Infrastructure & Scale",name:"Analytics Dashboard",description:"Real-time KPI tracking and statistics dashboard",price:2500,type:"one-time",active:true}
+];
+
+async function loadServices() {
+  try {
+    const doc = await db.collection('catalog').doc('services').get();
+    if (doc.exists && doc.data().items) { services = doc.data().items; return; }
+  } catch(e) {}
+  await loadServicesLocal();
+}
+
+async function loadServicesLocal() {
+  try {
+    const res = await fetch('prices.json?v=' + Date.now());
+    const data = await res.json();
+    services = data.services;
+  } catch(e) { services = DEFAULTS; }
+}
+
+function renderSolGrid() {
+  [1,2,3].forEach(ph => {
+    const el = document.getElementById('ph' + ph + 'items');
+    if (!el) return;
+    el.innerHTML = services.filter(s => s.phase === ph && s.active !== false).map(s =>
+      `<div class="product-item"><span class="prod-num">${String(s.id).padStart(2,'0')}</span><span class="prod-name">${s.name}</span><span class="prod-arrow">→</span></div>`
+    ).join('');
+  });
+}
+
+function renderSvcTable() {
+  const body = document.getElementById('svcBody');
+  if (!body) return;
+  body.innerHTML = services.map(s => `
+    <div class="svc-row" id="sr${s.id}">
+      <span class="svc-id">${String(s.id).padStart(2,'0')}</span>
+      <span class="svc-name">${s.name}</span>
+      <span class="svc-ph">Ph.${s.phase}</span>
+      <input class="svc-pin" type="number" value="${s.price}" min="0" step="50" onchange="markSvcDirty()">
+      <select class="svc-sel" onchange="markSvcDirty()">
+        <option value="one-time" ${s.type==='one-time'?'selected':''}>1x</option>
+        <option value="monthly"  ${s.type==='monthly'?'selected':''}>/mo</option>
+      </select>
+      <button class="svc-del" onclick="deleteService(${s.id})">✕</button>
+    </div>
+  `).join('');
+}
+
+function markSvcDirty() { servicesDirty = true; }
+
+function deleteService(id) {
+  if (!confirm('Remove this service?')) return;
+  services = services.filter(s => s.id !== id);
+  renderSolGrid();
+  renderSvcTable();
+  markSvcDirty();
+}
+
+function showAddSvcForm() {
+  document.getElementById('addSvcForm').style.display = 'block';
+  document.querySelector('.add-svc-btn').style.display = 'none';
+}
+
+function addNewService() {
+  const name = document.getElementById('ns-name').value.trim();
+  if (!name) { toast('Enter a service name', 'error'); return; }
+  const phaseMap = {1:'Brand & Authority',2:'Growth & Traffic',3:'Infrastructure & Scale'};
+  const phase = parseInt(document.getElementById('ns-phase').value);
+  const newId = Math.max(...services.map(s => s.id), 0) + 1;
+  services.push({ id: newId, phase, phaseLabel: phaseMap[phase], name,
+    description: document.getElementById('ns-desc').value.trim(),
+    price: parseFloat(document.getElementById('ns-price').value) || 0,
+    type: document.getElementById('ns-type').value, active: true });
+  renderSolGrid(); renderSvcTable();
+  document.getElementById('ns-name').value = '';
+  document.getElementById('ns-desc').value = '';
+  document.getElementById('addSvcForm').style.display = 'none';
+  document.querySelector('.add-svc-btn').style.display = 'block';
+  markSvcDirty();
+  toast('✓ Service added — save to cloud', 'success');
+}
+
+function collectServices() {
+  return services.map((s, i) => {
+    const row = document.getElementById('sr' + s.id);
+    if (!row) return s;
+    const pin = row.querySelector('.svc-pin');
+    const sel = row.querySelector('.svc-sel');
+    return { ...s, price: parseFloat(pin?.value) || s.price, type: sel?.value || s.type };
+  });
+}
+
+async function saveServicesToCloud() {
+  if (!db) { toast('Connect Firebase first', 'error'); return; }
+  const updated = collectServices();
+  try {
+    await db.collection('catalog').doc('services').set({ items: updated, lastUpdated: new Date().toISOString().slice(0,10) });
+    services = updated;
+    servicesDirty = false;
+    renderSolGrid();
+    toast('✓ Services saved to cloud', 'success');
+  } catch(e) { toast('Save failed: ' + e.message, 'error'); }
+}
+
+/* ══════════════════════════════════════════════
+   SETTINGS — COMPANY INFO
+══════════════════════════════════════════════ */
+function fillCompanyForm(d) {
+  const s = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+  s('d-name', d.name); s('d-tagline', d.tagline); s('d-email', d.email);
+  s('d-phone', d.phone); s('d-address', d.address);
+  s('d-logo-url', d.logo); previewLogo();
+  s('d-linkedin', d.social?.linkedin); s('d-instagram', d.social?.instagram);
+  s('d-facebook', d.social?.facebook); s('d-tiktok', d.social?.tiktok);
+  s('d-twitter', d.social?.twitter); s('d-youtube', d.social?.youtube);
+}
+
+function previewLogo() {
+  const url = document.getElementById('d-logo-url').value.trim();
+  const box = document.getElementById('logoPreview');
+  if (url) {
+    box.innerHTML = `<img src="${url}" alt="logo" onerror="this.parentElement.innerHTML='<span class=nolgo>Image not found</span>'">`;
+  } else {
+    box.innerHTML = '<span class="nolgo">No logo set</span>';
   }
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
-   COMPANY INFO
-══════════════════════════════════════════════════════════════════════════ */
-function populateCompanyForm(d) {
-  const set = (id, val) => { const el = document.getElementById(id); if(el) el.value = val || ''; };
-  set('s-name', d.name); set('s-tagline', d.tagline); set('s-logo', d.logo);
-  set('s-email', d.email); set('s-phone', d.phone); set('s-address', d.address);
-  set('s-linkedin', d.social?.linkedin); set('s-instagram', d.social?.instagram);
-  set('s-facebook', d.social?.facebook); set('s-tiktok', d.social?.tiktok);
-  set('s-twitter', d.social?.twitter); set('s-youtube', d.social?.youtube);
+async function uploadLogoFile(input) {
+  if (!storage) { toast('Firebase Storage not connected', 'error'); return; }
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { toast('File too large (max 5MB)', 'error'); return; }
+  toast('Uploading logo…', '');
+  try {
+    const ext = file.name.split('.').pop();
+    const ref = storage.ref(`company/logo.${ext}`);
+    await ref.put(file);
+    const url = await ref.getDownloadURL();
+    document.getElementById('d-logo-url').value = url;
+    previewLogo();
+    toast('✓ Logo uploaded', 'success');
+  } catch(e) { toast('Upload failed: ' + e.message, 'error'); }
 }
 
 async function saveCompanyInfo() {
-  const val = id => document.getElementById(id).value.trim();
+  if (!db) { toast('Connect Firebase first', 'error'); return; }
+  const v = id => document.getElementById(id)?.value.trim() || '';
   const data = {
-    name: val('s-name'), tagline: val('s-tagline'), logo: val('s-logo'),
-    email: val('s-email'), phone: val('s-phone'), address: val('s-address'),
-    social: {
-      linkedin: val('s-linkedin'), instagram: val('s-instagram'),
-      facebook: val('s-facebook'), tiktok: val('s-tiktok'),
-      twitter: val('s-twitter'), youtube: val('s-youtube'),
-    },
+    name: v('d-name'), tagline: v('d-tagline'), email: v('d-email'),
+    phone: v('d-phone'), address: v('d-address'), logo: v('d-logo-url'),
+    social: { linkedin: v('d-linkedin'), instagram: v('d-instagram'),
+      facebook: v('d-facebook'), tiktok: v('d-tiktok'),
+      twitter: v('d-twitter'), youtube: v('d-youtube') },
     updatedAt: new Date().toISOString()
   };
-  if (!db) { showToast('Connect Firebase first (☁ Firebase Setup tab)', 'error'); return; }
   try {
     await db.collection('settings').doc('company').set(data);
-    showToast('✓ Company info saved to cloud', 'success');
-  } catch(e) { showToast('Save failed: ' + e.message, 'error'); }
+    toast('✓ Company info saved', 'success');
+  } catch(e) { toast('Save failed: ' + e.message, 'error'); }
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
-   PRICING & DISCOUNTS
-══════════════════════════════════════════════════════════════════════════ */
-function populatePricingForm(d) {
-  const set = (id, val) => { const el = document.getElementById(id); if(el) el.value = val ?? ''; };
-  set('s-currency', d.currency || '$');
-  set('s-tax', d.taxRate || 0);
-  set('s-bundle-discount', d.bundleDiscount || 0);
-  set('s-bundle-min', d.bundleMin || 5);
-  const container = document.getElementById('promoCodes');
-  container.innerHTML = '';
+/* ══════════════════════════════════════════════
+   SETTINGS — PRICING
+══════════════════════════════════════════════ */
+function fillPricingForm(d) {
+  const s = (id, v) => { const el = document.getElementById(id); if (el) el.value = v ?? ''; };
+  s('d-currency', d.currency || '$'); s('d-tax', d.taxRate || 0);
+  s('d-bdiscount', d.bundleDiscount || 0); s('d-bmin', d.bundleMin || 5);
+  document.getElementById('promoList').innerHTML = '';
   (d.promoCodes || []).forEach(p => addPromoRow(p));
 }
 
 function addPromoRow(data = {}) {
   const row = document.createElement('div');
-  row.className = 'data-row';
+  row.className = 'drow';
   row.innerHTML = `
-    <span class="row-hint">Code</span>
-    <input type="text"   placeholder="SAVE20"  value="${data.code || ''}" style="max-width:130px">
-    <span class="row-hint">Discount</span>
-    <input type="number" placeholder="20"       value="${data.discount || ''}" style="max-width:80px" min="0">
-    <select style="max-width:110px">
-      <option value="percent" ${data.type !== 'fixed' ? 'selected' : ''}>% off</option>
-      <option value="fixed"   ${data.type === 'fixed'  ? 'selected' : ''}>$ off</option>
+    <span class="drow-hint">Code</span>
+    <input type="text" placeholder="SAVE20" value="${data.code || ''}" style="max-width:110px">
+    <span class="drow-hint">Disc.</span>
+    <input type="number" placeholder="20" value="${data.discount || ''}" style="max-width:65px" min="0">
+    <select style="max-width:80px">
+      <option value="percent" ${data.type!=='fixed'?'selected':''}>% off</option>
+      <option value="fixed"   ${data.type==='fixed'?'selected':''}>$ off</option>
     </select>
-    <button class="del-btn" onclick="this.closest('.data-row').remove()">✕</button>
+    <button class="ddel" onclick="this.closest('.drow').remove()">✕</button>
   `;
-  document.getElementById('promoCodes').appendChild(row);
+  document.getElementById('promoList').appendChild(row);
 }
 
-function collectPromoCodes() {
-  return Array.from(document.querySelectorAll('#promoCodes .data-row')).map(row => {
-    const inputs = row.querySelectorAll('input');
-    const sel = row.querySelector('select');
-    return { code: inputs[0].value.trim().toUpperCase(), discount: parseFloat(inputs[1].value) || 0, type: sel.value };
+function collectPromos() {
+  return Array.from(document.querySelectorAll('#promoList .drow')).map(r => {
+    const ins = r.querySelectorAll('input');
+    return { code: ins[0].value.trim().toUpperCase(), discount: parseFloat(ins[1].value)||0, type: r.querySelector('select').value };
   }).filter(p => p.code);
 }
 
 async function savePricingSettings() {
-  const data = {
-    currency: document.getElementById('s-currency').value.trim() || '$',
-    taxRate: parseFloat(document.getElementById('s-tax').value) || 0,
-    bundleDiscount: parseFloat(document.getElementById('s-bundle-discount').value) || 0,
-    bundleMin: parseInt(document.getElementById('s-bundle-min').value) || 5,
-    promoCodes: collectPromoCodes(),
-    updatedAt: new Date().toISOString()
-  };
-  if (!db) { showToast('Connect Firebase first', 'error'); return; }
+  if (!db) { toast('Connect Firebase first', 'error'); return; }
+  const v = id => document.getElementById(id)?.value;
   try {
-    await db.collection('settings').doc('pricing').set(data);
-    showToast('✓ Pricing settings saved', 'success');
-  } catch(e) { showToast('Save failed: ' + e.message, 'error'); }
+    await db.collection('settings').doc('pricing').set({
+      currency: v('d-currency') || '$', taxRate: parseFloat(v('d-tax'))||0,
+      bundleDiscount: parseFloat(v('d-bdiscount'))||0, bundleMin: parseInt(v('d-bmin'))||5,
+      promoCodes: collectPromos(), updatedAt: new Date().toISOString()
+    });
+    toast('✓ Pricing settings saved', 'success');
+  } catch(e) { toast('Save failed: ' + e.message, 'error'); }
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
-   SERVICES CATALOG (Settings tab)
-══════════════════════════════════════════════════════════════════════════ */
-function renderCatalogList() {
-  const current = collectServices();
-  const phaseLabels = {1:'Ph.1',2:'Ph.2',3:'Ph.3'};
-  document.getElementById('catalogList').innerHTML = current.map(s => `
-    <div class="catalog-service-row">
-      <span class="csr-phase">${phaseLabels[s.phase]}</span>
-      <span class="csr-name">${s.name}</span>
-      <span class="csr-price">$${s.price.toLocaleString()} ${s.type === 'monthly' ? '/mo' : ''}</span>
-      <button class="del-btn" onclick="deleteService(${s.id})">✕ Remove</button>
-    </div>
-  `).join('');
-}
-
-function deleteService(id) {
-  if (!confirm('Remove this service from the catalog?')) return;
-  services = collectServices().filter(s => s.id !== id);
-  renderAdmin();
-  renderCatalogList();
-  markDirty();
-  showToast('Service removed — save catalog to cloud to persist', '');
-}
-
-function addNewService() {
-  const name = document.getElementById('ns-name').value.trim();
-  if (!name) { showToast('Enter a service name', 'error'); return; }
-  const phaseMap = {1:'Brand & Authority', 2:'Growth & Traffic', 3:'Infrastructure & Scale'};
-  const phase = parseInt(document.getElementById('ns-phase').value);
-  const current = collectServices();
-  const newId = Math.max(...current.map(s => s.id), 0) + 1;
-  const newSvc = {
-    id: newId, phase, phaseLabel: phaseMap[phase],
-    name, description: document.getElementById('ns-desc').value.trim(),
-    price: parseFloat(document.getElementById('ns-price').value) || 0,
-    type: document.getElementById('ns-type').value,
-    active: true
-  };
-  services = [...current, newSvc];
-  renderAdmin();
-  renderCatalogList();
-  // reset form
-  ['ns-name','ns-desc'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('addServiceForm').style.display = 'none';
-  document.querySelector('.add-row-btn[onclick*=addServiceForm]').style.display = 'inline-flex';
-  markDirty();
-  showToast(`✓ "${name}" added — save catalog to cloud`, 'success');
-}
-
-async function saveCatalogToCloud() {
-  if (!db) { showToast('Connect Firebase first', 'error'); return; }
-  const updated = collectServices();
-  try {
-    await db.collection('catalog').doc('services').set({ items: updated, lastUpdated: new Date().toISOString().slice(0,10) });
-    services = updated;
-    isDirty = false;
-    showToast('✓ Catalog saved to cloud', 'success');
-  } catch(e) { showToast('Save failed: ' + e.message, 'error'); }
-}
-
-/* ══════════════════════════════════════════════════════════════════════════
-   USERS & ACCESS
-══════════════════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════
+   SETTINGS — ACCESS
+══════════════════════════════════════════════ */
 function renderPartnerRows(list = []) {
-  const container = document.getElementById('partnerLogins');
-  container.innerHTML = '';
+  document.getElementById('partnerList').innerHTML = '';
   list.forEach(p => addPartnerRow(p));
 }
 
 function addPartnerRow(data = {}) {
   const row = document.createElement('div');
-  row.className = 'data-row';
+  row.className = 'drow';
   row.innerHTML = `
-    <input type="text"     placeholder="Partner Name"   value="${data.name || ''}"  style="max-width:150px">
-    <input type="email"    placeholder="email@co.com"   value="${data.email || ''}">
-    <input type="password" placeholder="password"       value="${data.password || ''}" style="max-width:130px">
-    <button class="del-btn" onclick="this.closest('.data-row').remove()">✕</button>
+    <input type="text"     placeholder="Name"     value="${data.name||''}"  style="max-width:120px">
+    <input type="email"    placeholder="email"    value="${data.email||''}">
+    <input type="password" placeholder="password" value="${data.password||''}" style="max-width:100px">
+    <button class="ddel" onclick="this.closest('.drow').remove()">✕</button>
   `;
-  document.getElementById('partnerLogins').appendChild(row);
+  document.getElementById('partnerList').appendChild(row);
 }
 
-function collectPartnerLogins() {
-  return Array.from(document.querySelectorAll('#partnerLogins .data-row')).map(row => {
-    const inputs = row.querySelectorAll('input');
-    return { name: inputs[0].value.trim(), email: inputs[1].value.trim(), password: inputs[2].value };
+function collectPartners() {
+  return Array.from(document.querySelectorAll('#partnerList .drow')).map(r => {
+    const ins = r.querySelectorAll('input');
+    return { name: ins[0].value.trim(), email: ins[1].value.trim(), password: ins[2].value };
   }).filter(p => p.email);
 }
 
-async function changeAdminPassword() {
-  const cur = document.getElementById('s-cur-pw').value;
-  const nw  = document.getElementById('s-new-pw').value;
-  const con = document.getElementById('s-con-pw').value;
-  if (cur !== ADMIN_PASSWORD)     { showToast('Current password is incorrect', 'error'); return; }
-  if (nw.length < 8)              { showToast('New password must be at least 8 characters', 'error'); return; }
-  if (nw !== con)                 { showToast('Passwords do not match', 'error'); return; }
+async function changePassword() {
+  const cur = document.getElementById('d-cur-pw').value;
+  const nw  = document.getElementById('d-new-pw').value;
+  const con = document.getElementById('d-con-pw').value;
+  if (cur !== ADMIN_PASSWORD) { toast('Current password incorrect', 'error'); return; }
+  if (nw.length < 8)          { toast('New password must be at least 8 characters', 'error'); return; }
+  if (nw !== con)             { toast('Passwords do not match', 'error'); return; }
   ADMIN_PASSWORD = nw;
-  ['s-cur-pw','s-new-pw','s-con-pw'].forEach(id => document.getElementById(id).value = '');
+  ['d-cur-pw','d-new-pw','d-con-pw'].forEach(id => document.getElementById(id).value = '');
   if (db) {
-    try {
-      await db.collection('settings').doc('access').set({ adminPassword: nw }, { merge: true });
-      showToast('✓ Password updated and saved to cloud', 'success');
-    } catch(e) { showToast('Password changed locally only (cloud save failed)', ''); }
-  } else {
-    showToast('✓ Password changed for this session', 'success');
+    try { await db.collection('settings').doc('access').set({ adminPassword: nw }, { merge: true }); }
+    catch(e) {}
   }
+  toast('✓ Password updated', 'success');
 }
 
 async function saveAccessSettings() {
-  if (!db) { showToast('Connect Firebase first', 'error'); return; }
+  if (!db) { toast('Connect Firebase first', 'error'); return; }
   try {
     await db.collection('settings').doc('access').set({
       adminPassword: ADMIN_PASSWORD,
-      partnerLogins: collectPartnerLogins(),
+      partnerLogins: collectPartners(),
       updatedAt: new Date().toISOString()
     });
-    showToast('✓ Access settings saved to cloud', 'success');
-  } catch(e) { showToast('Save failed: ' + e.message, 'error'); }
+    toast('✓ Access settings saved', 'success');
+  } catch(e) { toast('Save failed: ' + e.message, 'error'); }
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
-   FIREBASE SETUP TAB
-══════════════════════════════════════════════════════════════════════════ */
-function populateSetupFields(cfg) {
-  if (!cfg) return;
-  const set = (id, val) => { const el = document.getElementById(id); if(el) el.value = val || ''; };
-  set('fb-apiKey', cfg.apiKey); set('fb-projectId', cfg.projectId);
-  set('fb-appId', cfg.appId); set('fb-messagingSenderId', cfg.messagingSenderId);
-  set('fb-authDomain', cfg.authDomain); set('fb-storageBucket', cfg.storageBucket);
+/* ══════════════════════════════════════════════
+   DRAWER
+══════════════════════════════════════════════ */
+function openDrawer() {
+  document.getElementById('settingsDrawer').classList.add('open');
+  document.getElementById('drawerBackdrop').classList.add('open');
+}
+function closeDrawer() {
+  document.getElementById('settingsDrawer').classList.remove('open');
+  document.getElementById('drawerBackdrop').classList.remove('open');
+}
+function switchDT(name) {
+  ['company','pricing','services','access'].forEach(t => {
+    document.getElementById('dt-' + t).classList.toggle('active', t === name);
+    document.getElementById('dp-' + t).classList.toggle('active', t === name);
+  });
+  if (name === 'services') renderSvcTable();
 }
 
-async function connectFirebase() {
-  const cfg = {
-    apiKey:            document.getElementById('fb-apiKey').value.trim(),
-    projectId:         document.getElementById('fb-projectId').value.trim(),
-    appId:             document.getElementById('fb-appId').value.trim(),
-    messagingSenderId: document.getElementById('fb-messagingSenderId').value.trim(),
-    authDomain:        document.getElementById('fb-authDomain').value.trim() || document.getElementById('fb-projectId').value.trim() + '.firebaseapp.com',
-    storageBucket:     document.getElementById('fb-storageBucket').value.trim() || document.getElementById('fb-projectId').value.trim() + '.appspot.com',
-  };
-  if (!cfg.apiKey || !cfg.projectId) { showToast('Enter at least the API Key and Project ID', 'error'); return; }
-  const statusEl = document.getElementById('firebaseStatus');
-  statusEl.className = 'config-status not-configured';
-  statusEl.textContent = '… Connecting…';
-  const ok = await initFirebase(cfg);
-  if (ok) {
-    localStorage.setItem('fifteen_fb_config', JSON.stringify(cfg));
-    statusEl.className = 'config-status connected';
-    statusEl.textContent = '✓ Connected to Firebase — cloud sync is active';
-    setCloudBadge(true);
-    await loadAllSettings();
-    await loadServices();
-    showToast('✓ Firebase connected! All settings now sync to the cloud.', 'success');
-  } else {
-    statusEl.className = 'config-status not-configured';
-    statusEl.textContent = '✕ Connection failed — check your config values and Firestore rules';
-    showToast('Firebase connection failed', 'error');
-  }
-}
-
-function disconnectFirebase() {
-  if (!confirm('Disconnect Firebase? Settings will be local-only until reconnected.')) return;
-  localStorage.removeItem('fifteen_fb_config');
-  db = null;
-  setCloudBadge(false);
-  document.getElementById('firebaseStatus').className = 'config-status not-configured';
-  document.getElementById('firebaseStatus').textContent = '○ Not connected';
-  showToast('Firebase disconnected', '');
-}
-
-/* ══════════════════════════════════════════════════════════════════════════
+/* ══════════════════════════════════════════════
    TOAST
-══════════════════════════════════════════════════════════════════════════ */
-function showToast(msg, type) {
+══════════════════════════════════════════════ */
+function toast(msg, type) {
   const el = document.getElementById('toast');
   el.textContent = msg;
-  el.className = 'toast show ' + (type || '');
+  el.className = 't-toast show' + (type ? ' ' + type : '');
   clearTimeout(el._t);
   el._t = setTimeout(() => el.classList.remove('show'), 3500);
 }
 
-window.addEventListener('beforeunload', e => { if (isDirty) { e.preventDefault(); e.returnValue = ''; } });
+/* ══════════════════════════════════════════════
+   INDEX.HTML JS (sidebar, partner modal, apply)
+══════════════════════════════════════════════ */
+const toggle = document.getElementById('sidebarToggle');
+const sidebar = document.getElementById('sidebar');
+const sOverlay = document.getElementById('sidebarOverlay');
+toggle.addEventListener('click', () => { sidebar.classList.toggle('open'); sOverlay.classList.toggle('open'); });
+sOverlay.addEventListener('click', () => { sidebar.classList.remove('open'); sOverlay.classList.remove('open'); });
+sidebar.querySelectorAll('a[href^="#"]').forEach(a => a.addEventListener('click', () => { sidebar.classList.remove('open'); sOverlay.classList.remove('open'); }));
+
+function openPartnerModal()  { document.getElementById('partnerModalOverlay').classList.add('open'); setTimeout(() => document.getElementById('partnerEmail').focus(), 80); }
+function closePartnerModal(e){ if (e && e.target !== document.getElementById('partnerModalOverlay')) return; document.getElementById('partnerModalOverlay').classList.remove('open'); document.getElementById('partnerEmail').value=''; document.getElementById('partnerPw').value=''; }
+function submitPartnerLogin(){ const btn = document.querySelector('#partnerModalOverlay .btn-go'); btn.textContent='Checking…'; btn.style.opacity='.7'; setTimeout(()=>{ btn.textContent='✓ Request Sent'; btn.style.background='#1d7a4c'; btn.style.opacity='1'; setTimeout(()=>closePartnerModal(),1800); },1200); }
+
+function handleApply() {
+  const name = document.getElementById('fn').value.trim();
+  const email = document.getElementById('fe').value.trim();
+  const industry = document.getElementById('fi').value;
+  if (!name || !email || !industry) { alert('Please fill in your name, email, and industry sector.'); return; }
+  const btn = document.querySelector('.form-submit');
+  btn.textContent = 'Checking Availability…'; btn.style.opacity = '.7'; btn.disabled = true;
+  setTimeout(() => { btn.textContent = '✓ Application Received — We\'ll Be In Touch Within 48 Hours'; btn.style.background = '#1d7a4c'; btn.style.opacity = '1'; }, 1400);
+}
+
+document.querySelectorAll('a[href^="#"]').forEach(a => a.addEventListener('click', e => {
+  const t = document.querySelector(a.getAttribute('href'));
+  if (t) { e.preventDefault(); t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+}));
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closePartnerModal({ target: document.getElementById('partnerModalOverlay') }); closeDrawer(); }
+});
 </script>
 </body>
 </html>
