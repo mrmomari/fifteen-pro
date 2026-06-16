@@ -66,7 +66,7 @@ body{
   display:block;
   margin-bottom:32px;
 }
-.sidebar-logo span{color:var(--green)}
+.sidebar-logo .logo-accent{color:var(--green)}
 .sidebar-section-label{
   font-size:9px;
   font-weight:800;
@@ -163,32 +163,6 @@ body{
 }
 .portal-sub a{color:var(--green);text-decoration:none;font-weight:600}
 
-/* Resources */
-.sidebar-resources{display:flex;flex-direction:column;gap:2px;margin-bottom:20px}
-.resource-link{
-  display:flex;
-  align-items:center;
-  gap:9px;
-  padding:8px 12px;
-  border-radius:8px;
-  text-decoration:none;
-  font-size:12px;
-  font-weight:500;
-  color:var(--text-muted);
-  transition:all .15s;
-}
-.resource-link:hover{background:rgba(0,0,0,0.07);color:var(--text)}
-.resource-link svg{opacity:.55;flex-shrink:0}
-.resource-link:hover svg{opacity:.9}
-.resource-link .ext-arrow{
-  margin-left:auto;
-  opacity:0;
-  font-size:10px;
-  color:var(--green);
-  transition:opacity .15s;
-}
-.resource-link:hover .ext-arrow{opacity:1}
-
 /* Sidebar footer */
 .sidebar-footer{
   padding:16px 20px;
@@ -200,14 +174,6 @@ body{
   align-items:center;
   justify-content:space-between;
 }
-.admin-trigger{
-  background:none;border:none;padding:4px 8px;cursor:pointer;text-decoration:none;
-  color:var(--text-dim);opacity:.6;transition:opacity .2s;line-height:1;
-  display:flex;align-items:center;gap:5px;font-size:11px;font-family:inherit;
-  border-radius:6px;
-}
-.admin-trigger:hover{opacity:1;background:rgba(0,0,0,.06);}
-
 
 /* Mobile toggle */
 .sidebar-toggle{
@@ -603,7 +569,7 @@ body{
 /* ── Footer ── */
 .footer{padding:40px 0;border-top:1px solid rgba(0,0,0,0.08);text-align:center;background:var(--cream-alt)}
 .footer-logo{font-size:26px;font-weight:900;letter-spacing:-.04em;color:var(--text);margin-bottom:8px}
-.footer-logo span{color:var(--green)}
+.footer-logo .logo-accent{color:var(--green)}
 .footer-copy{font-size:12px;color:var(--text-dim);line-height:1.8}
 /* ── Social icons ── */
 .soc{width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;transition:opacity .2s,transform .15s;font-size:11px;flex-shrink:0}
@@ -669,7 +635,10 @@ body{
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-inner">
 
-    <a href="#" class="sidebar-logo">FIFTEEN<span>.</span></a>
+    <a href="#" class="sidebar-logo" id="sidebarLogo">
+      <img id="sidebarLogoImg" alt="Fifteen" style="display:none;max-height:44px;width:auto;object-fit:contain">
+      <span id="sidebarLogoText">FIFTEEN<span class="logo-accent">.</span></span>
+    </a>
 
     <!-- Nav -->
     <div class="sidebar-section-label">Navigate</div>
@@ -712,46 +681,11 @@ body{
       </a>
     </nav>
 
-    <div class="sidebar-divider"></div>
-
-    <!-- Client portal -->
-    <!-- Resources -->
-    <div class="sidebar-section-label">Resources</div>
-    <div class="sidebar-resources">
-<a href="Products Guide.pdf" target="_blank" rel="noopener" class="resource-link">
-        <svg class="icon" width="13" height="13" viewBox="0 0 24 24" style="stroke:var(--green)">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-          <polyline points="14 2 14 8 20 8"/>
-        </svg>
-        Products Guide
-        <span class="ext-arrow">↗</span>
-      </a>
-      <a href="Ultimate Guide.pdf" target="_blank" rel="noopener" class="resource-link">
-        <svg class="icon" width="13" height="13" viewBox="0 0 24 24" style="stroke:var(--green)">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-          <polyline points="14 2 14 8 20 8"/>
-        </svg>
-        Ultimate Guide
-        <span class="ext-arrow">↗</span>
-      </a>
-      <a href="fifteen---bundle-flyer1.1.pdf" target="_blank" rel="noopener" class="resource-link">
-        <svg class="icon" width="13" height="13" viewBox="0 0 24 24" style="stroke:var(--orange)">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-          <polyline points="14 2 14 8 20 8"/>
-        </svg>
-        Bundle Flyer
-        <span class="ext-arrow">↗</span>
-      </a>
-    </div>
 
   </div>
   <div class="sidebar-footer">
     <div class="sf-top">
       <span>15fifteen15 &nbsp;·&nbsp; Business Acceleration</span>
-      <a href="admin.html" class="admin-trigger" title="Admin panel">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        Admin
-      </a>
     </div>
     <div id="sfContact" style="display:none">
       <div id="sfAddr" class="sf-addr"></div>
@@ -1120,7 +1054,10 @@ body{
 <!-- FOOTER -->
 <footer class="footer">
   <div class="container">
-    <div class="footer-logo">FIFTEEN<span>.</span></div>
+    <div class="footer-logo" id="footerLogo">
+      <img id="footerLogoImg" alt="Fifteen" style="display:none;max-height:48px;width:auto;object-fit:contain;margin:0 auto 4px">
+      <span id="footerLogoText">FIFTEEN<span class="logo-accent">.</span></span>
+    </div>
     <div class="ft-soc-row" id="ftSocRow" style="display:none">
       <a class="soc li" id="ft-li" href="#" target="_blank" rel="noopener" style="display:none" title="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
       <a class="soc ig" id="ft-ig" href="#" target="_blank" rel="noopener" style="display:none" title="Instagram"><i class="fa-brands fa-instagram"></i></a>
@@ -1221,6 +1158,21 @@ document.querySelectorAll('a[href^="#"]').forEach(a=>{
     db.collection('settings').doc('company').get().then(doc => {
       if (!doc.exists) return;
       const d = doc.data();
+      const logoUrl = (d.logo || '').trim();
+      if (logoUrl) {
+        ['sidebarLogoImg','footerLogoImg'].forEach(id => {
+          const img = document.getElementById(id);
+          if (!img) return;
+          img.onload = () => {
+            img.style.display = 'block';
+            const txtId = id.replace('Img','Text');
+            const txt = document.getElementById(txtId);
+            if (txt) txt.style.display = 'none';
+          };
+          img.onerror = () => { img.style.display = 'none'; };
+          img.src = logoUrl;
+        });
+      }
       const addr = (d.address || '').trim();
       const sfAddr = document.getElementById('sfAddr');
       const ftAddr = document.getElementById('ftAddr');
