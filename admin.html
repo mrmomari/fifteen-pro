@@ -263,7 +263,7 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
 .svc-id{font-size:10px;color:var(--green);font-weight:700}
 .svc-name{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .svc-ph{font-size:10px;color:var(--text-dim)}
-.svc-pin,.svc-sel{width:100%;padding:4px 6px;border:1px solid rgba(0,0,0,.1);border-radius:5px;font-size:11px;font-family:inherit}
+.svc-pin,.svc-sel,.svc-name-input{width:100%;padding:4px 6px;border:1px solid rgba(0,0,0,.1);border-radius:5px;font-size:11px;font-family:inherit}
 .svc-del{background:transparent;border:none;color:#dc3545;font-size:13px;cursor:pointer;padding:0}
 .add-svc-form{display:none;margin-top:12px;padding:16px;background:rgba(38,145,94,.05);border-radius:8px;border:1px solid rgba(38,145,94,.16)}
 
@@ -1225,7 +1225,7 @@ function renderSvcTable() {
   body.innerHTML = services.map(s => `
     <div class="svc-row" id="sr${s.id}">
       <span class="svc-id">${String(s.id).padStart(2,'0')}</span>
-      <span class="svc-name" title="${escHtml(s.name)}">${escHtml(s.name)}</span>
+      <input class="svc-name-input" type="text" value="${escHtml(s.name)}" title="${escHtml(s.name)}">
       <span class="svc-ph">P${s.phase}</span>
       <input class="svc-pin" type="number" value="${s.price}" min="0" step="50">
       <select class="svc-sel">
@@ -1275,9 +1275,10 @@ function collectServices() {
   return services.map(s => {
     const row = document.getElementById('sr' + s.id);
     if (!row) return s;
+    const nameInput = row.querySelector('.svc-name-input');
     const pin = row.querySelector('.svc-pin');
     const sel = row.querySelector('.svc-sel');
-    return { ...s, price: parseFloat(pin?.value) || s.price, type: sel?.value || s.type };
+    return { ...s, name: nameInput?.value.trim() || s.name, price: parseFloat(pin?.value) || s.price, type: sel?.value || s.type };
   });
 }
 
