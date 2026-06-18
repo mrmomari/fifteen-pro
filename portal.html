@@ -1063,6 +1063,14 @@ body{
             <i class="fa-solid fa-credit-card"></i>
             Billing
           </button>
+          <button class="p-nav-item" data-tab="request-service" onclick="switchTab('request-service',this)">
+            <i class="fa-solid fa-plus-circle"></i>
+            Request Service
+          </button>
+          <button class="p-nav-item" data-tab="audit" onclick="switchTab('audit',this)">
+            <i class="fa-solid fa-history"></i>
+            Activity Log
+          </button>
           <a class="p-nav-item" href="shop.html" target="_blank" rel="noopener">
             <i class="fa-solid fa-cart-shopping"></i>
             Shop
@@ -1200,6 +1208,68 @@ body{
 
           <div id="billingContent">
             <div class="skeleton" style="height:300px;border-radius:var(--radius)"></div>
+          </div>
+        </div>
+
+        <!-- ── TAB 5: REQUEST SERVICE ── -->
+        <div class="tab-panel" id="tab-request-service">
+          <div class="section-hdr">Request a Service</div>
+          <div class="card">
+            <div class="card-body">
+              <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 8px; color: var(--text);">Available Services</label>
+                <select id="serviceSelect" style="width: 100%; padding: 10px; border: 1px solid var(--cream-alt); border-radius: 8px; font-family: inherit;">
+                  <option value="">Loading services...</option>
+                </select>
+              </div>
+
+              <div id="serviceConfigContainer" style="display: none;">
+                <div style="margin-bottom: 20px; padding: 16px; background: var(--cream-alt); border-radius: 8px;">
+                  <div id="serviceDescription" style="font-size: 14px; color: var(--text-muted); line-height: 1.6;"></div>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                  <label style="display: block; font-weight: 600; margin-bottom: 8px; color: var(--text);">Preferred Start Date</label>
+                  <input type="date" id="serviceStartDate" style="width: 100%; padding: 10px; border: 1px solid var(--cream-alt); border-radius: 8px; font-family: inherit;">
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                  <label style="display: block; font-weight: 600; margin-bottom: 8px; color: var(--text);">Additional Notes</label>
+                  <textarea id="serviceNotes" placeholder="Any specific requirements or preferences..." style="width: 100%; padding: 10px; border: 1px solid var(--cream-alt); border-radius: 8px; font-family: inherit; min-height: 100px;"></textarea>
+                </div>
+
+                <button onclick="submitServiceRequest()" style="padding: 10px 20px; background: var(--green); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-family: inherit;">
+                  Submit Request
+                </button>
+                <button onclick="cancelServiceRequest()" style="padding: 10px 20px; background: transparent; color: var(--text-muted); border: 1px solid var(--cream-alt); border-radius: 8px; font-weight: 600; cursor: pointer; font-family: inherit; margin-left: 8px;">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── TAB 6: AUDIT LOG ── -->
+        <div class="tab-panel" id="tab-audit">
+          <div class="section-hdr">Activity Log</div>
+          <div class="card">
+            <div style="overflow-x: auto;">
+              <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                  <tr style="border-bottom: 1px solid var(--cream-alt);">
+                    <th style="text-align: left; padding: 12px; font-weight: 600; color: var(--text-muted); font-size: 12px; text-transform: uppercase;">Date & Time</th>
+                    <th style="text-align: left; padding: 12px; font-weight: 600; color: var(--text-muted); font-size: 12px; text-transform: uppercase;">Action</th>
+                    <th style="text-align: left; padding: 12px; font-weight: 600; color: var(--text-muted); font-size: 12px; text-transform: uppercase;">Resource</th>
+                    <th style="text-align: left; padding: 12px; font-weight: 600; color: var(--text-muted); font-size: 12px; text-transform: uppercase;">Details</th>
+                  </tr>
+                </thead>
+                <tbody id="auditTableBody">
+                  <tr>
+                    <td colspan="4" style="padding: 32px; text-align: center; color: var(--text-dim);">Loading activity log...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -1441,6 +1511,9 @@ function switchTab(tabName, btn) {
   // Close mobile sidebar
   document.getElementById('pSidebar').classList.remove('open');
   document.getElementById('sidebarOverlay').classList.remove('open');
+  // Load data for specific tabs
+  if (tabName === 'request-service') loadServicesCatalog();
+  if (tabName === 'audit') loadAuditLog();
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -1450,7 +1523,9 @@ async function loadAllData() {
   await Promise.all([
     loadServices(),
     loadTickets(),
-    loadInvoices()
+    loadInvoices(),
+    loadServicesCatalog(),
+    loadAuditLog()
   ]);
 }
 
@@ -1954,6 +2029,168 @@ function formatTicketStatus(status) {
     resolved:    'Resolved'
   };
   return map[status] || (status || 'Open');
+}
+
+/* ══════════════════════════════════════════════════════════
+   REQUEST SERVICE
+══════════════════════════════════════════════════════════ */
+async function loadServicesCatalog() {
+  try {
+    let allServices = [];
+    const catalogDoc = await db.collection('catalog').doc('services').get();
+    if (catalogDoc.exists && catalogDoc.data().items) {
+      allServices = catalogDoc.data().items;
+    }
+
+    const select = document.getElementById('serviceSelect');
+    select.innerHTML = '<option value="">Select a service...</option>';
+    allServices.forEach(svc => {
+      if (svc.active) {
+        const opt = document.createElement('option');
+        opt.value = svc.id;
+        opt.text = svc.name + (svc.type === 'monthly' ? ' ($' + svc.price + '/mo)' : ' ($' + svc.price + ')');
+        opt.dataset.service = JSON.stringify(svc);
+        select.appendChild(opt);
+      }
+    });
+  } catch(e) {
+    console.error('Error loading services:', e);
+  }
+}
+
+document.getElementById('serviceSelect')?.addEventListener('change', function() {
+  const container = document.getElementById('serviceConfigContainer');
+  if (this.value) {
+    const selected = [...this.options].find(o => o.value === this.value);
+    if (selected && selected.dataset.service) {
+      const svc = JSON.parse(selected.dataset.service);
+      document.getElementById('serviceDescription').innerHTML =
+        `<strong>${svc.name}</strong><br/>${svc.description}`;
+      container.style.display = 'block';
+    }
+  } else {
+    container.style.display = 'none';
+  }
+});
+
+async function submitServiceRequest() {
+  const serviceId = parseInt(document.getElementById('serviceSelect').value);
+  const startDate = document.getElementById('serviceStartDate').value;
+  const notes = document.getElementById('serviceNotes').value;
+
+  if (!serviceId || !startDate) {
+    alert('Please select a service and preferred start date');
+    return;
+  }
+
+  try {
+    const select = document.getElementById('serviceSelect');
+    const selected = [...select.options].find(o => o.value == serviceId);
+    const svc = JSON.parse(selected.dataset.service);
+
+    await db.collection('customerServices').add({
+      userId: currentUser.uid,
+      customerId: currentUser.uid,
+      customerName: customerData.name || currentUser.email,
+      serviceId: svc.id,
+      serviceName: svc.name,
+      phase: svc.phase,
+      status: 'pending',
+      startDate: new Date(startDate),
+      completionDate: null,
+      milestones: [],
+      notes: notes,
+      configuration: {},
+      createdAt: new Date(),
+      requestedAt: new Date()
+    });
+
+    // Log audit trail
+    await db.collection('auditLogs').add({
+      userId: currentUser.uid,
+      action: 'request',
+      resourceType: 'service',
+      resourceId: svc.id,
+      changes: { serviceName: svc.name, notes: notes },
+      timestamp: new Date()
+    });
+
+    showToast('✓ Service request submitted successfully!');
+    cancelServiceRequest();
+    await loadServices();
+  } catch(e) {
+    console.error('Error submitting request:', e);
+    showToast('Failed to submit request');
+  }
+}
+
+function cancelServiceRequest() {
+  document.getElementById('serviceSelect').value = '';
+  document.getElementById('serviceStartDate').value = '';
+  document.getElementById('serviceNotes').value = '';
+  document.getElementById('serviceConfigContainer').style.display = 'none';
+}
+
+/* ══════════════════════════════════════════════════════════
+   AUDIT LOG
+══════════════════════════════════════════════════════════ */
+async function loadAuditLog() {
+  try {
+    const logs = await db.collection('auditLogs')
+      .where('userId', '==', currentUser.uid)
+      .orderBy('timestamp', 'desc')
+      .limit(50)
+      .get();
+
+    const tbody = document.getElementById('auditTableBody');
+    tbody.innerHTML = '';
+
+    if (logs.empty) {
+      tbody.innerHTML = '<tr><td colspan="4" style="padding: 32px; text-align: center; color: var(--text-dim);">No activity logged yet</td></tr>';
+      return;
+    }
+
+    logs.docs.forEach(doc => {
+      const d = doc.data();
+      const row = tbody.insertRow();
+      const timestamp = d.timestamp?.toDate ? d.timestamp.toDate() : new Date(d.timestamp);
+
+      row.innerHTML = `
+        <td style="padding: 12px; border-bottom: 1px solid var(--cream-alt); font-size: 13px;">${formatDate(timestamp)}</td>
+        <td style="padding: 12px; border-bottom: 1px solid var(--cream-alt); font-size: 13px; text-transform: capitalize;">${d.action || '—'}</td>
+        <td style="padding: 12px; border-bottom: 1px solid var(--cream-alt); font-size: 13px; text-transform: capitalize;">${d.resourceType || '—'}</td>
+        <td style="padding: 12px; border-bottom: 1px solid var(--cream-alt); font-size: 12px; color: var(--text-dim);">${JSON.stringify(d.changes || {}).substring(0, 50)}</td>
+      `;
+    });
+  } catch(e) {
+    console.error('Error loading audit log:', e);
+    const tbody = document.getElementById('auditTableBody');
+    tbody.innerHTML = '<tr><td colspan="4" style="padding: 32px; text-align: center; color: #dc3545;">Error loading activity log</td></tr>';
+  }
+}
+
+function showToast(message) {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--green);
+    color: white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    z-index: 10000;
+    animation: slideIn 0.3s ease-out;
+  `;
+  toast.textContent = message;
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.animation = 'slideOut 0.3s ease-out forwards';
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
 }
 </script>
 </body>

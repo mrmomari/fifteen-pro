@@ -417,6 +417,15 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
           <button class="sb-tab" onclick="switchTab('expertise')">
             <i class="fa-solid fa-users"></i> Expertise
           </button>
+          <button class="sb-tab" onclick="switchTab('services-mgmt')">
+            <i class="fa-solid fa-briefcase"></i> Services
+          </button>
+          <button class="sb-tab" onclick="switchTab('audit')">
+            <i class="fa-solid fa-clock-rotate-left"></i> Audit Logs
+          </button>
+          <button class="sb-tab" onclick="switchTab('notifications')">
+            <i class="fa-solid fa-bell"></i> Notifications
+          </button>
         </nav>
 
         <div class="sb-divider"></div>
@@ -675,6 +684,151 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
           <button class="form-save" onclick="saveExpertise()">Save Expertise</button>
         </div>
 
+        <!-- ═══ SERVICE MANAGEMENT PANEL ═══ -->
+        <div class="dash-panel" id="panel-services-mgmt">
+          <div class="panel-heading">Service Management</div>
+          <div class="panel-sub">Assign services to customers, configure parameters, and manage service lifecycle.</div>
+
+          <div class="form-card">
+            <div class="form-card-title">Assign Service to Customer</div>
+            <div class="form-grid one">
+              <div class="f-field"><label>Customer</label><select id="sm-customer"></select></div>
+              <div class="f-field"><label>Service</label><select id="sm-service"></select></div>
+              <div class="f-field"><label>Start Date</label><input id="sm-start" type="date"></div>
+              <div class="f-field"><label>Target Completion</label><input id="sm-completion" type="date"></div>
+              <button class="form-save" onclick="assignService()">Assign Service</button>
+            </div>
+          </div>
+
+          <div class="form-card">
+            <div class="form-card-title">Active Services</div>
+            <div style="overflow-x: auto;">
+              <table class="data-table" id="svcMgmtTable">
+                <thead>
+                  <tr>
+                    <th>Customer</th>
+                    <th>Service</th>
+                    <th>Phase</th>
+                    <th>Status</th>
+                    <th>Start Date</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="svcMgmtBody">
+                  <tr>
+                    <td colspan="6">
+                      <div class="empty-state">
+                        <i class="fa-regular fa-briefcase"></i>
+                        Loading services…
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ AUDIT LOGS PANEL ═══ -->
+        <div class="dash-panel" id="panel-audit">
+          <div class="panel-heading">Audit Logs</div>
+          <div class="panel-sub">View activity history and changes across the system.</div>
+
+          <div class="form-card">
+            <div class="form-card-title">Filter</div>
+            <div class="form-grid">
+              <div class="f-field"><label>Resource Type</label><select id="audit-resource">
+                <option value="">All</option>
+                <option value="application">Applications</option>
+                <option value="customer">Customers</option>
+                <option value="service">Services</option>
+                <option value="ticket">Tickets</option>
+                <option value="invoice">Invoices</option>
+              </select></div>
+              <div class="f-field"><label>Action</label><select id="audit-action">
+                <option value="">All</option>
+                <option value="create">Create</option>
+                <option value="update">Update</option>
+                <option value="delete">Delete</option>
+              </select></div>
+            </div>
+            <button class="form-save" onclick="filterAuditLogs()">Filter</button>
+          </div>
+
+          <div class="data-table-wrap">
+            <table class="data-table" id="auditTable">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>User</th>
+                  <th>Action</th>
+                  <th>Resource</th>
+                  <th>Changes</th>
+                </tr>
+              </thead>
+              <tbody id="auditTableBody">
+                <tr>
+                  <td colspan="5">
+                    <div class="empty-state">
+                      <i class="fa-regular fa-history"></i>
+                      Loading audit logs…
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ═══ NOTIFICATIONS PANEL ═══ -->
+        <div class="dash-panel" id="panel-notifications">
+          <div class="panel-heading">Notifications</div>
+          <div class="panel-sub">Configure email and SMS notification preferences.</div>
+
+          <div class="form-card">
+            <div class="form-card-title">Email Notifications</div>
+            <div class="form-grid">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" id="notif-app-email" checked> <label>New applications received</label>
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" id="notif-service-email" checked> <label>Service status changes</label>
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" id="notif-ticket-email" checked> <label>New support tickets</label>
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" id="notif-invoice-email" checked> <label>Invoice notifications</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-card">
+            <div class="form-card-title">Notification Recipients</div>
+            <div id="notif-recipients">
+              <div class="drow">
+                <input type="email" id="notif-email-1" placeholder="admin@email.com" style="flex:1">
+                <button class="ddel" onclick="removeNotifEmail(1)"><i class="fa-solid fa-trash"></i></button>
+              </div>
+            </div>
+            <button class="as-add" onclick="addNotifEmail()"><i class="fa-solid fa-plus"></i> Add Email</button>
+          </div>
+
+          <div class="form-card">
+            <div class="form-card-title">SMS Notifications (Pending Cloud Functions)</div>
+            <div class="form-grid one">
+              <div class="f-field"><label>Enable SMS</label>
+                <select id="notif-sms-enable">
+                  <option value="no">No</option>
+                  <option value="yes">Yes (requires Twilio setup)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <button class="form-save" onclick="saveNotifications()">Save Notification Settings</button>
+        </div>
+
       </div><!-- /dash-body -->
     </main>
 
@@ -812,6 +966,9 @@ async function showDashboard() {
   renderSvcTable();
   await loadApplications();
   await loadCustomers();
+  await loadServiceMgmt();
+  await loadAuditLogs();
+  await loadNotifications();
 }
 
 async function fetchStoredPassword() {
@@ -826,7 +983,7 @@ async function fetchStoredPassword() {
 /* ══════════════════════════════════════════════
    SIDEBAR TABS
 ══════════════════════════════════════════════ */
-const TABS = ['applications','company','pricing','services','access','expertise'];
+const TABS = ['applications','company','pricing','services','access','expertise','services-mgmt','audit','notifications'];
 
 function switchTab(name) {
   TABS.forEach(t => {
@@ -840,6 +997,9 @@ function switchTab(name) {
   if (name === 'services') renderSvcTable();
   if (name === 'access')  { loadCustomers(); }
   if (name === 'applications') loadApplications();
+  if (name === 'services-mgmt') loadServiceMgmt();
+  if (name === 'audit') loadAuditLogs();
+  if (name === 'notifications') loadNotifications();
 }
 
 /* ══════════════════════════════════════════════
@@ -1402,6 +1562,234 @@ async function saveExpertise() {
   try {
     await db.collection('content').doc('team').set({ members, updatedAt: new Date().toISOString() });
     toast('✓ Expertise saved', 'success');
+  } catch(e) { toast('Save failed: ' + e.message, 'error'); }
+}
+
+/* ══════════════════════════════════════════════
+   SERVICE MANAGEMENT
+══════════════════════════════════════════════ */
+async function loadServiceMgmt() {
+  if (!db) return;
+  try {
+    const [customers, services, custServices] = await Promise.all([
+      db.collection('customers').get(),
+      db.collection('catalog').doc('services').get(),
+      db.collection('customerServices').get()
+    ]);
+
+    const custSelect = document.getElementById('sm-customer');
+    custSelect.innerHTML = '<option value="">Select customer...</option>';
+    customers.docs.forEach(doc => {
+      const opt = document.createElement('option');
+      opt.value = doc.id;
+      opt.text = doc.data().name || 'Unknown';
+      custSelect.appendChild(opt);
+    });
+
+    const svcSelect = document.getElementById('sm-service');
+    svcSelect.innerHTML = '<option value="">Select service...</option>';
+    const svcData = services.data()?.items || services;
+    (Array.isArray(svcData) ? svcData : services.items || []).forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.id;
+      opt.text = s.name;
+      svcSelect.appendChild(opt);
+    });
+
+    const tbody = document.getElementById('svcMgmtBody');
+    tbody.innerHTML = '';
+    if (custServices.empty) {
+      tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><i class="fa-regular fa-briefcase"></i>No services assigned yet</div></td></tr>';
+    } else {
+      custServices.docs.forEach(doc => {
+        const d = doc.data();
+        const row = tbody.insertRow();
+        row.innerHTML = `
+          <td>${escHtml(d.customerName || 'Unknown')}</td>
+          <td>${escHtml(d.serviceName || 'Unknown')}</td>
+          <td>Phase ${d.phase || '—'}</td>
+          <td><span class="status-badge ${d.status === 'active' ? 'status-approved' : 'status-pending'}">${d.status || 'pending'}</span></td>
+          <td class="td-date">${formatDate(d.startDate)}</td>
+          <td><button class="btn-approve" onclick="editCustomerService('${doc.id}')">Edit</button></td>
+        `;
+      });
+    }
+  } catch(e) { console.error(e); }
+}
+
+async function assignService() {
+  if (!db) { toast('Firebase not connected', 'error'); return; }
+  const custId = document.getElementById('sm-customer').value;
+  const svcId = parseInt(document.getElementById('sm-service').value);
+  const start = document.getElementById('sm-start').value;
+  const completion = document.getElementById('sm-completion').value;
+  if (!custId || !svcId || !start) { toast('Fill all fields', 'error'); return; }
+
+  try {
+    const [custDoc, svcDoc] = await Promise.all([
+      db.collection('customers').doc(custId).get(),
+      db.collection('catalog').doc('services').get()
+    ]);
+
+    if (!custDoc.exists) { toast('Customer not found', 'error'); return; }
+    const svc = (svcDoc.data()?.items || []).find(s => s.id === svcId) || { name: 'Unknown', phase: 1 };
+
+    await db.collection('customerServices').add({
+      userId: custId,
+      customerId: custId,
+      customerName: custDoc.data().name,
+      serviceId: svcId,
+      serviceName: svc.name,
+      phase: svc.phase,
+      status: 'pending',
+      startDate: new Date(start),
+      completionDate: completion ? new Date(completion) : null,
+      milestones: [],
+      notes: '',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    toast('✓ Service assigned', 'success');
+    document.getElementById('sm-customer').value = '';
+    document.getElementById('sm-service').value = '';
+    document.getElementById('sm-start').value = '';
+    document.getElementById('sm-completion').value = '';
+    await loadServiceMgmt();
+  } catch(e) { toast('Assignment failed: ' + e.message, 'error'); }
+}
+
+async function editCustomerService(docId) {
+  // Modal for editing service details
+  AppUtils.showConfirm('Edit Service', 'Would you like to edit milestones or cancel this service?', async () => {
+    // Placeholder for edit modal
+    toast('Edit feature coming soon', 'info');
+  });
+}
+
+function formatDate(timestamp) {
+  if (!timestamp) return '—';
+  const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
+  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+/* ══════════════════════════════════════════════
+   AUDIT LOGS
+══════════════════════════════════════════════ */
+async function loadAuditLogs() {
+  if (!db) return;
+  try {
+    const logs = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
+    const tbody = document.getElementById('auditTableBody');
+    tbody.innerHTML = '';
+    if (logs.empty) {
+      tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><i class="fa-regular fa-history"></i>No audit logs yet</div></td></tr>';
+    } else {
+      logs.docs.forEach(doc => {
+        const d = doc.data();
+        const row = tbody.insertRow();
+        const timestamp = d.timestamp instanceof Date ? d.timestamp : new Date(d.timestamp?.seconds * 1000 || 0);
+        row.innerHTML = `
+          <td class="td-date">${formatDate(timestamp)}</td>
+          <td>${escHtml(d.userId || 'System')}</td>
+          <td>${escHtml(d.action || '—')}</td>
+          <td>${escHtml(d.resourceType || '—')}</td>
+          <td style="font-size:11px;color:var(--text-dim)">${escHtml(JSON.stringify(d.changes || {}).substring(0, 40))}</td>
+        `;
+      });
+    }
+  } catch(e) { console.error(e); }
+}
+
+async function filterAuditLogs() {
+  if (!db) return;
+  const resource = document.getElementById('audit-resource').value;
+  const action = document.getElementById('audit-action').value;
+  try {
+    let query = db.collection('auditLogs').orderBy('timestamp', 'desc');
+    if (resource) query = query.where('resourceType', '==', resource);
+    if (action) query = query.where('action', '==', action);
+    const logs = await query.limit(100).get();
+    const tbody = document.getElementById('auditTableBody');
+    tbody.innerHTML = '';
+    if (logs.empty) {
+      tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state">No matching logs</div></td></tr>';
+    } else {
+      logs.docs.forEach(doc => {
+        const d = doc.data();
+        const row = tbody.insertRow();
+        const timestamp = d.timestamp instanceof Date ? d.timestamp : new Date(d.timestamp?.seconds * 1000 || 0);
+        row.innerHTML = `
+          <td class="td-date">${formatDate(timestamp)}</td>
+          <td>${escHtml(d.userId || 'System')}</td>
+          <td>${escHtml(d.action || '—')}</td>
+          <td>${escHtml(d.resourceType || '—')}</td>
+          <td style="font-size:11px;color:var(--text-dim)">${escHtml(JSON.stringify(d.changes || {}).substring(0, 40))}</td>
+        `;
+      });
+    }
+  } catch(e) { toast('Filter failed: ' + e.message, 'error'); }
+}
+
+/* ══════════════════════════════════════════════
+   NOTIFICATIONS
+══════════════════════════════════════════════ */
+async function loadNotifications() {
+  if (!db) return;
+  try {
+    const notifDoc = await db.collection('settings').doc('notifications').get();
+    if (notifDoc.exists) {
+      const d = notifDoc.data();
+      document.getElementById('notif-app-email').checked = d.emailApplications !== false;
+      document.getElementById('notif-service-email').checked = d.emailServices !== false;
+      document.getElementById('notif-ticket-email').checked = d.emailTickets !== false;
+      document.getElementById('notif-invoice-email').checked = d.emailInvoices !== false;
+      document.getElementById('notif-sms-enable').value = d.smsEnabled ? 'yes' : 'no';
+
+      const recipientsDiv = document.getElementById('notif-recipients');
+      recipientsDiv.innerHTML = '';
+      (d.emailRecipients || []).forEach((email, idx) => {
+        addNotifEmail(email, idx + 1);
+      });
+    }
+  } catch(e) { console.error(e); }
+}
+
+function addNotifEmail(email = '', idx = null) {
+  if (idx === null) {
+    const existing = document.querySelectorAll('#notif-recipients input').length;
+    idx = existing + 1;
+  }
+  const div = document.createElement('div');
+  div.className = 'drow';
+  div.innerHTML = `
+    <input type="email" placeholder="recipient@email.com" value="${escHtml(email || '')}" style="flex:1">
+    <button class="ddel" onclick="removeNotifEmail(${idx})"><i class="fa-solid fa-trash"></i></button>
+  `;
+  document.getElementById('notif-recipients').appendChild(div);
+}
+
+function removeNotifEmail(idx) {
+  const rows = document.querySelectorAll('#notif-recipients .drow');
+  if (rows[idx - 1]) rows[idx - 1].remove();
+}
+
+async function saveNotifications() {
+  if (!db) { toast('Firebase not connected', 'error'); return; }
+  try {
+    const emails = Array.from(document.querySelectorAll('#notif-recipients input'))
+      .map(el => el.value.trim())
+      .filter(v => v);
+
+    await db.collection('settings').doc('notifications').set({
+      emailApplications: document.getElementById('notif-app-email').checked,
+      emailServices: document.getElementById('notif-service-email').checked,
+      emailTickets: document.getElementById('notif-ticket-email').checked,
+      emailInvoices: document.getElementById('notif-invoice-email').checked,
+      emailRecipients: emails,
+      smsEnabled: document.getElementById('notif-sms-enable').value === 'yes',
+      updatedAt: new Date().toISOString()
+    });
+    toast('✓ Notifications saved', 'success');
   } catch(e) { toast('Save failed: ' + e.message, 'error'); }
 }
 
