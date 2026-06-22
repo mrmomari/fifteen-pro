@@ -1384,7 +1384,8 @@ let _db = null;
 
   /* Option click handlers */
   document.querySelectorAll('.qo').forEach(opt => {
-    opt.addEventListener('click', function(){
+    opt.addEventListener('click', function(e){
+      e.preventDefault();
       const grp = this.closest('.quiz-opts');
       const isCheck = grp.classList.contains('cb');
       const val = this.querySelector('input').value;
