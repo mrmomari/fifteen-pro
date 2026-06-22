@@ -986,7 +986,10 @@ body{
 ═══════════════════════════════════ -->
 <div id="loginScreen">
   <div class="login-card">
-    <a href="index.html" class="login-logo">FIFTEEN<span>.</span></a>
+    <a href="index.html" class="login-logo" id="loginLogo">
+      <img id="loginLogoImg" alt="Fifteen" style="display:none;max-height:80px;width:auto;max-width:240px;object-fit:contain">
+      <span id="loginLogoText">FIFTEEN<span>.</span></span>
+    </a>
     <div class="login-sub-label">Partner Portal</div>
     <h2>Welcome Back</h2>
 
@@ -1032,7 +1035,10 @@ body{
     <!-- ── Sidebar ── -->
     <aside class="p-sidebar" id="pSidebar">
       <div class="p-sidebar-inner">
-        <a href="index.html" class="p-sidebar-logo">FIFTEEN<span>.</span></a>
+        <a href="index.html" class="p-sidebar-logo" id="sidebarLogo">
+          <img id="sidebarLogoImg" alt="Fifteen" style="display:none;width:100%;height:auto;max-height:80px;object-fit:contain">
+          <span id="sidebarLogoText">FIFTEEN<span>.</span></span>
+        </a>
 
         <!-- User block -->
         <div class="p-user-block">
@@ -1308,6 +1314,30 @@ let dataLoaded = { services: false, tickets: false, invoices: false };
     console.error('Firebase init failed:', e);
   }
 })();
+
+/* ══════════════════════════════════════════════════════════
+   LOGO LOADING
+══════════════════════════════════════════════════════════ */
+function loadLogos() {
+  if (!db) return;
+  db.collection('settings').doc('company').get().then(doc => {
+    if (!doc.exists) return;
+    const logoUrl = (doc.data().logo || '').trim();
+    if (!logoUrl) return;
+    [['loginLogoImg','loginLogoText'],['sidebarLogoImg','sidebarLogoText']].forEach(([imgId, txtId]) => {
+      const img = document.getElementById(imgId);
+      if (!img) return;
+      img.onload = () => {
+        img.style.display = 'block';
+        const txt = document.getElementById(txtId);
+        if (txt) txt.style.display = 'none';
+      };
+      img.onerror = () => { img.style.display = 'none'; };
+      img.src = logoUrl;
+    });
+  }).catch(() => {});
+}
+loadLogos();
 
 /* ══════════════════════════════════════════════════════════
    AUTH STATE
