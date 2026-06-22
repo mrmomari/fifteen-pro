@@ -393,7 +393,10 @@ body{
 <!-- ═══ SIDEBAR ═══ -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-inner">
-    <a href="index.html" class="sidebar-logo">FIFTEEN<span>.</span></a>
+    <a href="index.html" class="sidebar-logo" id="sidebarLogo">
+      <img id="sidebarLogoImg" alt="Fifteen" style="display:none;width:100%;height:auto;max-height:120px;object-fit:contain">
+      <span id="sidebarLogoText">FIFTEEN<span>.</span></span>
+    </a>
 
     <div class="sidebar-section-label">Navigate</div>
     <nav class="sidebar-nav">
@@ -599,6 +602,7 @@ async function tryFirestoreServices() {
 
 /* ─── Init ─── */
 async function init() {
+  loadSidebarLogo();
   try {
     const cloudServices = await tryFirestoreServices();
     if (cloudServices) { SERVICES = cloudServices; renderShop(); return; }
@@ -609,6 +613,28 @@ async function init() {
     SERVICES = DEFAULTS;
   }
   renderShop();
+}
+
+function loadSidebarLogo() {
+  const cfg = getFbConfig();
+  if (!cfg) return;
+  try {
+    if (firebase.apps.length === 0) firebase.initializeApp(cfg);
+    firebase.firestore().collection('settings').doc('company').get().then(doc => {
+      if (!doc.exists) return;
+      const logoUrl = (doc.data().logo || '').trim();
+      if (!logoUrl) return;
+      const img = document.getElementById('sidebarLogoImg');
+      if (!img) return;
+      img.onload = () => {
+        img.style.display = 'block';
+        const txt = document.getElementById('sidebarLogoText');
+        if (txt) txt.style.display = 'none';
+      };
+      img.onerror = () => { img.style.display = 'none'; };
+      img.src = logoUrl;
+    });
+  } catch(e) {}
 }
 
 /* ─── Render ─── */
