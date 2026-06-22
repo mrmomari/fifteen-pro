@@ -364,7 +364,10 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
 ══════════════════════════════════════ -->
 <div id="loginScreen">
   <div class="login-card">
-    <div class="login-logo">FIFTEEN<span>.</span></div>
+    <div class="login-logo" id="loginLogo">
+      <img id="loginLogoImg" alt="Fifteen" style="display:none;max-height:80px;width:auto;max-width:240px;object-fit:contain">
+      <span id="loginLogoText">FIFTEEN<span>.</span></span>
+    </div>
     <div class="login-portal">Admin Portal</div>
     <h2>Sign In</h2>
     <div class="login-field">
@@ -384,7 +387,10 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
 
   <!-- Mobile top bar -->
   <div class="mob-bar">
-    <div class="mob-bar-logo">FIFTEEN<span>.</span></div>
+    <div class="mob-bar-logo" id="mobBarLogo">
+      <img id="mobBarLogoImg" alt="Fifteen" style="display:none;max-height:36px;width:auto;max-width:160px;object-fit:contain">
+      <span id="mobBarLogoText">FIFTEEN<span>.</span></span>
+    </div>
     <button class="mob-toggle" onclick="toggleSidebar()"><i class="fa fa-bars"></i></button>
   </div>
   <div class="sb-overlay" id="sbOverlay" onclick="closeSidebar()"></div>
@@ -394,7 +400,10 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
     <!-- ── Sidebar ── -->
     <aside class="dash-sidebar" id="dashSidebar">
       <div class="sb-inner">
-        <a href="index.html" class="sb-logo">FIFTEEN<span>.</span></a>
+        <a href="index.html" class="sb-logo" id="sbLogo">
+          <img id="sbLogoImg" alt="Fifteen" style="display:none;width:100%;height:auto;max-height:80px;object-fit:contain">
+          <span id="sbLogoText">FIFTEEN<span>.</span></span>
+        </a>
         <div class="sb-badge">Admin</div>
 
         <div class="sb-label">Navigation</div>
@@ -1805,6 +1814,29 @@ function toast(msg, type) {
 }
 
 /* ══════════════════════════════════════════════
+   LOGO LOADING
+══════════════════════════════════════════════ */
+function loadLogos() {
+  if (!db) return;
+  db.collection('settings').doc('company').get().then(doc => {
+    if (!doc.exists) return;
+    const logoUrl = (doc.data().logo || '').trim();
+    if (!logoUrl) return;
+    [['loginLogoImg','loginLogoText'],['mobBarLogoImg','mobBarLogoText'],['sbLogoImg','sbLogoText']].forEach(([imgId, txtId]) => {
+      const img = document.getElementById(imgId);
+      if (!img) return;
+      img.onload = () => {
+        img.style.display = 'block';
+        const txt = document.getElementById(txtId);
+        if (txt) txt.style.display = 'none';
+      };
+      img.onerror = () => { img.style.display = 'none'; };
+      img.src = logoUrl;
+    });
+  }).catch(() => {});
+}
+
+/* ══════════════════════════════════════════════
    INIT
 ══════════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', async () => {
@@ -1819,6 +1851,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   await initFirebase();
+  loadLogos();
 
   if (isLocked()) applyLockUI();
 
