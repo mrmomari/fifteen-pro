@@ -511,6 +511,67 @@ body{
 .form-submit{width:100%;padding:15px;font-size:15px;margin-top:6px}
 .form-sub{text-align:center;margin-top:18px;font-size:12px;color:var(--text-dim)}
 
+/* ── Quiz ── */
+.quiz-wrap{background:rgba(255,255,255,0.5);border:1px solid rgba(0,0,0,0.09);border-radius:var(--radius-lg);max-width:720px;margin:0 auto;box-shadow:0 4px 22px rgba(0,0,0,0.06);overflow:hidden}
+.quiz-top{padding:22px 48px 0}
+.quiz-progress-track{height:3px;background:rgba(0,0,0,0.07);border-radius:3px;margin-bottom:13px}
+.quiz-progress-fill{height:100%;background:var(--green);border-radius:3px;transition:width .4s ease;width:0%}
+.quiz-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:26px}
+.quiz-step-count{font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:.05em}
+.quiz-phase-tag{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--green);background:rgba(38,145,94,.1);border-radius:5px;padding:3px 9px}
+.quiz-slides-wrap{position:relative}
+.quiz-slide{padding:0 48px 32px;display:none}
+.quiz-slide.active{display:block}
+.quiz-slide.anim-in-r{animation:qInR .28s ease both}
+.quiz-slide.anim-in-l{animation:qInL .28s ease both}
+@keyframes qInR{from{opacity:0;transform:translateX(36px)}to{opacity:1;transform:translateX(0)}}
+@keyframes qInL{from{opacity:0;transform:translateX(-36px)}to{opacity:1;transform:translateX(0)}}
+.quiz-q-cat{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--green);margin-bottom:9px}
+.quiz-question{font-size:19px;font-weight:800;color:var(--text);letter-spacing:-.02em;line-height:1.38;margin-bottom:20px}
+.quiz-opts{display:flex;flex-direction:column;gap:9px}
+.qo{display:flex;align-items:flex-start;gap:14px;background:rgba(255,255,255,0.7);border:1.5px solid rgba(0,0,0,0.1);border-radius:10px;padding:13px 17px;cursor:pointer;transition:border-color .18s,background .18s;user-select:none}
+.qo:hover{border-color:rgba(38,145,94,.35);background:rgba(255,255,255,0.9)}
+.qo.sel{border-color:var(--green);background:rgba(38,145,94,.07)}
+.qo input{display:none}
+.qo-mark{width:20px;height:20px;border-radius:50%;border:2px solid rgba(0,0,0,0.18);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all .18s}
+.qo.sel .qo-mark{background:var(--green);border-color:var(--green)}
+.qo-mark::after{content:'';width:7px;height:7px;border-radius:50%;background:#fff;display:none}
+.qo.sel .qo-mark::after{display:block}
+.quiz-opts.cb .qo-mark{border-radius:5px}
+.quiz-opts.cb .qo-mark::after{content:'✓';width:auto;height:auto;border-radius:0;background:transparent;color:#fff;font-size:11px;font-weight:900;line-height:1}
+.qo-text{font-size:14px;color:var(--text);line-height:1.5}
+.qo.sel .qo-text{font-weight:600}
+.quiz-nav{display:flex;align-items:center;justify-content:space-between;padding:18px 48px 30px;border-top:1px solid rgba(0,0,0,0.06);margin-top:4px}
+.quiz-back-btn{background:none;border:none;color:var(--text-muted);font-size:13px;font-weight:600;cursor:pointer;padding:8px 0;font-family:inherit;transition:color .18s}
+.quiz-back-btn:hover{color:var(--text)}
+.quiz-back-btn:disabled{opacity:.28;cursor:default;pointer-events:none}
+.quiz-next-btn{padding:12px 30px;font-size:14px}
+.quiz-rec-box{background:linear-gradient(135deg,rgba(38,145,94,.1),rgba(38,145,94,.03));border:1px solid rgba(38,145,94,.18);border-radius:12px;padding:20px 22px;margin-bottom:16px}
+.quiz-rec-label{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--green);margin-bottom:8px}
+.quiz-rec-text{font-size:14px;color:var(--text);line-height:1.7}
+.quiz-rec-tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
+.quiz-rec-tag{background:rgba(38,145,94,.12);color:var(--green);border-radius:6px;padding:5px 12px;font-size:12px;font-weight:700}
+.quiz-rec-bundle{background:rgba(227,108,68,.07);border:1px solid rgba(227,108,68,.2);border-radius:10px;padding:15px 18px;display:flex;align-items:center;gap:14px}
+.quiz-rec-bundle-icon{font-size:26px;flex-shrink:0}
+.quiz-rec-bundle-label{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--orange);margin-bottom:3px}
+.quiz-rec-bundle-name{font-size:15px;font-weight:800;color:var(--text)}
+.quiz-contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.quiz-contact-grid .field.full{grid-column:1/-1}
+.quiz-success{text-align:center;padding:14px 0 10px}
+.quiz-success-icon{width:68px;height:68px;border-radius:50%;background:rgba(38,145,94,.1);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;font-size:30px;color:var(--green)}
+.quiz-success-title{font-size:22px;font-weight:900;color:var(--text);letter-spacing:-.03em;margin-bottom:10px}
+.quiz-success-sub{font-size:14px;color:var(--text-muted);line-height:1.7;margin-bottom:26px;max-width:420px;margin-left:auto;margin-right:auto}
+.quiz-book-btn{display:inline-flex;align-items:center;gap:9px;padding:15px 34px;font-size:14px}
+@media(max-width:960px){
+  .quiz-top,.quiz-slide,.quiz-nav{padding-left:22px;padding-right:22px}
+  .quiz-question{font-size:16px}
+  .quiz-contact-grid{grid-template-columns:1fr}
+  .quiz-contact-grid .field.full{grid-column:1}
+}
+@media(max-width:400px){
+  .quiz-top,.quiz-slide,.quiz-nav{padding-left:14px;padding-right:14px}
+}
+
 /* ── Partners strip ── */
 .partners-strip{
   padding:48px 0 44px;background:#fff;border-top:1px solid rgba(0,0,0,0.07);
@@ -926,67 +987,273 @@ body{
   </div>
 </section>
 
-<!-- FORM / APPLY -->
+<!-- QUIZ / APPLY -->
 <section class="section" id="apply">
   <div class="container">
-    <div class="badge text-center mx-auto" style="display:block;width:fit-content">Industry Lockout</div>
+    <div class="badge text-center mx-auto" style="display:block;width:fit-content">15-Point Brand Discovery</div>
     <h2 class="section-title text-center">Is Your Industry<br>Still Available?</h2>
-    <p class="section-sub text-center mx-auto" style="display:block">One sector. One partner. We legally lock out your competition the moment you're confirmed.</p>
-    <div class="form-wrap">
-      <div class="availability-bar">
-        <span class="pulse-dot"></span>
-        <span class="avail-text">We are actively reviewing new applications — industry sectors are filling fast.</span>
-      </div>
+    <p class="section-sub text-center mx-auto" style="display:block">Answer 15 quick questions and get a personalized growth plan — then lock in your exclusive industry slot.</p>
 
-      <div class="form-row">
-        <div class="field">
-          <label for="name">Full Name</label>
-          <input type="text" id="name" name="name" placeholder="Your full name" autocomplete="name">
-        </div>
-        <div class="field">
-          <label for="email">Business Email</label>
-          <input type="email" id="email" name="email" placeholder="you@company.com" autocomplete="email">
-        </div>
-      </div>
-
-      <div class="form-row">
-        <div class="field">
-          <label for="phone">Phone Number</label>
-          <input type="tel" id="phone" name="phone" placeholder="+1 (000) 000-0000" autocomplete="tel">
-        </div>
-        <div class="field">
-          <label for="website">Website</label>
-          <input type="url" id="website" name="website" placeholder="https://yoursite.com" autocomplete="url">
-        </div>
-      </div>
-
-      <div class="form-row single">
-        <div class="field">
-          <label for="industry">Industry / Niche</label>
-          <select id="industry" name="industry">
-            <option value="" disabled selected>Select your industry sector</option>
-            <option>E-commerce &amp; Retail</option>
-            <option>Real Estate</option>
-            <option>Health &amp; Wellness</option>
-            <option>Food &amp; Beverage</option>
-            <option>Professional Services</option>
-            <option>Automotive</option>
-            <option>Technology &amp; SaaS</option>
-            <option>Beauty &amp; Cosmetics</option>
-            <option>Finance &amp; Fintech</option>
-            <option>Education &amp; Training</option>
-            <option>Hospitality &amp; Tourism</option>
-            <option>Construction &amp; Contracting</option>
-            <option>Other</option>
-          </select>
-        </div>
-      </div>
-
-      <button type="button" class="glow-btn form-submit" onclick="handleApply()">
-        Check Industry Availability &amp; Apply
-      </button>
-      <div class="form-sub">Jeeh, Jeeh! &nbsp;·&nbsp; Applications reviewed within 48 hours. Strictly confidential.</div>
+    <div class="availability-bar" style="max-width:720px;margin:0 auto 20px">
+      <span class="pulse-dot"></span>
+      <span class="avail-text">We are actively reviewing new applications — industry sectors are filling fast.</span>
     </div>
+
+    <div class="quiz-wrap" id="quizWrap">
+      <!-- Progress -->
+      <div class="quiz-top">
+        <div class="quiz-progress-track"><div class="quiz-progress-fill" id="qProgress"></div></div>
+        <div class="quiz-meta">
+          <span class="quiz-step-count" id="qStepCount">Question 1 of 15</span>
+          <span class="quiz-phase-tag" id="qPhaseTag">Brand Discovery</span>
+        </div>
+      </div>
+
+      <div class="quiz-slides-wrap">
+        <!-- Q1: Brand State -->
+        <div class="quiz-slide active" id="qs0">
+          <div class="quiz-q-cat">Brand Foundation</div>
+          <h3 class="quiz-question">What is the current state of your brand identity?</h3>
+          <div class="quiz-opts" id="qo0" data-type="radio">
+            <label class="qo"><input type="radio" name="q0" value="strong"><span class="qo-mark"></span><span class="qo-text">We have a strong, complete brand identity.</span></label>
+            <label class="qo"><input type="radio" name="q0" value="logo-only"><span class="qo-mark"></span><span class="qo-text">We have a logo, but need full brand guidelines (colors, fonts, etc.).</span></label>
+            <label class="qo"><input type="radio" name="q0" value="zero"><span class="qo-mark"></span><span class="qo-text">We are starting from absolute zero and need a full Visual Identity Creation.</span></label>
+          </div>
+        </div>
+        <!-- Q2: Platforms -->
+        <div class="quiz-slide" id="qs1">
+          <div class="quiz-q-cat">Digital Presence</div>
+          <h3 class="quiz-question">Which digital platforms do you currently operate on?</h3>
+          <div class="quiz-opts cb" id="qo1" data-type="checkbox">
+            <label class="qo"><input type="checkbox" value="facebook"><span class="qo-mark"></span><span class="qo-text">Facebook</span></label>
+            <label class="qo"><input type="checkbox" value="instagram"><span class="qo-mark"></span><span class="qo-text">Instagram</span></label>
+            <label class="qo"><input type="checkbox" value="tiktok"><span class="qo-mark"></span><span class="qo-text">TikTok</span></label>
+            <label class="qo"><input type="checkbox" value="website"><span class="qo-mark"></span><span class="qo-text">Website</span></label>
+            <label class="qo"><input type="checkbox" value="ecommerce"><span class="qo-mark"></span><span class="qo-text">E-commerce Store</span></label>
+            <label class="qo none-opt"><input type="checkbox" value="none"><span class="qo-mark"></span><span class="qo-text">None yet</span></label>
+          </div>
+        </div>
+        <!-- Q3: Raw Materials -->
+        <div class="quiz-slide" id="qs2">
+          <div class="quiz-q-cat">Your Assets</div>
+          <h3 class="quiz-question">What digital "raw materials" do you already have ready to use?</h3>
+          <div class="quiz-opts cb" id="qo2" data-type="checkbox">
+            <label class="qo"><input type="checkbox" value="photos"><span class="qo-mark"></span><span class="qo-text">High-quality product or lifestyle photos.</span></label>
+            <label class="qo"><input type="checkbox" value="video"><span class="qo-mark"></span><span class="qo-text">Raw video footage waiting to be edited.</span></label>
+            <label class="qo"><input type="checkbox" value="database"><span class="qo-mark"></span><span class="qo-text">A database of customer emails / phone numbers.</span></label>
+            <label class="qo none-opt"><input type="checkbox" value="none"><span class="qo-mark"></span><span class="qo-text">None of the above — I need everything built from scratch.</span></label>
+          </div>
+        </div>
+        <!-- Q4: Design Services -->
+        <div class="quiz-slide" id="qs3">
+          <div class="quiz-q-cat">Services — Design &amp; Identity</div>
+          <h3 class="quiz-question">Which DESIGN &amp; IDENTITY services do you need?</h3>
+          <div class="quiz-opts cb" id="qo3" data-type="checkbox">
+            <label class="qo"><input type="checkbox" value="logo-identity"><span class="qo-mark"></span><span class="qo-text">Logo &amp; Visual Identity Creation</span></label>
+            <label class="qo"><input type="checkbox" value="digital-arts"><span class="qo-mark"></span><span class="qo-text">Digital Arts &amp; AI Designs</span></label>
+            <label class="qo"><input type="checkbox" value="editorial"><span class="qo-mark"></span><span class="qo-text">Editorial / Print Designs (Flyers, Billboards, Business Cards)</span></label>
+            <label class="qo none-opt"><input type="checkbox" value="none"><span class="qo-mark"></span><span class="qo-text">None needed right now.</span></label>
+          </div>
+        </div>
+        <!-- Q5: Content Services -->
+        <div class="quiz-slide" id="qs4">
+          <div class="quiz-q-cat">Services — Content &amp; Media</div>
+          <h3 class="quiz-question">Which CONTENT &amp; MEDIA services do you need?</h3>
+          <div class="quiz-opts cb" id="qo4" data-type="checkbox">
+            <label class="qo"><input type="checkbox" value="photography"><span class="qo-mark"></span><span class="qo-text">Professional Photography (Product or Lifestyle)</span></label>
+            <label class="qo"><input type="checkbox" value="reels"><span class="qo-mark"></span><span class="qo-text">Reels &amp; Short Video Production</span></label>
+            <label class="qo"><input type="checkbox" value="motion"><span class="qo-mark"></span><span class="qo-text">Motion Videos (Animated Explainers)</span></label>
+            <label class="qo"><input type="checkbox" value="animations"><span class="qo-mark"></span><span class="qo-text">Animations (Dynamic visual experiences)</span></label>
+            <label class="qo none-opt"><input type="checkbox" value="none"><span class="qo-mark"></span><span class="qo-text">None needed right now.</span></label>
+          </div>
+        </div>
+        <!-- Q6: Social Services -->
+        <div class="quiz-slide" id="qs5">
+          <div class="quiz-q-cat">Services — Social &amp; Outreach</div>
+          <h3 class="quiz-question">Which SOCIAL &amp; OUTREACH services do you need?</h3>
+          <div class="quiz-opts cb" id="qo5" data-type="checkbox">
+            <label class="qo"><input type="checkbox" value="platform-mgmt"><span class="qo-mark"></span><span class="qo-text">Full Social Media Platform Management</span></label>
+            <label class="qo"><input type="checkbox" value="branded-content"><span class="qo-mark"></span><span class="qo-text">Branded Content / Influencer Marketing</span></label>
+            <label class="qo"><input type="checkbox" value="newsletters"><span class="qo-mark"></span><span class="qo-text">Newsletters / SMS Marketing Campaigns</span></label>
+            <label class="qo none-opt"><input type="checkbox" value="none"><span class="qo-mark"></span><span class="qo-text">None needed right now.</span></label>
+          </div>
+        </div>
+        <!-- Q7: Tech Services -->
+        <div class="quiz-slide" id="qs6">
+          <div class="quiz-q-cat">Services — Tech &amp; Web</div>
+          <h3 class="quiz-question">Which TECH &amp; WEB services do you need?</h3>
+          <div class="quiz-opts cb" id="qo6" data-type="checkbox">
+            <label class="qo"><input type="checkbox" value="website"><span class="qo-mark"></span><span class="qo-text">Website Creation / Landing Page Design</span></label>
+            <label class="qo"><input type="checkbox" value="ecommerce"><span class="qo-mark"></span><span class="qo-text">E-commerce Store Setup</span></label>
+            <label class="qo"><input type="checkbox" value="app"><span class="qo-mark"></span><span class="qo-text">Custom Mobile App Development</span></label>
+            <label class="qo"><input type="checkbox" value="erp"><span class="qo-mark"></span><span class="qo-text">Business Hub (ERP) / Statistics Dashboard Integration</span></label>
+            <label class="qo none-opt"><input type="checkbox" value="none"><span class="qo-mark"></span><span class="qo-text">None needed right now.</span></label>
+          </div>
+        </div>
+        <!-- Q8: Performance Services -->
+        <div class="quiz-slide" id="qs7">
+          <div class="quiz-q-cat">Services — Performance &amp; Search</div>
+          <h3 class="quiz-question">Which PERFORMANCE &amp; SEARCH services do you need?</h3>
+          <div class="quiz-opts cb" id="qo7" data-type="checkbox">
+            <label class="qo"><input type="checkbox" value="social-ads"><span class="qo-mark"></span><span class="qo-text">Facebook, Instagram &amp; TikTok Ads (Media Buying)</span></label>
+            <label class="qo"><input type="checkbox" value="google-ads"><span class="qo-mark"></span><span class="qo-text">Google Ads (Search &amp; Display) &amp; Google My Business Management</span></label>
+            <label class="qo"><input type="checkbox" value="seo"><span class="qo-mark"></span><span class="qo-text">Ranking Control (SEO)</span></label>
+            <label class="qo none-opt"><input type="checkbox" value="none"><span class="qo-mark"></span><span class="qo-text">None needed right now.</span></label>
+          </div>
+        </div>
+        <!-- Q9: Offline Services -->
+        <div class="quiz-slide" id="qs8">
+          <div class="quiz-q-cat">Services — Offline &amp; Events (STAGE)</div>
+          <h3 class="quiz-question">Which OFFLINE &amp; EVENT services do you need?</h3>
+          <div class="quiz-opts cb" id="qo8" data-type="checkbox">
+            <label class="qo"><input type="checkbox" value="field-marketing"><span class="qo-mark"></span><span class="qo-text">Field Marketing / On-ground direct campaigns</span></label>
+            <label class="qo"><input type="checkbox" value="events"><span class="qo-mark"></span><span class="qo-text">Event &amp; Conference Organization</span></label>
+            <label class="qo"><input type="checkbox" value="parties"><span class="qo-mark"></span><span class="qo-text">Party / Concert Organization &amp; Photography</span></label>
+            <label class="qo none-opt"><input type="checkbox" value="none"><span class="qo-mark"></span><span class="qo-text">None needed right now.</span></label>
+          </div>
+        </div>
+        <!-- Q10: Brand Personality -->
+        <div class="quiz-slide" id="qs9">
+          <div class="quiz-q-cat">Brand Character</div>
+          <h3 class="quiz-question">If your brand was a person, how would it act?</h3>
+          <div class="quiz-opts" id="qo9" data-type="radio">
+            <label class="qo"><input type="radio" name="q9" value="corporate"><span class="qo-mark"></span><span class="qo-text">Highly corporate and professional (Talk like an adult).</span></label>
+            <label class="qo"><input type="radio" name="q9" value="creative"><span class="qo-mark"></span><span class="qo-text">Creative, fun, and slightly edgy (Act like a kid).</span></label>
+            <label class="qo"><input type="radio" name="q9" value="community"><span class="qo-mark"></span><span class="qo-text">Community-focused, warm, and welcoming.</span></label>
+            <label class="qo"><input type="radio" name="q9" value="luxury"><span class="qo-mark"></span><span class="qo-text">Luxurious and highly exclusive.</span></label>
+          </div>
+        </div>
+        <!-- Q11: Pain Point -->
+        <div class="quiz-slide" id="qs10">
+          <div class="quiz-q-cat">Current Challenge</div>
+          <h3 class="quiz-question">What is your BIGGEST current pain point?</h3>
+          <div class="quiz-opts" id="qo10" data-type="radio">
+            <label class="qo"><input type="radio" name="q10" value="no-awareness"><span class="qo-mark"></span><span class="qo-text">Nobody knows we exist (Need brand awareness).</span></label>
+            <label class="qo"><input type="radio" name="q10" value="no-conversions"><span class="qo-mark"></span><span class="qo-text">People know us, but don't buy (Need conversions / sales).</span></label>
+            <label class="qo"><input type="radio" name="q10" value="outdated-content"><span class="qo-mark"></span><span class="qo-text">Our visual content looks outdated or cheap.</span></label>
+            <label class="qo"><input type="radio" name="q10" value="need-event"><span class="qo-mark"></span><span class="qo-text">We need to launch a physical event or on-ground campaign.</span></label>
+          </div>
+        </div>
+        <!-- Q12: First Goal -->
+        <div class="quiz-slide" id="qs11">
+          <div class="quiz-q-cat">3-Month Strategy</div>
+          <h3 class="quiz-question">What is your primary goal for the FIRST 3 MONTHS?</h3>
+          <div class="quiz-opts" id="qo11" data-type="radio">
+            <label class="qo"><input type="radio" name="q11" value="audience"><span class="qo-mark"></span><span class="qo-text">Audience Optimization (Growing followers and reach).</span></label>
+            <label class="qo"><input type="radio" name="q11" value="content"><span class="qo-mark"></span><span class="qo-text">Content Optimization (Establishing a high-end visual identity).</span></label>
+            <label class="qo"><input type="radio" name="q11" value="budget"><span class="qo-mark"></span><span class="qo-text">Budget Optimization (Driving immediate leads / sales through ads).</span></label>
+          </div>
+        </div>
+        <!-- Q13: Exclusivity -->
+        <div class="quiz-slide" id="qs12">
+          <div class="quiz-q-cat">Industry Exclusivity</div>
+          <h3 class="quiz-question">We don't work with direct competitors simultaneously. Are you ready to lock in your industry?</h3>
+          <div class="quiz-opts" id="qo12" data-type="radio">
+            <label class="qo"><input type="radio" name="q12" value="yes-lock"><span class="qo-mark"></span><span class="qo-text">Yes, I want to block my competitors from working with you.</span></label>
+            <label class="qo"><input type="radio" name="q12" value="need-info"><span class="qo-mark"></span><span class="qo-text">I need to know who you currently work with first.</span></label>
+          </div>
+        </div>
+        <!-- Q14: Bundle -->
+        <div class="quiz-slide" id="qs13">
+          <div class="quiz-q-cat">Partnership Bundle</div>
+          <h3 class="quiz-question">Which partnership bundle fits your current budget?</h3>
+          <div class="quiz-opts" id="qo13" data-type="radio">
+            <label class="qo"><input type="radio" name="q13" value="3-month"><span class="qo-mark"></span><span class="qo-text">3-Month Package</span></label>
+            <label class="qo"><input type="radio" name="q13" value="6-month"><span class="qo-mark"></span><span class="qo-text">6-Month Package</span></label>
+            <label class="qo"><input type="radio" name="q13" value="12-month"><span class="qo-mark"></span><span class="qo-text">12-Month Package</span></label>
+            <label class="qo"><input type="radio" name="q13" value="custom"><span class="qo-mark"></span><span class="qo-text">I need a custom quote outside of these bundles.</span></label>
+          </div>
+        </div>
+        <!-- Q15: Separate Budgets -->
+        <div class="quiz-slide" id="qs14">
+          <div class="quiz-q-cat">Budget Clarity</div>
+          <h3 class="quiz-question">Aside from the monthly fee, do you have separate budgets for Ad Spend, Custom Websites, or specialized Photoshoots?</h3>
+          <div class="quiz-opts" id="qo14" data-type="radio">
+            <label class="qo"><input type="radio" name="q14" value="yes"><span class="qo-mark"></span><span class="qo-text">Yes, I have separate budgets ready for these.</span></label>
+            <label class="qo"><input type="radio" name="q14" value="no"><span class="qo-mark"></span><span class="qo-text">No, I only have the monthly bundle fee right now.</span></label>
+            <label class="qo"><input type="radio" name="q14" value="discuss"><span class="qo-mark"></span><span class="qo-text">I'm not sure, let's discuss on the call.</span></label>
+          </div>
+        </div>
+        <!-- Recommendation -->
+        <div class="quiz-slide" id="qs15">
+          <div class="quiz-q-cat">Your Personalized Plan</div>
+          <h3 class="quiz-question">Here's what we'd build for you.</h3>
+          <div class="quiz-rec-box">
+            <div class="quiz-rec-label">Your Strategic Focus</div>
+            <div class="quiz-rec-text" id="qRecText"></div>
+            <div class="quiz-rec-tags" id="qRecTags"></div>
+          </div>
+          <div class="quiz-rec-bundle">
+            <div class="quiz-rec-bundle-icon">🚀</div>
+            <div>
+              <div class="quiz-rec-bundle-label">Recommended Bundle</div>
+              <div class="quiz-rec-bundle-name" id="qRecBundleName"></div>
+            </div>
+          </div>
+        </div>
+        <!-- Contact Info -->
+        <div class="quiz-slide" id="qs16">
+          <div class="quiz-q-cat">Almost There</div>
+          <h3 class="quiz-question">Tell us about you so we can reserve your industry slot.</h3>
+          <div class="quiz-contact-grid">
+            <div class="field">
+              <label for="qName">Full Name</label>
+              <input type="text" id="qName" placeholder="Your full name" autocomplete="name">
+            </div>
+            <div class="field">
+              <label for="qEmail">Business Email</label>
+              <input type="email" id="qEmail" placeholder="you@company.com" autocomplete="email">
+            </div>
+            <div class="field">
+              <label for="qPhone">Phone Number</label>
+              <input type="tel" id="qPhone" placeholder="+1 (000) 000-0000" autocomplete="tel">
+            </div>
+            <div class="field">
+              <label for="qWebsite">Website</label>
+              <input type="url" id="qWebsite" placeholder="https://yoursite.com" autocomplete="url">
+            </div>
+            <div class="field full">
+              <label for="qIndustry">Industry / Niche</label>
+              <select id="qIndustry">
+                <option value="" disabled selected>Select your industry sector</option>
+                <option>E-commerce &amp; Retail</option>
+                <option>Real Estate</option>
+                <option>Health &amp; Wellness</option>
+                <option>Food &amp; Beverage</option>
+                <option>Professional Services</option>
+                <option>Automotive</option>
+                <option>Technology &amp; SaaS</option>
+                <option>Beauty &amp; Cosmetics</option>
+                <option>Finance &amp; Fintech</option>
+                <option>Education &amp; Training</option>
+                <option>Hospitality &amp; Tourism</option>
+                <option>Construction &amp; Contracting</option>
+                <option>Other</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <!-- Success -->
+        <div class="quiz-slide" id="qs17">
+          <div class="quiz-success">
+            <div class="quiz-success-icon"><i class="fa-solid fa-check"></i></div>
+            <div class="quiz-success-title">Your Application is In!</div>
+            <div class="quiz-success-sub">We've received your brand discovery quiz and will review it within 48 hours. Our team will reach out to discuss your personalized growth plan and confirm your industry exclusivity.</div>
+            <a href="#" class="glow-btn quiz-book-btn" id="qBookBtn" target="_blank" rel="noopener">
+              <i class="fa-solid fa-calendar-check"></i>
+              Book Your Strategy Call
+            </a>
+            <div class="form-sub" style="margin-top:16px">Jeeh, Jeeh! &nbsp;·&nbsp; Strictly confidential. Industry slot reserved only upon confirmation.</div>
+          </div>
+        </div>
+      </div><!-- /quiz-slides-wrap -->
+
+      <!-- Nav -->
+      <div class="quiz-nav" id="quizNav">
+        <button class="quiz-back-btn" id="qBack" disabled>← Back</button>
+        <button class="glow-btn quiz-next-btn" id="qNext">Continue →</button>
+      </div>
+    </div><!-- /quiz-wrap -->
   </div>
 </section>
 
@@ -1097,45 +1364,199 @@ sidebar.querySelectorAll('a[href^="#"]').forEach(a=>{
   });
 });
 
-/* Apply form — saves to Firebase */
+/* Quiz Engine */
 let _db = null;
 
-async function handleApply(){
-  const name    = document.getElementById('name').value.trim();
-  const email   = document.getElementById('email').value.trim();
-  const phone   = document.getElementById('phone').value.trim();
-  const website = document.getElementById('website').value.trim();
-  const industry = document.getElementById('industry').value;
-  if(!name || !email || !industry){
-    alert('Please fill in your name, email, and industry sector to check availability.');
-    return;
-  }
-  const btn = document.querySelector('.form-submit');
-  btn.textContent = 'Checking Availability...';
-  btn.style.opacity = '.7';
-  btn.disabled = true;
-  try {
-    if(_db){
-      await _db.collection('applications').add({
-        name, email, phone, website, industry,
-        status: 'pending',
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
+(function(){
+  const TOTAL_Q = 15;
+  let step = 0;
+  let busy = false;
+  const answers = {};
+
+  const phases = [
+    'Brand Discovery','Digital Presence','Your Assets',
+    'Design Services','Content Services','Social Services',
+    'Tech Services','Performance Services','Offline Services',
+    'Brand Character','Current Challenge','3-Month Strategy',
+    'Exclusivity','Bundle Choice','Budget',
+    'Your Plan','Contact Info','All Done!'
+  ];
+
+  /* Option click handlers */
+  document.querySelectorAll('.qo').forEach(opt => {
+    opt.addEventListener('click', function(){
+      const grp = this.closest('.quiz-opts');
+      const isCheck = grp.classList.contains('cb');
+      const val = this.querySelector('input').value;
+      if(!isCheck){
+        grp.querySelectorAll('.qo').forEach(o => { o.classList.remove('sel'); o.querySelector('input').checked = false; });
+        this.classList.add('sel');
+        this.querySelector('input').checked = true;
+      } else {
+        if(val === 'none'){
+          grp.querySelectorAll('.qo').forEach(o => { o.classList.remove('sel'); o.querySelector('input').checked = false; });
+        } else {
+          const noneEl = grp.querySelector('.none-opt');
+          if(noneEl){ noneEl.classList.remove('sel'); noneEl.querySelector('input').checked = false; }
+        }
+        const isNowSel = !this.classList.contains('sel');
+        this.classList.toggle('sel', isNowSel);
+        this.querySelector('input').checked = isNowSel;
+      }
+    });
+  });
+
+  function readStep(s){
+    const el = document.getElementById('qo' + s);
+    if(!el) return null;
+    if(el.dataset.type === 'radio'){
+      const c = el.querySelector('input:checked');
+      return c ? c.value : null;
     }
-    btn.textContent = "✓ Application Received — We'll Be In Touch Within 48 Hours";
-    btn.style.background = '#1d7a4c';
-    btn.style.opacity = '1';
-  } catch(e) {
-    btn.textContent = 'Submission failed — please try again';
-    btn.style.background = '#dc3545';
-    btn.style.opacity = '1';
-    btn.disabled = false;
-    setTimeout(()=>{
-      btn.textContent = 'Check My Industry Availability';
-      btn.style.background = '';
-    }, 3000);
+    return Array.from(el.querySelectorAll('input:checked')).map(i => i.value);
   }
-}
+
+  function saveStep(s){ if(s < TOTAL_Q){ const v = readStep(s); if(v !== null) answers['q' + s] = v; } }
+
+  function updateUI(){
+    const pct = step < TOTAL_Q ? Math.round((step / TOTAL_Q) * 100) : 100;
+    document.getElementById('qProgress').style.width = pct + '%';
+    document.getElementById('qStepCount').textContent = step < TOTAL_Q ? ('Question ' + (step + 1) + ' of ' + TOTAL_Q)
+      : step === 15 ? 'Your Personalized Plan' : step === 16 ? 'Final Step' : 'Application Submitted';
+    document.getElementById('qPhaseTag').textContent = phases[step] || '';
+    document.getElementById('qBack').disabled = step === 0;
+    const nav = document.getElementById('quizNav');
+    const btn = document.getElementById('qNext');
+    if(step === 17){ nav.style.display = 'none'; return; }
+    nav.style.display = '';
+    btn.textContent = step === 14 ? 'See My Personalized Plan →'
+      : step === 15 ? "Looks Good — Let's Connect →"
+      : step === 16 ? 'Submit My Application →'
+      : 'Continue →';
+  }
+
+  function showStep(to, dir){
+    if(busy) return;
+    busy = true;
+    const from = document.getElementById('qs' + step);
+    const next = document.getElementById('qs' + to);
+    from.classList.remove('active');
+    next.classList.remove('anim-in-r','anim-in-l');
+    next.classList.add('active');
+    void next.offsetWidth;
+    next.classList.add(dir === 'fwd' ? 'anim-in-r' : 'anim-in-l');
+    step = to;
+    updateUI();
+    document.getElementById('apply').scrollIntoView({behavior:'smooth', block:'nearest'});
+    setTimeout(() => { busy = false; }, 350);
+  }
+
+  function buildRec(){
+    const a = answers;
+    let svcs = [];
+    const q0 = a.q0;
+    if(q0 === 'zero') svcs.push('Visual Identity Creation','Brand Book & Guidelines');
+    else if(q0 === 'logo-only') svcs.push('Brand Guidelines & Color System');
+
+    const svcMap = [
+      [3, {'logo-identity':'Logo & Visual Identity','digital-arts':'Digital Arts & AI Design','editorial':'Editorial & Print Design'}],
+      [4, {'photography':'Professional Photography','reels':'Reels & Short Video','motion':'Motion Video Production','animations':'Animations'}],
+      [5, {'platform-mgmt':'Social Platform Management','branded-content':'Branded Content / Influencer','newsletters':'Newsletter & SMS Campaigns'}],
+      [6, {'website':'Website / Landing Page','ecommerce':'E-commerce Store','app':'Mobile App Development','erp':'Business Hub (ERP)'}],
+      [7, {'social-ads':'Social Media Advertising','google-ads':'Google Ads & GMB','seo':'SEO / Ranking Control'}],
+      [8, {'field-marketing':'Field Marketing Campaigns','events':'Event Organization','parties':'Concert & Party Production'}]
+    ];
+    svcMap.forEach(([qi, map]) => {
+      (a['q' + qi] || []).filter(v => v !== 'none').forEach(v => { if(map[v]) svcs.push(map[v]); });
+    });
+
+    const painAddons = {
+      'no-awareness': ['Brand Awareness Strategy','Social Growth Plan'],
+      'no-conversions': ['Conversion Funnel Optimization','High-ROI Ad Campaigns'],
+      'outdated-content': ['Visual Content Overhaul','Content Refresh Package'],
+      'need-event': ['Event Production','On-Ground Campaigns']
+    };
+    (painAddons[a.q10] || []).forEach(s => { if(!svcs.includes(s)) svcs.push(s); });
+    svcs = [...new Set(svcs)].slice(0, 6);
+
+    const intros = {
+      'no-awareness': "Your brand needs to be seen. We'll build a solid foundation and amplify your presence across the channels your audience uses most.",
+      'no-conversions': "You have the audience — now let's convert them. We'll optimize your funnel, launch high-ROI campaigns, and build assets that close deals.",
+      'outdated-content': "First impressions are everything. We'll rebuild your visual world with content that commands attention and builds instant trust.",
+      'need-event': "Big experiences drive big results. We'll design and execute your on-ground campaigns and events from concept to crowd."
+    };
+    const bundleNames = {
+      '3-month':'3-Month Sprint Package','6-month':'6-Month Growth Package',
+      '12-month':'12-Month Scale Package','custom':'Custom Enterprise Package'
+    };
+
+    document.getElementById('qRecText').textContent = intros[a.q10] || "Based on your brand profile, we've identified the highest-impact services to accelerate your growth.";
+    document.getElementById('qRecTags').innerHTML = svcs.map(s => '<span class="quiz-rec-tag">' + s + '</span>').join('');
+    document.getElementById('qRecBundleName').textContent = bundleNames[a.q13] || '6-Month Growth Package';
+  }
+
+  async function submitQuiz(){
+    const name = document.getElementById('qName').value.trim();
+    const email = document.getElementById('qEmail').value.trim();
+    const phone = document.getElementById('qPhone').value.trim();
+    const website = document.getElementById('qWebsite').value.trim();
+    const industry = document.getElementById('qIndustry').value;
+    if(!name || !email || !industry){
+      alert('Please fill in your name, email, and industry sector to continue.');
+      return false;
+    }
+    const btn = document.getElementById('qNext');
+    btn.textContent = 'Submitting...';
+    btn.style.opacity = '.7';
+    btn.disabled = true;
+    try {
+      if(typeof _db !== 'undefined' && _db){
+        await _db.collection('applications').add({
+          name, email, phone, website, industry,
+          status: 'pending',
+          quizAnswers: answers,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      }
+      return true;
+    } catch(e){
+      btn.textContent = 'Submit My Application →';
+      btn.style.opacity = '1';
+      btn.disabled = false;
+      alert('Submission failed — please try again.');
+      return false;
+    }
+  }
+
+  document.getElementById('qNext').addEventListener('click', async function(){
+    if(busy) return;
+    if(step < TOTAL_Q){
+      const isRadio = document.getElementById('qo' + step)?.dataset.type === 'radio';
+      if(isRadio && !readStep(step)){
+        const grp = document.getElementById('qo' + step);
+        grp.style.outline = '2px solid rgba(227,108,68,.5)';
+        grp.style.borderRadius = '10px';
+        setTimeout(() => { grp.style.outline = ''; }, 700);
+        return;
+      }
+      saveStep(step);
+      if(step === 14){ buildRec(); showStep(15, 'fwd'); }
+      else { showStep(step + 1, 'fwd'); }
+    } else if(step === 15){
+      showStep(16, 'fwd');
+    } else if(step === 16){
+      const ok = await submitQuiz();
+      if(ok) showStep(17, 'fwd');
+    }
+  });
+
+  document.getElementById('qBack').addEventListener('click', function(){
+    if(busy || step === 0) return;
+    showStep(step - 1, 'back');
+  });
+
+  updateUI();
+})();
 
 /* Smooth scroll */
 document.querySelectorAll('a[href^="#"]').forEach(a=>{
