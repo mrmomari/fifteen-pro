@@ -1,21 +1,22 @@
 # Fifteen Pro — Codebase Guide
 
 ## What This Is
-B2B business acceleration & digital solutions website for **15fifteen15 / Fifteen**. One partner per industry sector. Vanilla HTML/CSS/JS — no framework, no build step.
+B2B digital solutions website for **15fifteen15 / Fifteen**. One partner per industry sector. Vanilla HTML/CSS/JS — no framework, no build step.
 
 ## Stack
 - **Frontend:** Pure HTML5 + CSS3 + Vanilla JS (ES2020+)
 - **Backend:** Firebase Firestore (database) + Firebase Storage (file uploads) + Firebase Auth (customer portal)
 - **CDNs:** Firebase SDK v10.7.1 (compat), Font Awesome 6.5.1, Google Fonts (Inter)
 - **Dev server:** `npx serve` (port 3333)
+- **Live domain:** 15fifteen15.com (Firebase Hosting)
 
 ## Files
 
 | File | Purpose |
 |---|---|
-| `index.html` | Public marketing site — hero, solutions grid, process, team, apply form |
-| `admin.html` | Admin-only dashboard at `/admin.html` (hidden route, no nav link) |
-| `portal.html` | Customer partner portal — Firebase Auth protected |
+| `index.html` | Public marketing site — hero, solutions grid, invest block, team, 15-question quiz/apply |
+| `admin.html` | Admin dashboard at `/admin.html` — linked from sidebar (muted, below divider) |
+| `portal.html` | Customer partner portal — Firebase Auth protected, linked from sidebar |
 | `shop.html` | Interactive service configurator / quote builder |
 | `firebase-config.js` | Firebase project credentials (project: `fifteen-pro`) |
 | `prices.json` | Service catalog fallback (loaded if Firestore unavailable) |
@@ -36,7 +37,29 @@ B2B business acceleration & digital solutions website for **15fifteen15 / Fiftee
 font: Inter, system-ui, sans-serif
 ```
 
-Layout: fixed left sidebar (268px on main site, 240px admin, 260px portal) + scrollable main area.
+Layout: fixed left sidebar (268px on main site, 240px admin, 260px portal) + scrollable main area. No top bar.
+
+## index.html — Page Sections (in order)
+
+1. **Sidebar** — logo, nav links (Solutions, Process, Our Expertise, Build Your Plan, Apply Now), divider, Partner Portal → `portal.html`, Admin → `admin.html`, footer with social links
+2. **Hero** — H1, "Apply 15 Q&A" CTA button, stat row (15 / 3 / 1)
+3. **The Problem** — 3 cards: Weak Brand Authority, Stagnant Client Reach, Operational Chaos
+4. **The Engine** (Solutions) — 15 products across 3 phases
+5. **Invest / Process** — 2-column block: Due Diligence + Capital & Infrastructure (headings only, no body copy)
+6. **Our Expertise** (Team) — 3 team cards (populated from Firestore `content/team`)
+7. **Partners Strip** — scrolling marquee of partner logos
+8. **Quiz / Apply** (`#apply`) — 15-question brand discovery quiz → recommendation → contact info → success + Book a Call CTA
+9. **Footer** — © 2026 Fifteen. All rights reserved.
+
+## Quiz Flow (`#apply`)
+
+18 slides total (0-indexed), driven by `quiz-engine` IIFE in `index.html`:
+- Slides 0–14: 15 questions (radio = must select to advance; checkbox = optional, "None" deselects others)
+- Slide 15: Personalized recommendation generated from answers
+- Slide 16: Contact info (name, email, phone, website, industry) — saves to Firestore on submit
+- Slide 17: Success + "Book Your Strategy Call" CTA (`id="qBookBtn"` href — update to your Calendly URL)
+
+All answers + contact saved to `applications/{id}` with `quizAnswers` object and `status: 'pending'`.
 
 ## Firebase Collections
 
@@ -47,8 +70,9 @@ settings/access         — admin password, partner logins
 catalog/services        — 15 services with pricing (falls back to prices.json)
 content/team            — 3 team member profiles + photos
 
-applications/{id}       — partner applications from index.html form
+applications/{id}       — partner applications from quiz
   name, email, phone, website, industry
+  quizAnswers: { q0..q14 }   ← full quiz responses
   status: 'pending' | 'approved' | 'rejected'
   createdAt (serverTimestamp)
   userId (added on approval)
@@ -93,24 +117,25 @@ invoices/{id}           — billing invoices per customer
 ## Key User Flows
 
 **New partner applies:**
-1. Fills form on `index.html#apply` → saved to `applications` collection
-2. Admin sees it in `admin.html` → Applications tab
-3. Admin clicks Approve → Firebase Auth account created → password-reset email sent to customer
-4. Customer sets password → logs in at `portal.html`
+1. Completes 15-question quiz on `index.html#apply`
+2. Sees personalized recommendation, fills contact info → saved to `applications` collection
+3. Admin sees it in `admin.html` → Applications tab
+4. Admin clicks Approve → Firebase Auth account created → password-reset email sent
+5. Customer sets password → logs in at `portal.html`
 
 **Existing partner logs in:**
-- Goes to `portal.html` → signs in with email/password or Google
+- Sidebar → Partner Portal → `portal.html` → signs in with email/password or Google
 - Sees dashboard: Active Services KPI, Open Tickets, Next Milestone, Outstanding Invoices
 
 **Admin manages content:**
-- Goes to `admin.html` → enters password → tabs: Applications / Company / Pricing / Services / Access / Expertise
+- Sidebar → Admin → `admin.html` → enters password → tabs: Applications / Company / Pricing / Services / Access / Expertise
 
 ## Firebase Console Requirements
-These must be enabled for full functionality:
 - **Authentication → Email/Password** → Enable
 - **Authentication → Google** → Enable (public-facing name: "Fifteen", support email configured)
 - **Firestore** → already active
 - **Storage** → already active
+- **Hosting** → configured for 15fifteen15.com
 
 ## Services Catalog
 15 services across 3 phases:
@@ -119,4 +144,4 @@ These must be enabled for full functionality:
 - **Phase 3 — Infrastructure & Scale** (11–15): Website Creation, E-commerce Storefront, Secure E-commerce, Business Hub/ERP, Analytics Dashboard
 
 ## Branch Convention
-Development branch: `claude/determined-johnson-6dmdc8` → PRs into `main`
+Development branch: `claude/zealous-turing-10rdcm` → PRs into `main`
