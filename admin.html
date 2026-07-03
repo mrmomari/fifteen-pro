@@ -429,7 +429,7 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
         </a>
         <div class="sb-badge">Admin</div>
 
-        <div class="sb-label">Navigation</div>
+        <div class="sb-label">Inbound</div>
         <nav class="sb-nav">
           <button class="sb-tab active" onclick="switchTab('applications')">
             <i class="fa-regular fa-clipboard"></i> Applications
@@ -440,23 +440,16 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
           <button class="sb-tab" onclick="switchTab('tickets')">
             <i class="fa-solid fa-headset"></i> Tickets <span class="sb-count" id="tkBadge" style="display:none"></span>
           </button>
-          <button class="sb-tab" onclick="switchTab('company')">
-            <i class="fa-regular fa-building"></i> Company
-          </button>
-          <button class="sb-tab" onclick="switchTab('pricing')">
-            <i class="fa-solid fa-dollar-sign"></i> Pricing
-          </button>
-          <button class="sb-tab" onclick="switchTab('services')">
-            <i class="fa-solid fa-gear"></i> Services
-          </button>
+        </nav>
+
+        <div class="sb-divider"></div>
+        <div class="sb-label">Customers</div>
+        <nav class="sb-nav">
           <button class="sb-tab" onclick="switchTab('access')">
             <i class="fa-solid fa-lock"></i> Access
           </button>
-          <button class="sb-tab" onclick="switchTab('expertise')">
-            <i class="fa-solid fa-users"></i> Expertise
-          </button>
           <button class="sb-tab" onclick="switchTab('services-mgmt')">
-            <i class="fa-solid fa-briefcase"></i> Services
+            <i class="fa-solid fa-briefcase"></i> Service Mgmt
           </button>
           <button class="sb-tab" onclick="switchTab('tasks')">
             <i class="fa-solid fa-list-check"></i> Tasks <span class="sb-count" id="taskBadge" style="display:none"></span>
@@ -464,6 +457,28 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
           <button class="sb-tab" onclick="switchTab('invoices')">
             <i class="fa-solid fa-receipt"></i> Invoices
           </button>
+        </nav>
+
+        <div class="sb-divider"></div>
+        <div class="sb-label">Site Content</div>
+        <nav class="sb-nav">
+          <button class="sb-tab" onclick="switchTab('company')">
+            <i class="fa-regular fa-building"></i> Company
+          </button>
+          <button class="sb-tab" onclick="switchTab('pricing')">
+            <i class="fa-solid fa-dollar-sign"></i> Pricing
+          </button>
+          <button class="sb-tab" onclick="switchTab('services')">
+            <i class="fa-solid fa-gear"></i> Catalog
+          </button>
+          <button class="sb-tab" onclick="switchTab('expertise')">
+            <i class="fa-solid fa-users"></i> Expertise
+          </button>
+        </nav>
+
+        <div class="sb-divider"></div>
+        <div class="sb-label">System</div>
+        <nav class="sb-nav">
           <button class="sb-tab" onclick="switchTab('audit')">
             <i class="fa-solid fa-clock-rotate-left"></i> Audit Logs
           </button>
@@ -1361,7 +1376,7 @@ async function showDashboard() {
 /* ══════════════════════════════════════════════
    SIDEBAR TABS
 ══════════════════════════════════════════════ */
-const TABS = ['applications','orders','tickets','company','pricing','services','access','expertise','services-mgmt','tasks','invoices','audit','notifications'];
+const TABS = ['applications','orders','tickets','access','services-mgmt','tasks','invoices','company','pricing','services','expertise','audit','notifications'];
 
 function switchTab(name) {
   TABS.forEach(t => {
