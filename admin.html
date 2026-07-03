@@ -539,6 +539,13 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
             </div>
           </div>
 
+          <div class="form-card" style="max-width:680px">
+            <div class="form-card-title">Industry WhatsApp Routing</div>
+            <p style="font-size:12px;color:var(--text-dim);margin:-6px 0 14px">Each application's quiz report is sent via WhatsApp to the number responsible for that industry — e.g. the team member or group handling that sector. Leave a field blank to skip routing for that industry.</p>
+            <div id="industryRoutingList"></div>
+            <button class="form-save" onclick="saveIndustryRouting()">Save Routing</button>
+          </div>
+
           <div class="data-table-wrap">
             <table class="data-table" id="appTable">
               <thead>
@@ -1140,6 +1147,7 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
     <div id="app-answers"></div>
     <div class="modal-actions" style="margin-top:18px">
       <button class="modal-cancel" onclick="closeApplicationModal()">Close</button>
+      <button class="btn-whatsapp" onclick="sendApplicationWhatsApp(viewingAppDocId)">Send Report via WhatsApp</button>
     </div>
   </div>
 </div>
@@ -1523,9 +1531,12 @@ function formatQuizAnswer(qIndex, raw) {
   return vals.map(v => escHtml(def.o[v] || v)).join('<br>');
 }
 
+let viewingAppDocId = null;
+
 function viewApplication(docId) {
   const app = applications.find(a => a.docId === docId);
   if (!app) return;
+  viewingAppDocId = docId;
   const status = app.status || 'pending';
   document.getElementById('app-title').textContent = app.name || 'Application';
   document.getElementById('app-meta').innerHTML = `
@@ -1550,6 +1561,88 @@ function viewApplication(docId) {
 
 function closeApplicationModal() {
   document.getElementById('applicationModal').classList.remove('open');
+}
+
+/* ── Industry WhatsApp routing (mirrors index.html's qIndustry options) ── */
+const INDUSTRY_LIST = [
+  'E-commerce & Retail', 'Real Estate', 'Health & Wellness', 'Food & Beverage',
+  'Professional Services', 'Automotive', 'Technology & SaaS', 'Beauty & Cosmetics',
+  'Finance & Fintech', 'Education & Training', 'Hospitality & Tourism',
+  'Construction & Contracting', 'Other'
+];
+let industryContacts = {};
+
+async function loadIndustryContacts() {
+  if (!db) return;
+  try {
+    const doc = await db.collection('settings').doc('industryContacts').get();
+    industryContacts = (doc.exists && doc.data().mapping) ? doc.data().mapping : {};
+  } catch(e) { console.warn('Could not load industry routing:', e.message); industryContacts = {}; }
+  renderIndustryRoutingList();
+}
+
+function renderIndustryRoutingList() {
+  const wrap = document.getElementById('industryRoutingList');
+  if (!wrap) return;
+  wrap.innerHTML = INDUSTRY_LIST.map(ind => `
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+      <span style="flex:1;font-size:13px;color:var(--text)">${escHtml(ind)}</span>
+      <input type="tel" data-industry="${escHtml(ind)}" value="${escHtml(industryContacts[ind] || '')}" placeholder="+1 555 123 4567" style="flex:1">
+    </div>
+  `).join('');
+}
+
+async function saveIndustryRouting() {
+  if (!db) { toast('Connect Firebase first', 'error'); return; }
+  try {
+    const mapping = {};
+    document.querySelectorAll('#industryRoutingList input[data-industry]').forEach(i => {
+      const v = i.value.trim();
+      if (v) mapping[i.dataset.industry] = v;
+    });
+    industryContacts = mapping;
+    await db.collection('settings').doc('industryContacts').set({ mapping, updatedAt: new Date().toISOString() }, { merge: true });
+    toast('✓ Routing saved', 'success');
+  } catch(e) { toast('Save failed: ' + e.message, 'error'); }
+}
+
+function buildApplicationReport(app) {
+  const lines = [];
+  lines.push(`*New Application — ${app.name || 'Unknown'}*`);
+  lines.push(`Industry: ${app.industry || '—'}`);
+  lines.push(`Email: ${app.email || '—'}`);
+  lines.push(`Phone: ${app.phone || '—'}`);
+  if (app.website) lines.push(`Website: ${app.website}`);
+  lines.push(`Submitted: ${fmtDate(app.createdAt)}`);
+  lines.push('');
+  lines.push('*Quiz Responses:*');
+  const answers = app.quizAnswers || {};
+  QUIZ_MAP.forEach((def, i) => {
+    const raw = answers['q' + i];
+    if (raw === undefined || raw === null || (Array.isArray(raw) && !raw.length)) return;
+    const vals = Array.isArray(raw) ? raw : [raw];
+    const answerText = vals.map(v => def.o[v] || v).join(', ');
+    lines.push(`${i + 1}. ${def.q}`);
+    lines.push(`   → ${answerText}`);
+  });
+  lines.push('');
+  lines.push('— Fifteen');
+  return lines.join('\n');
+}
+
+function sendApplicationWhatsApp(docId) {
+  const app = applications.find(a => a.docId === docId);
+  if (!app) { toast('Application not found', 'error'); return; }
+  const industry = app.industry || '';
+  const phoneRaw = industryContacts[industry];
+  if (!phoneRaw) {
+    toast(`No WhatsApp number set for "${industry || 'this industry'}" — add one in Industry Routing`, 'error');
+    return;
+  }
+  const digits = phoneRaw.replace(/[^\d]/g, '');
+  if (!digits) { toast('Invalid routing number for this industry', 'error'); return; }
+  const text = encodeURIComponent(buildApplicationReport(app));
+  window.open(`https://wa.me/${digits}?text=${text}`, '_blank', 'noopener');
 }
 
 /* ── Approve flow ── */
@@ -1940,6 +2033,7 @@ async function loadAllSettings() {
     }
     await loadExpertise();
     await loadTeamMembers();
+    await loadIndustryContacts();
   } catch(e) { console.warn('Could not load settings:', e.message); }
 }
 
