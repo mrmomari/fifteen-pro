@@ -70,6 +70,7 @@ All answers + contact saved to `applications/{id}` with `quizAnswers` object and
 settings/company        — company info, logo URL, social links
 settings/pricing        — currency, tax, bundle discount, promo codes
 settings/access         — partner logins
+settings/team           — { members: [name, ...] } — internal team roster for milestone "Assigned To"; no login, admin-managed (admin.html Tasks tab)
 catalog/services        — 15 services with pricing (falls back to prices.json)
 content/team            — 3 team member profiles + photos
 admins/{uid}            — admin registry (doc id = Firebase Auth UID); managed via Firebase console
@@ -98,8 +99,11 @@ customerServices/{id}   — services assigned to a customer
   userId, serviceId, serviceName, phase
   status: 'pending' | 'active' | 'completed'
   startDate, completionDate
-  milestones: [{title, date, completed}]
+  milestones: [{title, date, completed, assignedTo, note}]
+    assignedTo — name from settings/team, for internal follow-up (admin.html Tasks tab)
+    note       — admin-written "what was achieved" text, shown once completed (customer-visible in portal.html)
   notes
+  customerPhone — for the "Send Progress Update via WhatsApp" button in admin.html
 
 tickets/{id}            — support tickets raised by customers
   userId, subject, category, message
@@ -152,7 +156,7 @@ invoices/{id}           — billing invoices per customer
 **Existing partner logs in:**
 - Sidebar → Partner Portal → `portal.html` → signs in with email/password or Google
 - Sees dashboard: Active Services KPI, Open Tickets, Next Milestone, Outstanding Invoices
-- Services tab shows a progress bar + milestone checklist per assigned service (from `customerServices.milestones`, set by admin)
+- Services tab shows a progress bar + milestone checklist per assigned service (from `customerServices.milestones`, set by admin) — completed milestones show an "Achieved" badge next to the date, plus the admin's achievement note if one was added
 - Tickets tab: opens a ticket, then can expand it to read/send replies against `tickets/{id}/replies`
 
 **Customer opens a support ticket:**
@@ -166,8 +170,9 @@ invoices/{id}           — billing invoices per customer
 3. Admin marks it `paid` / `overdue` / back to `pending` from the Invoices tab as money comes in or a due date passes (no automatic overdue detection — no backend/Cloud Functions in this stack)
 
 **Admin manages content:**
-- Sidebar → Admin → `admin.html` → signs in (email/password) → tabs: Applications / Orders / Tickets / Company / Pricing / Services / Access / Expertise / Service Mgmt / Invoices / Audit / Notifications
-- Service Mgmt: assign services to customers, edit status/notes, and manage the milestone checklist per service (progress bar + `x/y complete` shown both in the Active Services table and the edit modal) — this is what the customer sees in their portal
+- Sidebar → Admin → `admin.html` → signs in (email/password) → tabs: Applications / Orders / Tickets / Company / Pricing / Services / Access / Expertise / Service Mgmt / Tasks / Invoices / Audit / Notifications
+- Service Mgmt: assign services to customers, edit status/notes, and manage the milestone checklist per service (progress bar + `x/y complete` shown both in the Active Services table and the edit modal) — this is what the customer sees in their portal. Each milestone can be assigned to a team member and, once checked complete, given a free-text "what was achieved" note — both are editable from the same edit modal, which also has a "Send Progress Update via WhatsApp" button.
+- Tasks: internal follow-up view — a "Team Members" roster (`settings/team`, name-only, no login) feeds the "Assigned To" dropdown on milestones; the Pending Tasks table flattens every incomplete milestone across all customers/services, filterable by assignee, with an Open button that jumps to that service's edit modal in Service Mgmt
 - Invoices: bill a customer for completed/in-progress work; customer sees it in their portal Billing tab in real time
 
 ## Firebase Console Requirements

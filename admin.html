@@ -458,6 +458,9 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
           <button class="sb-tab" onclick="switchTab('services-mgmt')">
             <i class="fa-solid fa-briefcase"></i> Services
           </button>
+          <button class="sb-tab" onclick="switchTab('tasks')">
+            <i class="fa-solid fa-list-check"></i> Tasks <span class="sb-count" id="taskBadge" style="display:none"></span>
+          </button>
           <button class="sb-tab" onclick="switchTab('invoices')">
             <i class="fa-solid fa-receipt"></i> Invoices
           </button>
@@ -871,6 +874,57 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
                       <div class="empty-state">
                         <i class="fa-regular fa-briefcase"></i>
                         Loading services…
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ TASKS PANEL ═══ -->
+        <div class="dash-panel" id="panel-tasks">
+          <div class="panel-heading">Tasks</div>
+          <div class="panel-sub">Follow up on outstanding milestones across every customer, and manage who's assigned to what.</div>
+
+          <div class="form-card" style="max-width:680px">
+            <div class="form-card-title">Team Members</div>
+            <p style="font-size:12px;color:var(--text-dim);margin:-6px 0 14px">Names here populate the "Assigned To" list on milestones — no login required, just for internal follow-up.</p>
+            <div id="teamList"></div>
+            <button class="as-add" onclick="addTeamRow()"><i class="fa-solid fa-plus"></i> Add Team Member</button>
+            <div style="margin-top:14px">
+              <button class="form-save" onclick="saveTeamMembers()">Save Team</button>
+            </div>
+          </div>
+
+          <div class="form-card">
+            <div class="form-card-title">Pending Tasks</div>
+            <div class="form-grid one" style="margin-bottom:10px">
+              <div class="f-field" style="max-width:260px"><label>Filter by Assignee</label>
+                <select id="task-filter" onchange="renderTasksTable()">
+                  <option value="">Everyone</option>
+                </select>
+              </div>
+            </div>
+            <div style="overflow-x: auto;">
+              <table class="data-table" id="tasksTable">
+                <thead>
+                  <tr>
+                    <th>Customer</th>
+                    <th>Service</th>
+                    <th>Milestone</th>
+                    <th>Due</th>
+                    <th>Assigned To</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="tasksBody">
+                  <tr>
+                    <td colspan="6">
+                      <div class="empty-state">
+                        <i class="fa-solid fa-list-check"></i>
+                        Loading tasks…
                       </div>
                     </td>
                   </tr>
@@ -1307,7 +1361,7 @@ async function showDashboard() {
 /* ══════════════════════════════════════════════
    SIDEBAR TABS
 ══════════════════════════════════════════════ */
-const TABS = ['applications','orders','tickets','company','pricing','services','access','expertise','services-mgmt','invoices','audit','notifications'];
+const TABS = ['applications','orders','tickets','company','pricing','services','access','expertise','services-mgmt','tasks','invoices','audit','notifications'];
 
 function switchTab(name) {
   TABS.forEach(t => {
@@ -1324,6 +1378,7 @@ function switchTab(name) {
   if (name === 'orders') loadOrders();
   if (name === 'tickets') loadTickets();
   if (name === 'services-mgmt') loadServiceMgmt();
+  if (name === 'tasks') loadTasks();
   if (name === 'invoices') loadInvoices();
   if (name === 'audit') loadAuditLogs();
   if (name === 'notifications') loadNotifications();
@@ -1869,6 +1924,7 @@ async function loadAllSettings() {
       if (d.partnerLogins) renderPartnerRows(d.partnerLogins);
     }
     await loadExpertise();
+    await loadTeamMembers();
   } catch(e) { console.warn('Could not load settings:', e.message); }
 }
 
@@ -2352,7 +2408,9 @@ function editCustomerService(docId) {
   editingMilestones = (Array.isArray(d.milestones) ? d.milestones : []).map(m => ({
     title: m.title || '',
     date: toDateInputValue(m.date),
-    completed: !!m.completed
+    completed: !!m.completed,
+    assignedTo: m.assignedTo || '',
+    note: m.note || ''
   }));
 
   document.getElementById('se-title').textContent = `${d.serviceName || 'Service'} — ${d.customerName || ''}`;
@@ -2407,21 +2465,31 @@ function renderEditMilestones() {
     return;
   }
   wrap.innerHTML = editingMilestones.map((m, i) => `
-    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
-      <input type="checkbox" ${m.completed ? 'checked' : ''} onchange="editingMilestones[${i}].completed=this.checked;renderEditMilestones()" title="Mark complete">
-      <input type="text" value="${escHtml(m.title)}" placeholder="Milestone title" style="flex:2" oninput="editingMilestones[${i}].title=this.value">
-      <input type="date" value="${m.date}" style="flex:1" onchange="editingMilestones[${i}].date=this.value">
-      <button class="btn-reject" onclick="editingMilestones.splice(${i},1);renderEditMilestones()" title="Remove">✕</button>
+    <div style="border:1px solid rgba(0,0,0,.08);border-radius:8px;padding:8px;margin-bottom:8px">
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="checkbox" ${m.completed ? 'checked' : ''} onchange="editingMilestones[${i}].completed=this.checked;renderEditMilestones()" title="Mark complete">
+        <input type="text" data-role="title" value="${escHtml(m.title)}" placeholder="Milestone title" style="flex:2" oninput="editingMilestones[${i}].title=this.value">
+        <input type="date" value="${m.date}" style="flex:1" onchange="editingMilestones[${i}].date=this.value">
+        ${m.completed ? '<span style="font-size:10px;font-weight:700;letter-spacing:.04em;color:var(--green);background:rgba(38,145,94,.12);padding:3px 7px;border-radius:99px;white-space:nowrap">✓ ACHIEVED</span>' : ''}
+        <button class="btn-reject" onclick="editingMilestones.splice(${i},1);renderEditMilestones()" title="Remove">✕</button>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
+        <select style="flex:1;font-size:12px" onchange="editingMilestones[${i}].assignedTo=this.value">
+          <option value="">Unassigned</option>
+          ${teamMembers.map(name => `<option value="${escHtml(name)}" ${m.assignedTo === name ? 'selected' : ''}>${escHtml(name)}</option>`).join('')}
+        </select>
+        <input type="text" data-role="note" value="${escHtml(m.note)}" placeholder="What was achieved / delivered (optional)" style="flex:2;font-size:12px" oninput="editingMilestones[${i}].note=this.value">
+      </div>
     </div>
   `).join('');
 }
 
 function addEditMilestone() {
-  editingMilestones.push({ title: '', date: '', completed: false });
+  editingMilestones.push({ title: '', date: '', completed: false, assignedTo: '', note: '' });
   renderEditMilestones();
   const wrap = document.getElementById('se-milestones');
   wrap.scrollTop = wrap.scrollHeight;
-  const titleInputs = wrap.querySelectorAll('input[type=text]');
+  const titleInputs = wrap.querySelectorAll('input[data-role=title]');
   if (titleInputs.length) titleInputs[titleInputs.length - 1].focus();
 }
 
@@ -2444,7 +2512,13 @@ async function saveSvcEdit() {
       customerPhone: phone,
       milestones: editingMilestones
         .filter(hasMilestoneContent)
-        .map(m => ({ title: m.title.trim() || 'Milestone', date: m.date ? new Date(m.date) : null, completed: !!m.completed })),
+        .map(m => ({
+          title: m.title.trim() || 'Milestone',
+          date: m.date ? new Date(m.date) : null,
+          completed: !!m.completed,
+          assignedTo: (m.assignedTo || '').trim(),
+          note: (m.note || '').trim()
+        })),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     const custId = d.customerId || d.userId;
@@ -2476,9 +2550,10 @@ function sendMilestoneUpdateWhatsApp() {
     lines.push(`Progress: ${done}/${total} milestones complete (${pct}%)`);
     lines.push('');
     activeMilestones.forEach(m => {
-      const mark = m.completed ? '✅' : '⬜';
+      const mark = m.completed ? '✅ Achieved' : '⬜';
       const dateStr = m.date ? ` — ${m.date}` : '';
       lines.push(`${mark} ${m.title.trim() || 'Milestone'}${dateStr}`);
+      if (m.completed && m.note && m.note.trim()) lines.push(`   ↳ ${m.note.trim()}`);
     });
   } else {
     lines.push('');
@@ -2512,6 +2587,130 @@ function toDateInputValue(v) {
   const date = v.toDate ? v.toDate() : (v instanceof Date ? v : new Date(v));
   if (isNaN(date)) return '';
   return date.toISOString().split('T')[0];
+}
+
+/* ══════════════════════════════════════════════
+   TEAM MEMBERS (assignee roster for Tasks)
+══════════════════════════════════════════════ */
+let teamMembers = [];
+
+async function loadTeamMembers() {
+  if (!db) return;
+  try {
+    const doc = await db.collection('settings').doc('team').get();
+    teamMembers = (doc.exists && Array.isArray(doc.data().members)) ? doc.data().members : [];
+  } catch(e) { console.warn('Could not load team members:', e.message); teamMembers = []; }
+  renderTeamRows(teamMembers);
+}
+
+function renderTeamRows(list = []) {
+  const wrap = document.getElementById('teamList');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  list.forEach(name => addTeamRow(name));
+}
+
+function addTeamRow(name = '') {
+  const row = document.createElement('div');
+  row.className = 'drow';
+  row.innerHTML = `
+    <input type="text" placeholder="Team member name" value="${escHtml(name)}">
+    <button class="ddel" onclick="this.closest('.drow').remove()">&#10005;</button>
+  `;
+  document.getElementById('teamList').appendChild(row);
+}
+
+function collectTeamMembers() {
+  return Array.from(document.querySelectorAll('#teamList .drow input'))
+    .map(i => i.value.trim())
+    .filter(Boolean);
+}
+
+async function saveTeamMembers() {
+  if (!db) { toast('Connect Firebase first', 'error'); return; }
+  try {
+    teamMembers = collectTeamMembers();
+    await db.collection('settings').doc('team').set({ members: teamMembers, updatedAt: new Date().toISOString() }, { merge: true });
+    toast('✓ Team saved', 'success');
+    renderTasksTable();
+  } catch(e) { toast('Save failed: ' + e.message, 'error'); }
+}
+
+/* ══════════════════════════════════════════════
+   TASKS (pending milestones across all customers)
+══════════════════════════════════════════════ */
+let allTasks = [];
+
+async function loadTasks() {
+  if (!db) return;
+  await loadTeamMembers();
+  await loadServiceMgmt();
+
+  allTasks = [];
+  Object.keys(custServicesCache).forEach(docId => {
+    const d = custServicesCache[docId];
+    (Array.isArray(d.milestones) ? d.milestones : []).forEach((m, i) => {
+      if (!m.completed && (m.title || '').trim()) {
+        allTasks.push({
+          docId,
+          customerName: d.customerName || 'Unknown',
+          serviceName: d.serviceName || 'Unknown',
+          title: m.title,
+          date: m.date || null,
+          assignedTo: m.assignedTo || ''
+        });
+      }
+    });
+  });
+  allTasks.sort((a, b) => {
+    const da = a.date ? (a.date.toDate ? a.date.toDate() : new Date(a.date)) : null;
+    const db_ = b.date ? (b.date.toDate ? b.date.toDate() : new Date(b.date)) : null;
+    if (!da && !db_) return 0;
+    if (!da) return 1;
+    if (!db_) return -1;
+    return da - db_;
+  });
+
+  const filterSel = document.getElementById('task-filter');
+  const current = filterSel.value;
+  filterSel.innerHTML = '<option value="">Everyone</option>' +
+    teamMembers.map(name => `<option value="${escHtml(name)}">${escHtml(name)}</option>`).join('') +
+    '<option value="__unassigned__">Unassigned</option>';
+  filterSel.value = current;
+
+  renderTasksTable();
+}
+
+function renderTasksTable() {
+  const tbody = document.getElementById('tasksBody');
+  if (!tbody) return;
+  const filter = document.getElementById('task-filter').value;
+  const rows = allTasks.filter(t => {
+    if (!filter) return true;
+    if (filter === '__unassigned__') return !t.assignedTo;
+    return t.assignedTo === filter;
+  });
+
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><i class="fa-solid fa-circle-check"></i>No pending tasks' + (filter ? ' for this filter' : '') + '.</div></td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = rows.map(t => `
+    <tr>
+      <td>${escHtml(t.customerName)}</td>
+      <td>${escHtml(t.serviceName)}</td>
+      <td>${escHtml(t.title)}</td>
+      <td class="td-date">${t.date ? formatDate(t.date) : '—'}</td>
+      <td>${t.assignedTo ? escHtml(t.assignedTo) : '<span style="color:var(--text-dim)">Unassigned</span>'}</td>
+      <td><button class="btn-reject" onclick="openTaskService('${t.docId}')">Open</button></td>
+    </tr>
+  `).join('');
+}
+
+function openTaskService(docId) {
+  switchTab('services-mgmt');
+  editCustomerService(docId);
 }
 
 function formatDate(timestamp) {
