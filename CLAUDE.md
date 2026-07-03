@@ -20,6 +20,9 @@ B2B digital solutions website for **15fifteen15 / Fifteen**. One partner per ind
 | `shop.html` | Interactive service configurator / quote builder |
 | `firebase-config.js` | Firebase project credentials (project: `fifteen-pro`) |
 | `prices.json` | Service catalog fallback (loaded if Firestore unavailable) |
+| `firestore.rules` | Firestore security rules (paste into Firebase console) |
+| `storage.rules` | Firebase Storage security rules (paste into Firebase console) |
+| `SECURITY.md` | Step-by-step guide for enabling the security rules |
 | `MD/` | Source markdown for PDF guides (Products Guide, Ultimate Guide, Bundle Flyer) |
 
 ## Design System
@@ -66,9 +69,10 @@ All answers + contact saved to `applications/{id}` with `quizAnswers` object and
 ```
 settings/company        — company info, logo URL, social links
 settings/pricing        — currency, tax, bundle discount, promo codes
-settings/access         — admin password, partner logins
+settings/access         — partner logins
 catalog/services        — 15 services with pricing (falls back to prices.json)
 content/team            — 3 team member profiles + photos
+admins/{uid}            — admin registry (doc id = Firebase Auth UID); managed via Firebase console
 
 applications/{id}       — partner applications from quiz
   name, email, phone, website, industry
@@ -76,6 +80,14 @@ applications/{id}       — partner applications from quiz
   status: 'pending' | 'approved' | 'rejected'
   createdAt (serverTimestamp)
   userId (added on approval)
+
+orders/{id}             — quotes submitted from shop.html
+  name, email, phone, company
+  items: [{id, name, phase, price, type}]
+  oneTimeTotal, monthlyTotal
+  status: 'new' | 'contacted' | 'closed'
+  source: 'shop'
+  createdAt (serverTimestamp)
 
 customers/{uid}         — created when admin approves an application
   name, email, industry, applicationId
@@ -103,16 +115,20 @@ invoices/{id}           — billing invoices per customer
 ## Auth
 
 ### Admin (`admin.html`)
-- Password-based (NOT Firebase Auth)
-- Password stored in `settings/access.adminPassword` (default: `fifteen2025`)
-- Session: `localStorage['fifteen_admin_sess']`, 8-hour expiry
+- Firebase Auth (email/password) + must have an `admins/{uid}` doc in Firestore (see `SECURITY.md`)
+- Legacy fallback: if Firebase is unavailable (local dev), password-only login with the hardcoded default
+- Session: Firebase Auth persistence (+ `localStorage['fifteen_admin_sess']`, 8-hour expiry)
 - Brute-force: 5 attempts → 15-min lockout (`localStorage['fifteen_admin_att']`)
 
 ### Customers (`portal.html`)
 - Firebase Auth — Email/Password + Google OAuth
 - On sign-in, checks `customers/{uid}` exists; signs out if not found
-- When admin approves application: `createUserWithEmailAndPassword` (temp pw) → `sendPasswordResetEmail` → `signOut`
+- When admin approves application: customer account is created on a secondary Firebase app instance (`createUserWithEmailAndPassword` → `sendPasswordResetEmail` → sign out secondary) so the admin stays signed in
 - Customer sets their own password via the Firebase reset email link
+
+### Security rules
+- `firestore.rules` + `storage.rules` are deny-by-default; public visitors can read site content and create `applications`/`orders` only
+- Follow `SECURITY.md` in order when enabling — publishing rules before creating the admin user locks the dashboard out
 
 ## Key User Flows
 
@@ -122,6 +138,11 @@ invoices/{id}           — billing invoices per customer
 3. Admin sees it in `admin.html` → Applications tab
 4. Admin clicks Approve → Firebase Auth account created → password-reset email sent
 5. Customer sets password → logs in at `portal.html`
+
+**Visitor builds a plan (shop):**
+1. Picks services on `shop.html` → Get Quote → fills contact details → Submit Order
+2. Order saved to `orders` collection (status `new`)
+3. Admin sees it in `admin.html` → Orders tab → views items/totals, marks `contacted` / `closed`
 
 **Existing partner logs in:**
 - Sidebar → Partner Portal → `portal.html` → signs in with email/password or Google

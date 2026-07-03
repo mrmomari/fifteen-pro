@@ -1,0 +1,37 @@
+rules_version = '2';
+
+// Firebase Storage security rules for the fifteen-pro project.
+// Paste into Firebase Console → Storage → Rules → Publish.
+// Uploads (company logo, team photos) are admin-only; the images
+// themselves stay publicly readable so the site can display them.
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isAdmin() {
+      return request.auth != null
+        && firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid));
+    }
+
+    // Company logo (admin.html → Company tab)
+    match /company/{file} {
+      allow read: if true;
+      allow write: if isAdmin()
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+
+    // Team member photos (admin.html → Expertise tab)
+    match /team/{file} {
+      allow read: if true;
+      allow write: if isAdmin()
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+
+    // Everything else: denied.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

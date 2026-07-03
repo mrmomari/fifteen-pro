@@ -24,7 +24,7 @@ body{
   --green-dim:#1d7a4c;
   --orange:#E36C44;
   --cream:#E0E8CF;
-  --cream-sidebar:#C6D3A4;
+  --cream-sidebar:#ffffff;
   --cream-alt:#D5DFBE;
   --text:#1C2416;
   --text-muted:#5A6B4E;
@@ -986,7 +986,10 @@ body{
 ═══════════════════════════════════ -->
 <div id="loginScreen">
   <div class="login-card">
-    <a href="index.html" class="login-logo">FIFTEEN<span>.</span></a>
+    <a href="index.html" class="login-logo" id="loginLogo">
+      <img id="loginLogoImg" alt="Fifteen" style="display:none;max-height:80px;width:auto;max-width:240px;object-fit:contain">
+      <span id="loginLogoText">FIFTEEN<span>.</span></span>
+    </a>
     <div class="login-sub-label">Partner Portal</div>
     <h2>Welcome Back</h2>
 
@@ -1032,7 +1035,10 @@ body{
     <!-- ── Sidebar ── -->
     <aside class="p-sidebar" id="pSidebar">
       <div class="p-sidebar-inner">
-        <a href="index.html" class="p-sidebar-logo">FIFTEEN<span>.</span></a>
+        <a href="index.html" class="p-sidebar-logo" id="sidebarLogo">
+          <img id="sidebarLogoImg" alt="Fifteen" style="display:none;width:100%;height:auto;max-height:80px;object-fit:contain">
+          <span id="sidebarLogoText">FIFTEEN<span>.</span></span>
+        </a>
 
         <!-- User block -->
         <div class="p-user-block">
@@ -1308,6 +1314,30 @@ let dataLoaded = { services: false, tickets: false, invoices: false };
     console.error('Firebase init failed:', e);
   }
 })();
+
+/* ══════════════════════════════════════════════════════════
+   LOGO LOADING
+══════════════════════════════════════════════════════════ */
+function loadLogos() {
+  if (!db) return;
+  db.collection('settings').doc('company').get().then(doc => {
+    if (!doc.exists) return;
+    const logoUrl = (doc.data().logo || '').trim();
+    if (!logoUrl) return;
+    [['loginLogoImg','loginLogoText'],['sidebarLogoImg','sidebarLogoText']].forEach(([imgId, txtId]) => {
+      const img = document.getElementById(imgId);
+      if (!img) return;
+      img.onload = () => {
+        img.style.display = 'block';
+        const txt = document.getElementById(txtId);
+        if (txt) txt.style.display = 'none';
+      };
+      img.onerror = () => { img.style.display = 'none'; };
+      img.src = logoUrl;
+    });
+  }).catch(() => {});
+}
+loadLogos();
 
 /* ══════════════════════════════════════════════════════════
    AUTH STATE
@@ -1601,6 +1631,10 @@ function renderDashboard() {
 
   // KPI: Active Services
   const activeServices = servicesData.filter(s => s.status === 'active').length;
+  const pendingServices = servicesData.filter(s => s.status === 'pending').length;
+  const servicesSub = pendingServices > 0
+    ? `${servicesData.length} total · ${pendingServices} pending`
+    : `${servicesData.length} service${servicesData.length !== 1 ? 's' : ''} total`;
 
   // KPI: Open Tickets
   const openTickets = ticketsData.filter(t => t.status === 'open' || t.status === 'in-progress').length;
@@ -1636,7 +1670,7 @@ function renderDashboard() {
       <div class="kpi-icon"><i class="fa-solid fa-rocket"></i></div>
       <div class="kpi-value">${activeServices}</div>
       <div class="kpi-label">Active Services</div>
-      <div class="kpi-sub">${servicesData.length} service${servicesData.length !== 1 ? 's' : ''} total</div>
+      <div class="kpi-sub">${servicesSub}</div>
     </div>
     <div class="kpi-card">
       <div class="kpi-icon"><i class="fa-solid fa-ticket"></i></div>
