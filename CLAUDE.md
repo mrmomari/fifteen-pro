@@ -138,9 +138,11 @@ invoices/{id}           — billing invoices per customer
 **New partner applies:**
 1. Completes 15-question quiz on `index.html#apply`
 2. Sees personalized recommendation, fills contact info → saved to `applications` collection
-3. Admin sees it in `admin.html` → Applications tab
-4. Admin clicks Approve → Firebase Auth account created → password-reset email sent
+3. Admin sees it in `admin.html` → Applications tab → **View** shows the full quiz Q&A (readable labels, not raw `q0`..`q14` keys) alongside phone/website
+4. Admin clicks Approve → Firebase Auth account created → password-reset email sent → a `customers/{uid}` doc is created
 5. Customer sets password → logs in at `portal.html`
+6. **Approving does NOT assign any service or create anything billable.** Nothing shows up for that customer in Service Mgmt, Orders, or Invoices until admin explicitly does step 7/8 below — the quiz answers are only a signal of what to sell them.
+7. Admin → Service Mgmt → Assign Service to Customer, based on what they said they need in the quiz
 
 **Visitor builds a plan (shop):**
 1. Picks services on `shop.html` → Get Quote → fills contact details → Submit Order
@@ -158,9 +160,15 @@ invoices/{id}           — billing invoices per customer
 2. Admin sees it in `admin.html` → Tickets tab, opens it, replies (auto-bumps status to `in-progress`) or marks `resolved`
 3. Customer sees the reply in the same ticket's thread in the portal and can reply back
 
+**Admin invoices a customer:**
+1. Admin → Invoices → Create Invoice → pick customer, description, amount, currency, due date → saved to `invoices` collection (status `pending`)
+2. Customer sees it immediately in `portal.html` → Billing tab (amount, due date, status) and in the dashboard's Outstanding Invoices KPI
+3. Admin marks it `paid` / `overdue` / back to `pending` from the Invoices tab as money comes in or a due date passes (no automatic overdue detection — no backend/Cloud Functions in this stack)
+
 **Admin manages content:**
-- Sidebar → Admin → `admin.html` → signs in (email/password) → tabs: Applications / Orders / Tickets / Company / Pricing / Services / Access / Expertise / Service Mgmt / Audit / Notifications
+- Sidebar → Admin → `admin.html` → signs in (email/password) → tabs: Applications / Orders / Tickets / Company / Pricing / Services / Access / Expertise / Service Mgmt / Invoices / Audit / Notifications
 - Service Mgmt: assign services to customers, edit status/notes, and manage the milestone checklist per service (progress bar + `x/y complete` shown both in the Active Services table and the edit modal) — this is what the customer sees in their portal
+- Invoices: bill a customer for completed/in-progress work; customer sees it in their portal Billing tab in real time
 
 ## Firebase Console Requirements
 - **Authentication → Email/Password** → Enable
