@@ -2419,6 +2419,14 @@ function renderEditMilestones() {
 function addEditMilestone() {
   editingMilestones.push({ title: '', date: '', completed: false });
   renderEditMilestones();
+  const wrap = document.getElementById('se-milestones');
+  wrap.scrollTop = wrap.scrollHeight;
+  const titleInputs = wrap.querySelectorAll('input[type=text]');
+  if (titleInputs.length) titleInputs[titleInputs.length - 1].focus();
+}
+
+function hasMilestoneContent(m) {
+  return !!(m.title.trim() || m.date);
 }
 
 async function saveSvcEdit() {
@@ -2435,8 +2443,8 @@ async function saveSvcEdit() {
       notes: document.getElementById('se-notes').value.trim(),
       customerPhone: phone,
       milestones: editingMilestones
-        .filter(m => m.title.trim())
-        .map(m => ({ title: m.title.trim(), date: m.date ? new Date(m.date) : null, completed: !!m.completed })),
+        .filter(hasMilestoneContent)
+        .map(m => ({ title: m.title.trim() || 'Milestone', date: m.date ? new Date(m.date) : null, completed: !!m.completed })),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     const custId = d.customerId || d.userId;
@@ -2455,22 +2463,27 @@ function sendMilestoneUpdateWhatsApp() {
   const digits = phoneRaw.replace(/[^\d]/g, '');
   if (!digits) { toast('Enter the customer\'s WhatsApp number first', 'error'); return; }
 
-  const total = editingMilestones.filter(m => m.title.trim()).length;
-  const done = editingMilestones.filter(m => m.title.trim() && m.completed).length;
+  const activeMilestones = editingMilestones.filter(hasMilestoneContent);
+  const total = activeMilestones.length;
+  const done = activeMilestones.filter(m => m.completed).length;
   const pct = total ? Math.round((done / total) * 100) : 0;
   const status = document.getElementById('se-status').value || 'pending';
 
   const lines = [];
   lines.push(`*${d.serviceName || 'Service'} — Progress Update*`);
   lines.push(`Status: ${status.charAt(0).toUpperCase() + status.slice(1)}`);
-  if (total) lines.push(`Progress: ${done}/${total} milestones complete (${pct}%)`);
-  lines.push('');
-  editingMilestones.forEach(m => {
-    if (!m.title.trim()) return;
-    const mark = m.completed ? '✅' : '⬜';
-    const dateStr = m.date ? ` — ${m.date}` : '';
-    lines.push(`${mark} ${m.title.trim()}${dateStr}`);
-  });
+  if (total) {
+    lines.push(`Progress: ${done}/${total} milestones complete (${pct}%)`);
+    lines.push('');
+    activeMilestones.forEach(m => {
+      const mark = m.completed ? '✅' : '⬜';
+      const dateStr = m.date ? ` — ${m.date}` : '';
+      lines.push(`${mark} ${m.title.trim() || 'Milestone'}${dateStr}`);
+    });
+  } else {
+    lines.push('');
+    lines.push('(No milestones set yet.)');
+  }
   const notes = document.getElementById('se-notes').value.trim();
   if (notes) { lines.push(''); lines.push(`Notes: ${notes}`); }
   lines.push('');
