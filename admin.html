@@ -13,6 +13,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="firebase-config.js"></script>
+<script src="app.js"></script>
 <style>
 /* ── Reset & Root ── */
 *{margin:0;padding:0;box-sizing:border-box}
@@ -314,6 +315,13 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
 .modal-confirm{background:var(--green);color:#fff}
 .modal-confirm:hover{background:var(--green-dim)}
 .modal-confirm:disabled{opacity:.6;cursor:not-allowed}
+.modal-box-full{width:min(1000px,96vw);max-height:94vh}
+.se-layout{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:16px}
+.se-col{display:flex;flex-direction:column;min-width:0}
+.se-share{margin-top:auto;padding-top:16px;border-top:1px solid var(--cream-alt)}
+.btn-whatsapp{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;border-radius:8px;border:none;background:#25D366;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+.btn-whatsapp:hover{background:#1ebe57}
+@media (max-width:760px){.se-layout{grid-template-columns:1fr}}
 
 /* ══════════════════════════════════════════
    TOAST
@@ -1069,28 +1077,41 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
 
 <!-- ══ Service Edit Modal ══ -->
 <div class="modal-overlay" id="svcEditModal">
-  <div class="modal-box" style="width:520px;max-width:92vw;max-height:88vh;overflow-y:auto;text-align:left">
+  <div class="modal-box modal-box-full" style="overflow-y:auto;text-align:left">
     <h3 id="se-title">Edit Service</h3>
-    <div class="form-grid" style="margin-top:16px">
-      <div class="f-field"><label>Status</label><select id="se-status">
-        <option value="pending">Pending</option>
-        <option value="active">Active</option>
-        <option value="completed">Completed</option>
-      </select></div>
-      <div class="f-field"><label>Start Date</label><input id="se-start" type="date"></div>
-      <div class="f-field"><label>Target Completion</label><input id="se-completion" type="date"></div>
-    </div>
-    <div class="f-field"><label>Task Details / Notes</label><textarea id="se-notes" rows="4" placeholder="Describe the full task, scope, deliverables…"></textarea></div>
-    <div class="f-field">
-      <label>Milestones</label>
-      <p style="font-size:11px;color:var(--text-dim);margin:-2px 0 10px">Customers see these exact milestones and this progress bar in their portal.</p>
-      <div id="se-progress" style="margin-bottom:10px"></div>
-      <div id="se-milestones"></div>
-      <button class="btn-approve" style="align-self:flex-start" onclick="addEditMilestone()">+ Add Milestone</button>
+    <div class="se-layout">
+      <div class="se-col">
+        <div class="form-grid">
+          <div class="f-field"><label>Status</label><select id="se-status">
+            <option value="pending">Pending</option>
+            <option value="active">Active</option>
+            <option value="completed">Completed</option>
+          </select></div>
+          <div class="f-field"><label>Start Date</label><input id="se-start" type="date"></div>
+          <div class="f-field" style="grid-column:1/-1"><label>Target Completion</label><input id="se-completion" type="date"></div>
+        </div>
+        <div class="f-field"><label>Task Details / Notes</label><textarea id="se-notes" rows="8" placeholder="Describe the full task, scope, deliverables…"></textarea></div>
+        <div class="f-field">
+          <label>Customer WhatsApp Number</label>
+          <input id="se-phone" type="tel" placeholder="+1 555 123 4567">
+        </div>
+      </div>
+      <div class="se-col">
+        <div class="f-field" style="flex:1">
+          <label>Milestones</label>
+          <p style="font-size:11px;color:var(--text-dim);margin:-2px 0 10px">Customers see these exact milestones and this progress bar in their portal.</p>
+          <div id="se-progress" style="margin-bottom:10px"></div>
+          <div id="se-milestones" style="max-height:280px;overflow-y:auto"></div>
+          <button class="btn-approve" style="align-self:flex-start" onclick="addEditMilestone()">+ Add Milestone</button>
+        </div>
+        <div class="se-share">
+          <button class="btn-whatsapp" onclick="sendMilestoneUpdateWhatsApp()"><i class="fa-brands fa-whatsapp"></i> Send Progress Update via WhatsApp</button>
+        </div>
+      </div>
     </div>
     <div class="modal-actions" style="margin-top:18px">
       <button class="modal-cancel" onclick="closeSvcEditModal()">Cancel</button>
-      <button class="btn-reject" style="flex:1;padding:11px" onclick="deleteSvcEdit()">Remove</button>
+      <button class="btn-reject" style="flex:1;padding:11px" onclick="deleteSvcEdit()">Remove Service</button>
       <button class="modal-confirm" onclick="saveSvcEdit()">Save Changes</button>
     </div>
   </div>
@@ -2339,8 +2360,30 @@ function editCustomerService(docId) {
   document.getElementById('se-start').value = toDateInputValue(d.startDate);
   document.getElementById('se-completion').value = toDateInputValue(d.completionDate);
   document.getElementById('se-notes').value = d.notes || '';
+  document.getElementById('se-phone').value = d.customerPhone || '';
   renderEditMilestones();
   document.getElementById('svcEditModal').classList.add('open');
+
+  if (!d.customerPhone) {
+    lookupCustomerPhone(d.customerId || d.userId).then(phone => {
+      if (phone && editingSvcId === docId) document.getElementById('se-phone').value = phone;
+    });
+  }
+}
+
+async function lookupCustomerPhone(customerId) {
+  if (!db || !customerId) return '';
+  try {
+    const custDoc = await db.collection('customers').doc(customerId).get();
+    if (!custDoc.exists) return '';
+    const cust = custDoc.data();
+    if (cust.phone) return cust.phone;
+    if (cust.applicationId) {
+      const appDoc = await db.collection('applications').doc(cust.applicationId).get();
+      if (appDoc.exists) return appDoc.data().phone || '';
+    }
+  } catch(e) { console.warn('Phone lookup failed:', e.message); }
+  return '';
 }
 
 function closeSvcEditModal() {
@@ -2383,20 +2426,58 @@ async function saveSvcEdit() {
   try {
     const start = document.getElementById('se-start').value;
     const completion = document.getElementById('se-completion').value;
+    const phone = document.getElementById('se-phone').value.trim();
+    const d = custServicesCache[editingSvcId] || {};
     await db.collection('customerServices').doc(editingSvcId).update({
       status: document.getElementById('se-status').value,
       startDate: start ? new Date(start) : null,
       completionDate: completion ? new Date(completion) : null,
       notes: document.getElementById('se-notes').value.trim(),
+      customerPhone: phone,
       milestones: editingMilestones
         .filter(m => m.title.trim())
         .map(m => ({ title: m.title.trim(), date: m.date ? new Date(m.date) : null, completed: !!m.completed })),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
+    const custId = d.customerId || d.userId;
+    if (phone && custId) {
+      db.collection('customers').doc(custId).set({ phone }, { merge: true }).catch(() => {});
+    }
     toast('✓ Service updated', 'success');
     closeSvcEditModal();
     await loadServiceMgmt();
   } catch(e) { toast('Save failed: ' + e.message, 'error'); }
+}
+
+function sendMilestoneUpdateWhatsApp() {
+  const d = custServicesCache[editingSvcId] || {};
+  const phoneRaw = document.getElementById('se-phone').value.trim();
+  const digits = phoneRaw.replace(/[^\d]/g, '');
+  if (!digits) { toast('Enter the customer\'s WhatsApp number first', 'error'); return; }
+
+  const total = editingMilestones.filter(m => m.title.trim()).length;
+  const done = editingMilestones.filter(m => m.title.trim() && m.completed).length;
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  const status = document.getElementById('se-status').value || 'pending';
+
+  const lines = [];
+  lines.push(`*${d.serviceName || 'Service'} — Progress Update*`);
+  lines.push(`Status: ${status.charAt(0).toUpperCase() + status.slice(1)}`);
+  if (total) lines.push(`Progress: ${done}/${total} milestones complete (${pct}%)`);
+  lines.push('');
+  editingMilestones.forEach(m => {
+    if (!m.title.trim()) return;
+    const mark = m.completed ? '✅' : '⬜';
+    const dateStr = m.date ? ` — ${m.date}` : '';
+    lines.push(`${mark} ${m.title.trim()}${dateStr}`);
+  });
+  const notes = document.getElementById('se-notes').value.trim();
+  if (notes) { lines.push(''); lines.push(`Notes: ${notes}`); }
+  lines.push('');
+  lines.push('— Fifteen');
+
+  const text = encodeURIComponent(lines.join('\n'));
+  window.open(`https://wa.me/${digits}?text=${text}`, '_blank', 'noopener');
 }
 
 async function deleteSvcEdit() {
