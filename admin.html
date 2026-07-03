@@ -99,6 +99,16 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
 .sb-tab.active{background:rgba(38,145,94,.12);color:var(--green)}
 .sb-tab i{width:16px;text-align:center;font-size:12px;opacity:.75}
 .sb-tab.active i{opacity:1}
+.sb-count{
+  margin-left:auto;background:var(--orange);color:#fff;font-size:9px;font-weight:800;
+  padding:2px 6px;border-radius:10px;line-height:1.3;
+}
+
+/* Ticket thread */
+.tk-msg{max-width:85%;padding:10px 14px;border-radius:10px;font-size:13px;line-height:1.6;white-space:pre-wrap}
+.tk-msg.from-admin{align-self:flex-end;background:rgba(38,145,94,.08);border:1px solid rgba(38,145,94,.18)}
+.tk-msg.from-customer{align-self:flex-start;background:rgba(0,0,0,.04);border:1px solid rgba(0,0,0,.07)}
+.tk-msg-meta{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--text-dim);margin-bottom:4px}
 .sb-divider{height:1px;background:rgba(0,0,0,.1);margin:12px 0}
 .sb-footer{padding:14px 16px;border-top:1px solid rgba(0,0,0,.09)}
 .sb-logout{
@@ -169,6 +179,7 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
 .status-pending{background:rgba(227,108,68,.1);color:var(--orange);border:1px solid rgba(227,108,68,.25)}
 .status-approved{background:rgba(38,145,94,.1);color:var(--green);border:1px solid rgba(38,145,94,.25)}
 .status-rejected{background:rgba(0,0,0,.06);color:var(--text-dim);border:1px solid rgba(0,0,0,.1)}
+.status-inprogress{background:rgba(28,36,22,.07);color:var(--text-muted);border:1px solid rgba(28,36,22,.16)}
 
 /* ── Action buttons ── */
 .btn-approve{
@@ -418,6 +429,9 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
           <button class="sb-tab" onclick="switchTab('orders')">
             <i class="fa-solid fa-file-invoice-dollar"></i> Orders
           </button>
+          <button class="sb-tab" onclick="switchTab('tickets')">
+            <i class="fa-solid fa-headset"></i> Tickets <span class="sb-count" id="tkBadge" style="display:none"></span>
+          </button>
           <button class="sb-tab" onclick="switchTab('company')">
             <i class="fa-regular fa-building"></i> Company
           </button>
@@ -565,6 +579,56 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
                     <div class="empty-state">
                       <i class="fa-regular fa-clock"></i>
                       Loading orders…
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ═══ TICKETS PANEL ═══ -->
+        <div class="dash-panel" id="panel-tickets">
+          <div class="panel-heading">Support Tickets</div>
+          <div class="panel-sub">Respond to and resolve tickets raised by customers in the portal.</div>
+
+          <div class="stats-row">
+            <div class="stat-tile">
+              <div class="stat-tile-num" id="tkTotal">—</div>
+              <div class="stat-tile-label">Total</div>
+            </div>
+            <div class="stat-tile">
+              <div class="stat-tile-num orange" id="tkOpen">—</div>
+              <div class="stat-tile-label">Open</div>
+            </div>
+            <div class="stat-tile">
+              <div class="stat-tile-num" id="tkProgress">—</div>
+              <div class="stat-tile-label">In Progress</div>
+            </div>
+            <div class="stat-tile">
+              <div class="stat-tile-num green" id="tkResolved">—</div>
+              <div class="stat-tile-label">Resolved</div>
+            </div>
+          </div>
+
+          <div class="data-table-wrap">
+            <table class="data-table" id="ticketTable">
+              <thead>
+                <tr>
+                  <th>Customer</th>
+                  <th>Subject</th>
+                  <th>Category</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="ticketTableBody">
+                <tr>
+                  <td colspan="6">
+                    <div class="empty-state">
+                      <i class="fa-regular fa-clock"></i>
+                      Loading tickets…
                     </div>
                   </td>
                 </tr>
@@ -783,6 +847,7 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
                     <th>Customer</th>
                     <th>Service</th>
                     <th>Phase</th>
+                    <th>Progress</th>
                     <th>Status</th>
                     <th>Start Date</th>
                     <th>Task Details</th>
@@ -791,7 +856,7 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
                 </thead>
                 <tbody id="svcMgmtBody">
                   <tr>
-                    <td colspan="7">
+                    <td colspan="8">
                       <div class="empty-state">
                         <i class="fa-regular fa-briefcase"></i>
                         Loading services…
@@ -938,6 +1003,8 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
     <div class="f-field"><label>Task Details / Notes</label><textarea id="se-notes" rows="4" placeholder="Describe the full task, scope, deliverables…"></textarea></div>
     <div class="f-field">
       <label>Milestones</label>
+      <p style="font-size:11px;color:var(--text-dim);margin:-2px 0 10px">Customers see these exact milestones and this progress bar in their portal.</p>
+      <div id="se-progress" style="margin-bottom:10px"></div>
       <div id="se-milestones"></div>
       <button class="btn-approve" style="align-self:flex-start" onclick="addEditMilestone()">+ Add Milestone</button>
     </div>
@@ -945,6 +1012,25 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
       <button class="modal-cancel" onclick="closeSvcEditModal()">Cancel</button>
       <button class="btn-reject" style="flex:1;padding:11px" onclick="deleteSvcEdit()">Remove</button>
       <button class="modal-confirm" onclick="saveSvcEdit()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Ticket Detail Modal ══ -->
+<div class="modal-overlay" id="ticketModal">
+  <div class="modal-box" style="width:560px;max-width:92vw;max-height:88vh;overflow-y:auto;text-align:left">
+    <h3 id="tk-title">Ticket</h3>
+    <div style="font-size:11px;color:var(--text-dim);margin-top:4px" id="tk-meta"></div>
+    <div id="tk-thread" style="margin-top:16px;display:flex;flex-direction:column;gap:10px;max-height:320px;overflow-y:auto;padding-right:2px"></div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <textarea id="tk-reply-msg" rows="2" placeholder="Write a reply…" style="flex:1;padding:9px 12px;border:1.5px solid rgba(0,0,0,.12);border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;outline:none"></textarea>
+      <button class="modal-confirm" style="flex:none;padding:0 18px" onclick="sendTicketReply()">Send</button>
+    </div>
+    <div class="modal-actions" style="margin-top:18px;flex-wrap:wrap">
+      <button class="modal-cancel" onclick="closeTicketModal()">Close</button>
+      <button class="btn-approve" onclick="setTicketStatus(editingTicketId,'open')">Reopen</button>
+      <button class="btn-approve" onclick="setTicketStatus(editingTicketId,'in-progress')">In Progress</button>
+      <button class="btn-approve" style="background:var(--green);color:#fff" onclick="setTicketStatus(editingTicketId,'resolved')">Resolve</button>
     </div>
   </div>
 </div>
@@ -1109,6 +1195,7 @@ async function showDashboard() {
   renderSvcTable();
   await loadApplications();
   await loadOrders();
+  await loadTickets();
   await loadCustomers();
   await loadServiceMgmt();
   await loadAuditLogs();
@@ -1118,7 +1205,7 @@ async function showDashboard() {
 /* ══════════════════════════════════════════════
    SIDEBAR TABS
 ══════════════════════════════════════════════ */
-const TABS = ['applications','orders','company','pricing','services','access','expertise','services-mgmt','audit','notifications'];
+const TABS = ['applications','orders','tickets','company','pricing','services','access','expertise','services-mgmt','audit','notifications'];
 
 function switchTab(name) {
   TABS.forEach(t => {
@@ -1133,6 +1220,7 @@ function switchTab(name) {
   if (name === 'access')  { loadCustomers(); }
   if (name === 'applications') loadApplications();
   if (name === 'orders') loadOrders();
+  if (name === 'tickets') loadTickets();
   if (name === 'services-mgmt') loadServiceMgmt();
   if (name === 'audit') loadAuditLogs();
   if (name === 'notifications') loadNotifications();
@@ -1437,6 +1525,145 @@ function viewOrder(docId) {
 
 function closeOrderModal() {
   document.getElementById('orderModal').classList.remove('open');
+}
+
+/* ══════════════════════════════════════════════
+   SUPPORT TICKETS
+══════════════════════════════════════════════ */
+let tickets = [];
+let ticketCustomers = {};
+let editingTicketId = null;
+
+async function loadTickets() {
+  const tbody = document.getElementById('ticketTableBody');
+  if (!db) {
+    if (tbody) tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><i class="fa-solid fa-database"></i>Firebase not connected.</div></td></tr>`;
+    return;
+  }
+  try {
+    const [tSnap, cSnap] = await Promise.all([
+      db.collection('tickets').orderBy('createdAt', 'desc').get().catch(() => db.collection('tickets').get()),
+      db.collection('customers').get()
+    ]);
+    ticketCustomers = {};
+    cSnap.docs.forEach(d => { ticketCustomers[d.id] = d.data(); });
+    tickets = tSnap.docs.map(d => ({ docId: d.id, ...d.data() }));
+    tickets.sort((a, b) => {
+      const ta = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+      const tb = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+      return tb - ta;
+    });
+    renderTickets();
+  } catch(e) {
+    if (tbody) tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><i class="fa-solid fa-triangle-exclamation"></i>Error loading: ${escHtml(e.message)}</div></td></tr>`;
+  }
+}
+
+function renderTickets() {
+  document.getElementById('tkTotal').textContent    = tickets.length;
+  const openCount = tickets.filter(t => t.status === 'open' || !t.status).length;
+  document.getElementById('tkOpen').textContent     = openCount;
+  document.getElementById('tkProgress').textContent = tickets.filter(t => t.status === 'in-progress').length;
+  document.getElementById('tkResolved').textContent = tickets.filter(t => t.status === 'resolved').length;
+
+  const badge = document.getElementById('tkBadge');
+  if (badge) {
+    if (openCount) { badge.textContent = openCount; badge.style.display = 'inline-block'; }
+    else badge.style.display = 'none';
+  }
+
+  const tbody = document.getElementById('ticketTableBody');
+  if (!tickets.length) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><i class="fa-regular fa-comments"></i>No tickets yet.</div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = tickets.map(t => {
+    const status = t.status || 'open';
+    const badgeClass = status === 'resolved' ? 'status-approved' : status === 'in-progress' ? 'status-inprogress' : 'status-pending';
+    const cust = ticketCustomers[t.userId] || {};
+    return `<tr>
+      <td><strong>${escHtml(cust.name || 'Unknown')}</strong>${cust.email ? `<div style="font-size:11px;color:var(--text-dim)">${escHtml(cust.email)}</div>` : ''}</td>
+      <td>${escHtml(t.subject || '—')}</td>
+      <td>${t.category ? escHtml(t.category) : '—'}</td>
+      <td class="td-date">${fmtDate(t.createdAt)}</td>
+      <td><span class="status-badge ${badgeClass}">${escHtml(status)}</span></td>
+      <td><button class="btn-approve" onclick="viewTicket('${t.docId}')">View</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderTicketBubble(r) {
+  const isAdmin = r.from === 'admin';
+  const meta = (isAdmin ? 'Fifteen Team' : 'Customer') + (r.original ? ' · original message' : '') + (r.createdAt ? ' · ' + fmtDate(r.createdAt) : '');
+  return `<div class="tk-msg ${isAdmin ? 'from-admin' : 'from-customer'}">
+    <div class="tk-msg-meta">${escHtml(meta)}</div>
+    ${escHtml(r.message || '')}
+  </div>`;
+}
+
+async function viewTicket(docId) {
+  const t = tickets.find(x => x.docId === docId);
+  if (!t) return;
+  editingTicketId = docId;
+  const cust = ticketCustomers[t.userId] || {};
+
+  document.getElementById('tk-title').textContent = t.subject || 'Ticket';
+  document.getElementById('tk-meta').textContent = `${cust.name || 'Unknown'}${cust.email ? ' · ' + cust.email : ''} · ${t.category || 'General'} · opened ${fmtDate(t.createdAt)}`;
+  document.getElementById('tk-reply-msg').value = '';
+
+  const threadEl = document.getElementById('tk-thread');
+  threadEl.innerHTML = '<div class="empty-state" style="padding:20px"><i class="fa-solid fa-spinner fa-spin"></i></div>';
+  document.getElementById('ticketModal').classList.add('open');
+
+  try {
+    const repliesSnap = await db.collection('tickets').doc(docId).collection('replies').orderBy('createdAt').get();
+    const replies = repliesSnap.docs.map(d => d.data());
+    const all = [{ from: 'customer', message: t.message, createdAt: t.createdAt, original: true }, ...replies];
+    threadEl.innerHTML = all.map(renderTicketBubble).join('');
+    threadEl.scrollTop = threadEl.scrollHeight;
+  } catch(e) {
+    threadEl.innerHTML = `<div class="empty-state" style="padding:20px"><i class="fa-solid fa-triangle-exclamation"></i>Error loading replies: ${escHtml(e.message)}</div>`;
+  }
+}
+
+function closeTicketModal() {
+  document.getElementById('ticketModal').classList.remove('open');
+  editingTicketId = null;
+}
+
+async function sendTicketReply() {
+  if (!editingTicketId) return;
+  const msgEl = document.getElementById('tk-reply-msg');
+  const message = msgEl.value.trim();
+  if (!message) return;
+  try {
+    const authorId = (auth && auth.currentUser) ? auth.currentUser.uid : 'admin';
+    await db.collection('tickets').doc(editingTicketId).collection('replies').add({
+      from: 'admin', authorId, message,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    const t = tickets.find(x => x.docId === editingTicketId);
+    const updates = { updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+    if (t && (t.status === 'open' || !t.status)) updates.status = 'in-progress';
+    await db.collection('tickets').doc(editingTicketId).update(updates);
+    if (t && updates.status) t.status = updates.status;
+    msgEl.value = '';
+    renderTickets();
+    await viewTicket(editingTicketId);
+    toast('✓ Reply sent', 'success');
+  } catch(e) { toast('Failed to send reply: ' + e.message, 'error'); }
+}
+
+async function setTicketStatus(docId, status) {
+  if (!docId) return;
+  try {
+    await db.collection('tickets').doc(docId).update({ status, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    const t = tickets.find(x => x.docId === docId);
+    if (t) t.status = status;
+    renderTickets();
+    toast(`✓ Ticket marked ${status}`, 'success');
+  } catch(e) { toast('Update failed: ' + e.message, 'error'); }
 }
 
 /* ══════════════════════════════════════════════
@@ -1862,17 +2089,28 @@ async function loadServiceMgmt() {
     tbody.innerHTML = '';
     custServicesCache = {};
     if (custServices.empty) {
-      tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><i class="fa-regular fa-briefcase"></i>No services assigned yet</div></td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><i class="fa-regular fa-briefcase"></i>No services assigned yet</div></td></tr>';
     } else {
       custServices.docs.forEach(doc => {
         const d = doc.data();
         custServicesCache[doc.id] = d;
         const notesPreview = (d.notes || '').length > 60 ? d.notes.substring(0, 60) + '…' : (d.notes || '—');
+        const milestones = Array.isArray(d.milestones) ? d.milestones : [];
+        const msTotal = milestones.length;
+        const msDone  = milestones.filter(m => m.completed).length;
+        const msPct   = msTotal ? Math.round((msDone / msTotal) * 100) : 0;
+        const progressCell = msTotal
+          ? `<div style="display:flex;align-items:center;gap:6px;min-width:100px">
+               <div style="flex:1;height:6px;border-radius:99px;background:rgba(0,0,0,.08);overflow:hidden"><div style="height:100%;width:${msPct}%;background:var(--green);border-radius:99px"></div></div>
+               <span style="font-size:10px;color:var(--text-dim);white-space:nowrap">${msDone}/${msTotal}</span>
+             </div>`
+          : `<span style="font-size:11px;color:var(--text-dim)">No milestones</span>`;
         const row = tbody.insertRow();
         row.innerHTML = `
           <td>${escHtml(d.customerName || 'Unknown')}</td>
           <td>${escHtml(d.serviceName || 'Unknown')}</td>
           <td>Phase ${d.phase || '—'}</td>
+          <td>${progressCell}</td>
           <td><span class="status-badge ${d.status === 'active' ? 'status-approved' : d.status === 'completed' ? 'status-rejected' : 'status-pending'}">${d.status || 'pending'}</span></td>
           <td class="td-date">${formatDate(d.startDate)}</td>
           <td style="font-size:11px;color:var(--text-muted);max-width:180px">${escHtml(notesPreview)}</td>
@@ -1973,14 +2211,23 @@ function closeSvcEditModal() {
 }
 
 function renderEditMilestones() {
+  const total = editingMilestones.length;
+  const done  = editingMilestones.filter(m => m.completed).length;
+  const pct   = total ? Math.round((done / total) * 100) : 0;
+  const progEl = document.getElementById('se-progress');
+  progEl.innerHTML = total
+    ? `<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-dim);margin-bottom:5px"><span>${done}/${total} complete</span><span>${pct}%</span></div>
+       <div style="height:6px;border-radius:99px;background:rgba(0,0,0,.08);overflow:hidden"><div style="height:100%;width:${pct}%;background:var(--green);border-radius:99px;transition:width .2s"></div></div>`
+    : '';
+
   const wrap = document.getElementById('se-milestones');
-  if (!editingMilestones.length) {
-    wrap.innerHTML = '<div style="font-size:12px;color:var(--text-dim);padding:6px 0">No milestones yet.</div>';
+  if (!total) {
+    wrap.innerHTML = '<div style="font-size:12px;color:var(--text-dim);padding:6px 0">No milestones yet — add one below.</div>';
     return;
   }
   wrap.innerHTML = editingMilestones.map((m, i) => `
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
-      <input type="checkbox" ${m.completed ? 'checked' : ''} onchange="editingMilestones[${i}].completed=this.checked" title="Completed">
+      <input type="checkbox" ${m.completed ? 'checked' : ''} onchange="editingMilestones[${i}].completed=this.checked;renderEditMilestones()" title="Mark complete">
       <input type="text" value="${escHtml(m.title)}" placeholder="Milestone title" style="flex:2" oninput="editingMilestones[${i}].title=this.value">
       <input type="date" value="${m.date}" style="flex:1" onchange="editingMilestones[${i}].date=this.value">
       <button class="btn-reject" onclick="editingMilestones.splice(${i},1);renderEditMilestones()" title="Remove">✕</button>
@@ -2215,6 +2462,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   document.getElementById('orderModal').addEventListener('click', e => {
     if (e.target === document.getElementById('orderModal')) closeOrderModal();
+  });
+  document.getElementById('ticketModal').addEventListener('click', e => {
+    if (e.target === document.getElementById('ticketModal')) closeTicketModal();
   });
 
   await initFirebase();
