@@ -72,21 +72,6 @@ body{
 .ext-arrow{margin-left:auto;opacity:0;font-size:10px;color:var(--green);transition:opacity .15s}
 .resource-link:hover .ext-arrow{opacity:1}
 .sidebar-footer{padding:16px 20px;font-size:10px;color:var(--text-dim);border-top:1px solid rgba(0,0,0,0.09);letter-spacing:.02em;display:flex;align-items:center;justify-content:space-between;}
-.admin-trigger{background:none;border:none;padding:4px 8px;cursor:pointer;color:var(--text-dim);opacity:.6;transition:opacity .2s;line-height:1;display:flex;align-items:center;gap:5px;font-size:11px;font-family:inherit;border-radius:6px;}
-.admin-trigger:hover{opacity:1;background:rgba(0,0,0,.06);}
-.admin-modal-overlay{display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);align-items:center;justify-content:center;}
-.admin-modal-overlay.open{display:flex;}
-.admin-modal{background:#fff;border-radius:14px;padding:32px 28px;width:320px;box-shadow:0 20px 60px rgba(0,0,0,.25);}
-.admin-modal h3{margin:0 0 6px;font-size:15px;font-weight:700;color:#111;}
-.admin-modal p{margin:0 0 18px;font-size:12px;color:#888;}
-.admin-modal input{width:100%;box-sizing:border-box;padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:13px;outline:none;transition:border-color .2s;}
-.admin-modal input:focus{border-color:#111;}
-.admin-modal-error{display:none;color:#d04;font-size:11px;margin:6px 0 0;}
-.admin-modal-actions{display:flex;gap:8px;margin-top:16px;}
-.admin-modal-actions button{flex:1;padding:10px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .2s;}
-.admin-modal-actions .btn-cancel{background:#f0f0f0;color:#555;}
-.admin-modal-actions .btn-go{background:#111;color:#fff;}
-.admin-modal-actions button:hover{opacity:.8;}
 .sidebar-toggle{display:none;position:fixed;top:14px;right:14px;z-index:200;background:var(--orange);color:#fff;border:none;border-radius:8px;width:44px;height:44px;cursor:pointer;align-items:center;justify-content:center;box-shadow:0 3px 14px rgba(227,108,68,.4)}
 .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.25);z-index:99;backdrop-filter:blur(2px)}
 
@@ -317,11 +302,24 @@ body{
 .qc-input::placeholder{color:#aaa}
 
 .quote-actions{display:flex;gap:10px}
+.quote-submit-btn{
+  flex:1;padding:13px;background:var(--orange);color:#fff;border:none;border-radius:8px;
+  font-size:13px;font-weight:800;cursor:pointer;letter-spacing:.04em;transition:all .2s;
+  box-shadow:0 4px 16px rgba(227,108,68,.35);
+}
+.quote-submit-btn:hover{background:#ec7850;transform:translateY(-1px)}
+.quote-submit-btn:disabled{opacity:.7;cursor:not-allowed;transform:none}
 .quote-print-btn{
-  flex:1;padding:13px;background:var(--text);color:#fff;border:none;border-radius:8px;
+  padding:13px 20px;background:var(--text);color:#fff;border:none;border-radius:8px;
   font-size:13px;font-weight:800;cursor:pointer;letter-spacing:.04em;transition:all .2s;
 }
 .quote-print-btn:hover{background:#2d3a26;transform:translateY(-1px)}
+.quote-error{display:none;text-align:center;margin-top:12px;font-size:12px;font-weight:600;color:#dc3545}
+.quote-success{
+  display:none;margin-top:16px;padding:14px 18px;border-radius:10px;
+  background:rgba(38,145,94,.08);border:1px solid rgba(38,145,94,.25);
+  font-size:13px;color:var(--green);font-weight:600;text-align:center;line-height:1.5;
+}
 .quote-back-btn{
   padding:13px 20px;background:transparent;color:var(--text-muted);
   border:1.5px solid rgba(0,0,0,0.15);border-radius:8px;
@@ -333,7 +331,7 @@ body{
 /* ── Print styles ── */
 @media print{
   .sidebar,.cart-bar,.sidebar-toggle,.sidebar-overlay,
-  .quote-close,.quote-actions,.quote-note,.shop-hero,.phase-section{display:none!important}
+  .quote-close,.quote-actions,.quote-note,.quote-error,.quote-success,.shop-hero,.phase-section{display:none!important}
   .quote-overlay{position:static;background:none;padding:0;display:block!important}
   .quote-modal{box-shadow:none;max-height:none;border-radius:0}
   body{padding:0}
@@ -414,20 +412,6 @@ body{
   </div>
 </aside>
 
-<!-- Admin login modal -->
-<div class="admin-modal-overlay" id="adminModalOverlay" onclick="closeAdminModal(event)">
-  <div class="admin-modal">
-    <h3>Admin Access</h3>
-    <p>Enter your admin password to continue.</p>
-    <input type="password" id="adminModalPw" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')submitAdminLogin()">
-    <p class="admin-modal-error" id="adminModalError">Incorrect password. Try again.</p>
-    <div class="admin-modal-actions">
-      <button class="btn-cancel" onclick="closeAdminModal()">Cancel</button>
-      <button class="btn-go" onclick="submitAdminLogin()">Enter</button>
-    </div>
-  </div>
-</div>
-
 <button class="sidebar-toggle" id="sidebarToggle" aria-label="Menu">
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
     <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
@@ -493,10 +477,13 @@ body{
       </div>
 
       <div class="quote-actions">
-        <button class="quote-print-btn" onclick="printQuote()">Print / Save as PDF</button>
+        <button class="quote-submit-btn" id="quoteSubmitBtn" onclick="submitOrder()">Submit Order →</button>
+        <button class="quote-print-btn" onclick="printQuote()">Print / PDF</button>
         <button class="quote-back-btn" onclick="closeQuote()">← Keep Editing</button>
       </div>
-      <p class="quote-note">Screenshot or print this quote to save it. Applications reviewed within 48 hours.</p>
+      <p class="quote-error" id="quoteError"></p>
+      <div class="quote-success" id="quoteSuccess">✓ Order received! Our team will review your plan and get back to you within 48 hours.</div>
+      <p class="quote-note" id="quoteNote">Submit your order and we'll be in touch within 48 hours — or print a copy for your records.</p>
     </div>
   </div>
 </div>
@@ -729,8 +716,73 @@ function openQuote() {
   rows += `<div class="quote-total-row grand"><span class="quote-total-label">${grandLabel}</span><span class="quote-total-val">${grandVal}</span></div>`;
   totals.innerHTML = rows;
 
+  // Reset submit state from any previous order
+  const btn = document.getElementById('quoteSubmitBtn');
+  btn.disabled = false;
+  btn.textContent = 'Submit Order →';
+  document.getElementById('quoteError').style.display = 'none';
+  document.getElementById('quoteSuccess').style.display = 'none';
+  document.getElementById('quoteNote').style.display = '';
+
   document.getElementById('quoteOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
+}
+
+/* ─── Submit order to Firestore ─── */
+let submittingOrder = false;
+async function submitOrder() {
+  if (submittingOrder) return;
+  const err = document.getElementById('quoteError');
+  err.style.display = 'none';
+
+  const name    = document.getElementById('quoteName').value.trim();
+  const email   = document.getElementById('quoteEmail').value.trim();
+  const phone   = document.getElementById('quotePhone').value.trim();
+  const company = document.getElementById('quoteCo').value.trim();
+  if (!name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    err.textContent = 'Please enter your name and a valid email so we can follow up.';
+    err.style.display = 'block';
+    return;
+  }
+
+  const items = [...cart].map(id => SERVICES.find(s => s.id === id)).filter(Boolean)
+    .map(s => ({ id: s.id, name: s.name, phase: s.phase, price: s.price, type: s.type }));
+  if (!items.length) return;
+
+  const cfg = getFbConfig();
+  if (!cfg) {
+    err.textContent = 'Online ordering is temporarily unavailable — please print your quote and email it to us.';
+    err.style.display = 'block';
+    return;
+  }
+
+  const oneTimeTotal = items.filter(i => i.type === 'one-time').reduce((a, i) => a + i.price, 0);
+  const monthlyTotal = items.filter(i => i.type === 'monthly').reduce((a, i) => a + i.price, 0);
+
+  const btn = document.getElementById('quoteSubmitBtn');
+  submittingOrder = true;
+  btn.disabled = true;
+  btn.textContent = 'Submitting…';
+  try {
+    if (firebase.apps.length === 0) firebase.initializeApp(cfg);
+    await firebase.firestore().collection('orders').add({
+      name, email, phone, company, items, oneTimeTotal, monthlyTotal,
+      status: 'new',
+      source: 'shop',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    btn.textContent = '✓ Order Submitted';
+    document.getElementById('quoteSuccess').style.display = 'block';
+    document.getElementById('quoteNote').style.display = 'none';
+    clearCart();
+  } catch(e) {
+    err.textContent = 'Submission failed — please try again, or print your quote instead.';
+    err.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Submit Order →';
+  } finally {
+    submittingOrder = false;
+  }
 }
 
 function closeQuote() {
@@ -741,34 +793,6 @@ function closeQuote() {
 function printQuote() {
   window.print();
 }
-
-/* ─── Admin modal ─── */
-const ADMIN_PW = 'fifteen2025';
-function openAdminModal(){
-  document.getElementById('adminModalOverlay').classList.add('open');
-  setTimeout(()=>document.getElementById('adminModalPw').focus(),80);
-}
-function closeAdminModal(e){
-  if(e && e.target!==document.getElementById('adminModalOverlay')) return;
-  document.getElementById('adminModalOverlay').classList.remove('open');
-  document.getElementById('adminModalPw').value='';
-  document.getElementById('adminModalError').style.display='none';
-}
-function submitAdminLogin(){
-  const pw=document.getElementById('adminModalPw').value;
-  if(pw===ADMIN_PW){
-    sessionStorage.setItem('fifteen_admin_auth','1');
-    window.location.href='admin.html';
-  } else {
-    const err=document.getElementById('adminModalError');
-    err.style.display='block';
-    document.getElementById('adminModalPw').value='';
-    document.getElementById('adminModalPw').focus();
-    setTimeout(()=>err.style.display='none',2400);
-  }
-}
-document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeAdminModal({target:document.getElementById('adminModalOverlay')}); });
-
 
 const toggle  = document.getElementById('sidebarToggle');
 const sidebar = document.getElementById('sidebar');

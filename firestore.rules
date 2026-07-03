@@ -1,0 +1,132 @@
+rules_version = '2';
+
+// Firestore security rules for the fifteen-pro project.
+// Paste into Firebase Console → Firestore Database → Rules → Publish.
+// IMPORTANT: complete the setup steps in SECURITY.md BEFORE publishing,
+// otherwise the admin dashboard will be locked out.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // Admins are Firebase Auth users listed in the admins collection
+    // (doc id = the admin's auth UID). Managed from the Firebase console.
+    function isAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    // ── Admin registry ──
+    match /admins/{uid} {
+      allow get: if isOwner(uid);   // lets admin.html verify its own access
+      allow list, write: if false;  // manage only from the Firebase console
+    }
+
+    // ── Public site content (read-only to visitors, writable by admin) ──
+    match /settings/company {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /settings/pricing {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    // settings/access (partner logins), settings/notifications, etc.
+    // are admin-only — the admin password no longer lives here.
+    match /settings/{doc} {
+      allow read, write: if isAdmin();
+    }
+
+    match /catalog/{doc} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /content/{doc} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ── Partner applications (index.html quiz/apply form) ──
+    // Anyone may submit one; only admins can read or process them.
+    match /applications/{id} {
+      allow create: if request.resource.data.status == 'pending'
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 200
+        && request.resource.data.email is string
+        && request.resource.data.email.size() > 0
+        && request.resource.data.email.size() <= 200
+        && request.resource.data.keys().hasOnly(
+             ['name','email','phone','website','industry','status','quizAnswers','createdAt']);
+      allow read, update, delete: if isAdmin();
+    }
+
+    // ── Shop orders (shop.html quote builder) ──
+    // Anyone may submit one; only admins can read or process them.
+    match /orders/{id} {
+      allow create: if request.resource.data.status == 'new'
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 200
+        && request.resource.data.email is string
+        && request.resource.data.email.size() > 0
+        && request.resource.data.email.size() <= 200
+        && request.resource.data.items is list
+        && request.resource.data.items.size() > 0
+        && request.resource.data.items.size() <= 50
+        && request.resource.data.keys().hasOnly(
+             ['name','email','phone','company','items','oneTimeTotal','monthlyTotal','status','source','createdAt']);
+      allow read, update, delete: if isAdmin();
+    }
+
+    // ── Customers (portal accounts) ──
+    match /customers/{uid} {
+      allow read: if isAdmin() || isOwner(uid);
+      allow write: if isAdmin();
+    }
+
+    // ── Services assigned to customers ──
+    match /customerServices/{id} {
+      allow read: if isAdmin() || isOwner(resource.data.userId);
+      // Customers may request a service for themselves (status pending);
+      // admins may assign anything.
+      allow create: if isAdmin()
+        || (isOwner(request.resource.data.userId)
+            && request.resource.data.status == 'pending');
+      allow update, delete: if isAdmin();
+    }
+
+    // ── Support tickets ──
+    match /tickets/{id} {
+      allow read: if isAdmin() || isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+      allow update, delete: if isAdmin();
+    }
+
+    // ── Invoices ──
+    match /invoices/{id} {
+      allow read: if isAdmin() || isOwner(resource.data.userId);
+      allow write: if isAdmin();
+    }
+
+    // ── Audit logs (append-only) ──
+    match /auditLogs/{id} {
+      allow read: if isAdmin() || isOwner(resource.data.userId);
+      allow create: if isAdmin() || isOwner(request.resource.data.userId);
+      allow update, delete: if false;
+    }
+
+    // Everything else: denied.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
