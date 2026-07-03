@@ -66,7 +66,8 @@ It is no longer read by anything — delete that field:
 - [ ] Submitting the apply form on `index.html` works while logged out.
 - [ ] Submitting an order from `shop.html` works while logged out.
 - [ ] `admin.html` login works with your new email + password.
-- [ ] Applications / Orders tabs load and Approve / status buttons work.
+- [ ] Applications / Orders / Tickets tabs load and Approve / status buttons work.
+- [ ] Replying to a ticket in admin.html shows up in the customer's portal thread, and vice versa.
 - [ ] A customer can sign in to `portal.html` and sees only their own data.
 - [ ] In an incognito window (logged out), the browser console shows
       `permission-denied` if you try to read e.g. `applications`.
@@ -83,6 +84,7 @@ It is no longer read by anything — delete that field:
 | `customers/{uid}` | — | read own | full |
 | `customerServices` | — | read own, request own (pending) | full |
 | `tickets` | — | read/create own | full |
+| `tickets/{id}/replies` | — | read own thread, post as `customer` on own thread | read/post as `admin` on any thread |
 | `invoices` | — | read own | read/write |
 | `auditLogs` | — | read/create own | read/create (no edit/delete) |
 | `admins/{uid}` | — | read own entry | read own entry (writes via console only) |

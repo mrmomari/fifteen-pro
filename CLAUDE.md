@@ -106,6 +106,9 @@ tickets/{id}            — support tickets raised by customers
   status: 'open' | 'in-progress' | 'resolved'
   createdAt, updatedAt
 
+tickets/{id}/replies/{replyId}   — reply thread on a ticket (admin.html Tickets tab + portal.html)
+  from: 'customer' | 'admin', authorId, message, createdAt
+
 invoices/{id}           — billing invoices per customer
   userId, description, amount, currency
   status: 'paid' | 'pending' | 'overdue'
@@ -147,9 +150,17 @@ invoices/{id}           — billing invoices per customer
 **Existing partner logs in:**
 - Sidebar → Partner Portal → `portal.html` → signs in with email/password or Google
 - Sees dashboard: Active Services KPI, Open Tickets, Next Milestone, Outstanding Invoices
+- Services tab shows a progress bar + milestone checklist per assigned service (from `customerServices.milestones`, set by admin)
+- Tickets tab: opens a ticket, then can expand it to read/send replies against `tickets/{id}/replies`
+
+**Customer opens a support ticket:**
+1. Portal → Tickets → New Ticket → saved to `tickets` collection (status `open`)
+2. Admin sees it in `admin.html` → Tickets tab, opens it, replies (auto-bumps status to `in-progress`) or marks `resolved`
+3. Customer sees the reply in the same ticket's thread in the portal and can reply back
 
 **Admin manages content:**
-- Sidebar → Admin → `admin.html` → enters password → tabs: Applications / Company / Pricing / Services / Access / Expertise
+- Sidebar → Admin → `admin.html` → signs in (email/password) → tabs: Applications / Orders / Tickets / Company / Pricing / Services / Access / Expertise / Service Mgmt / Audit / Notifications
+- Service Mgmt: assign services to customers, edit status/notes, and manage the milestone checklist per service (progress bar + `x/y complete` shown both in the Active Services table and the edit modal) — this is what the customer sees in their portal
 
 ## Firebase Console Requirements
 - **Authentication → Email/Password** → Enable
@@ -165,4 +176,4 @@ invoices/{id}           — billing invoices per customer
 - **Phase 3 — Infrastructure & Scale** (11–15): Website Creation, E-commerce Storefront, Secure E-commerce, Business Hub/ERP, Analytics Dashboard
 
 ## Branch Convention
-Development branch: `claude/zealous-turing-10rdcm` → PRs into `main`
+Development branch: `claude/shop-orders-firestore-security-hf9k9b` → PRs into `main`

@@ -748,6 +748,25 @@ body{
 .ticket-expand-icon{color:var(--text-dim);font-size:11px;margin-left:auto;flex-shrink:0;transition:transform .2s}
 .ticket-expand-icon.open{transform:rotate(180deg)}
 
+/* Ticket reply thread */
+.ticket-thread{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.ticket-msg{max-width:85%;padding:10px 14px;border-radius:10px;font-size:13px;line-height:1.6;white-space:pre-wrap}
+.ticket-msg.from-customer{align-self:flex-end;background:rgba(38,145,94,.1);border:1px solid rgba(38,145,94,.2)}
+.ticket-msg.from-admin{align-self:flex-start;background:rgba(0,0,0,.04);border:1px solid rgba(0,0,0,.06)}
+.ticket-msg-meta{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--text-dim);margin-bottom:4px}
+.ticket-reply-form{display:flex;gap:8px;margin-top:14px}
+.ticket-reply-form textarea{
+  flex:1;padding:9px 12px;border:1.5px solid rgba(0,0,0,.12);border-radius:8px;
+  font-size:13px;font-family:inherit;resize:vertical;min-height:44px;outline:none;color:var(--text);
+}
+.ticket-reply-form textarea:focus{border-color:rgba(38,145,94,.4)}
+.ticket-reply-form button{
+  padding:0 18px;background:var(--green);color:#fff;border:none;border-radius:8px;
+  font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .15s;
+}
+.ticket-reply-form button:hover{background:var(--green-dim)}
+.ticket-reply-form button:disabled{opacity:.6;cursor:not-allowed}
+
 /* ══════════════════════════════════════
    BILLING TAB
 ══════════════════════════════════════ */
@@ -1802,6 +1821,7 @@ function renderServices() {
 ══════════════════════════════════════════════════════════ */
 function renderTickets() {
   const el = document.getElementById('ticketsContent');
+  Object.keys(ticketRepliesLoaded).forEach(k => delete ticketRepliesLoaded[k]);
   if (ticketsData.length === 0) {
     el.innerHTML = `<div class="card"><div class="empty-state">
       <div class="empty-state-icon"><i class="fa-solid fa-comments"></i></div>
@@ -1824,16 +1844,78 @@ function renderTickets() {
         <span><i class="fa-solid fa-clock"></i> Opened ${t.createdAt ? fmtDate(t.createdAt) : 'recently'}</span>
         ${t.updatedAt ? `<span><i class="fa-solid fa-rotate"></i> Updated ${fmtDate(t.updatedAt)}</span>` : ''}
       </div>
-      <div class="ticket-body" id="ticket-body-${idx}">${esc(t.message || '')}</div>
+      <div class="ticket-body" id="ticket-body-${idx}">
+        <div class="ticket-thread" id="ticket-thread-${idx}"></div>
+        ${t.status !== 'resolved' ? `
+        <div class="ticket-reply-form">
+          <textarea id="ticket-reply-${idx}" rows="2" placeholder="Reply to this ticket…"></textarea>
+          <button id="ticket-reply-btn-${idx}" onclick="sendTicketReply(${idx})">Send</button>
+        </div>` : ''}
+      </div>
     </div>
   `).join('')}</div>`;
 }
 
-function toggleTicketBody(idx) {
+const ticketRepliesLoaded = {};
+
+async function toggleTicketBody(idx) {
   const body = document.getElementById('ticket-body-' + idx);
   const icon = document.getElementById('expand-icon-' + idx);
   body.classList.toggle('show');
   icon.classList.toggle('open');
+  if (body.classList.contains('show') && !ticketRepliesLoaded[idx]) {
+    ticketRepliesLoaded[idx] = true;
+    await loadTicketThread(idx);
+  }
+}
+
+async function loadTicketThread(idx) {
+  const t = ticketsData[idx];
+  const threadEl = document.getElementById('ticket-thread-' + idx);
+  threadEl.innerHTML = '<div style="font-size:12px;color:var(--text-dim)"><i class="fa-solid fa-spinner fa-spin"></i> Loading…</div>';
+  try {
+    const snap = await db.collection('tickets').doc(t.id).collection('replies').orderBy('createdAt').get();
+    const replies = snap.docs.map(d => d.data());
+    const all = [{ from: 'customer', message: t.message, createdAt: t.createdAt, original: true }, ...replies];
+    threadEl.innerHTML = all.map(renderTicketBubble).join('');
+  } catch(e) {
+    threadEl.innerHTML = '<div style="font-size:12px;color:var(--text-dim)">Could not load replies.</div>';
+  }
+}
+
+function renderTicketBubble(r) {
+  const isCustomer = r.from === 'customer';
+  const who = isCustomer ? 'You' : 'Fifteen Team';
+  const meta = who + (r.original ? ' · original message' : '') + (r.createdAt ? ' · ' + fmtDate(r.createdAt) : '');
+  return `<div class="ticket-msg ${isCustomer ? 'from-customer' : 'from-admin'}">
+    <div class="ticket-msg-meta">${esc(meta)}</div>
+    ${esc(r.message || '')}
+  </div>`;
+}
+
+async function sendTicketReply(idx) {
+  const t = ticketsData[idx];
+  const msgEl = document.getElementById('ticket-reply-' + idx);
+  const btn = document.getElementById('ticket-reply-btn-' + idx);
+  const message = msgEl.value.trim();
+  if (!message) return;
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+  try {
+    await db.collection('tickets').doc(t.id).collection('replies').add({
+      from: 'customer',
+      authorId: currentUser.uid,
+      message,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    msgEl.value = '';
+    await loadTicketThread(idx);
+    showToast('Reply sent', 'success');
+  } catch(e) {
+    showToast('Failed to send reply', 'error');
+  }
+  btn.disabled = false;
+  btn.textContent = 'Send';
 }
 
 /* ══════════════════════════════════════════════════════════
