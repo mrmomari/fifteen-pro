@@ -703,8 +703,14 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
             <div class="form-grid one">
               <div class="f-field"><label>Customer</label><select id="sm-customer"></select></div>
               <div class="f-field"><label>Service</label><select id="sm-service"></select></div>
+              <div class="f-field"><label>Status</label><select id="sm-status">
+                <option value="active">Active</option>
+                <option value="pending">Pending</option>
+                <option value="completed">Completed</option>
+              </select></div>
               <div class="f-field"><label>Start Date</label><input id="sm-start" type="date"></div>
               <div class="f-field"><label>Target Completion</label><input id="sm-completion" type="date"></div>
+              <div class="f-field"><label>Task Details / Notes</label><textarea id="sm-notes" rows="3" placeholder="Describe the full task, scope, deliverables…"></textarea></div>
               <button class="form-save" onclick="assignService()">Assign Service</button>
             </div>
           </div>
@@ -720,12 +726,13 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
                     <th>Phase</th>
                     <th>Status</th>
                     <th>Start Date</th>
+                    <th>Task Details</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody id="svcMgmtBody">
                   <tr>
-                    <td colspan="6">
+                    <td colspan="7">
                       <div class="empty-state">
                         <i class="fa-regular fa-briefcase"></i>
                         Loading services…
@@ -852,6 +859,33 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
     <div class="modal-actions">
       <button class="modal-cancel" onclick="closeModal()">Cancel</button>
       <button class="modal-confirm" id="modalConfirmBtn" onclick="modalConfirmAction()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Service Edit Modal ══ -->
+<div class="modal-overlay" id="svcEditModal">
+  <div class="modal-box" style="width:520px;max-width:92vw;max-height:88vh;overflow-y:auto;text-align:left">
+    <h3 id="se-title">Edit Service</h3>
+    <div class="form-grid" style="margin-top:16px">
+      <div class="f-field"><label>Status</label><select id="se-status">
+        <option value="pending">Pending</option>
+        <option value="active">Active</option>
+        <option value="completed">Completed</option>
+      </select></div>
+      <div class="f-field"><label>Start Date</label><input id="se-start" type="date"></div>
+      <div class="f-field"><label>Target Completion</label><input id="se-completion" type="date"></div>
+    </div>
+    <div class="f-field"><label>Task Details / Notes</label><textarea id="se-notes" rows="4" placeholder="Describe the full task, scope, deliverables…"></textarea></div>
+    <div class="f-field">
+      <label>Milestones</label>
+      <div id="se-milestones"></div>
+      <button class="btn-approve" style="align-self:flex-start" onclick="addEditMilestone()">+ Add Milestone</button>
+    </div>
+    <div class="modal-actions" style="margin-top:18px">
+      <button class="modal-cancel" onclick="closeSvcEditModal()">Cancel</button>
+      <button class="btn-reject" style="flex:1;padding:11px" onclick="deleteSvcEdit()">Remove</button>
+      <button class="modal-confirm" onclick="saveSvcEdit()">Save Changes</button>
     </div>
   </div>
 </div>
@@ -1607,31 +1641,42 @@ async function loadServiceMgmt() {
 
     const tbody = document.getElementById('svcMgmtBody');
     tbody.innerHTML = '';
+    custServicesCache = {};
     if (custServices.empty) {
-      tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><i class="fa-regular fa-briefcase"></i>No services assigned yet</div></td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><i class="fa-regular fa-briefcase"></i>No services assigned yet</div></td></tr>';
     } else {
       custServices.docs.forEach(doc => {
         const d = doc.data();
+        custServicesCache[doc.id] = d;
+        const notesPreview = (d.notes || '').length > 60 ? d.notes.substring(0, 60) + '…' : (d.notes || '—');
         const row = tbody.insertRow();
         row.innerHTML = `
           <td>${escHtml(d.customerName || 'Unknown')}</td>
           <td>${escHtml(d.serviceName || 'Unknown')}</td>
           <td>Phase ${d.phase || '—'}</td>
-          <td><span class="status-badge ${d.status === 'active' ? 'status-approved' : 'status-pending'}">${d.status || 'pending'}</span></td>
+          <td><span class="status-badge ${d.status === 'active' ? 'status-approved' : d.status === 'completed' ? 'status-rejected' : 'status-pending'}">${d.status || 'pending'}</span></td>
           <td class="td-date">${formatDate(d.startDate)}</td>
-          <td><button class="btn-approve" onclick="editCustomerService('${doc.id}')">Edit</button></td>
+          <td style="font-size:11px;color:var(--text-muted);max-width:180px">${escHtml(notesPreview)}</td>
+          <td style="white-space:nowrap">
+            ${d.status !== 'active' ? `<button class="btn-approve" onclick="setServiceStatus('${doc.id}','active')">Activate</button>` : `<button class="btn-approve" onclick="setServiceStatus('${doc.id}','completed')">Complete</button>`}
+            <button class="btn-reject" onclick="editCustomerService('${doc.id}')">Edit</button>
+          </td>
         `;
       });
     }
   } catch(e) { console.error(e); }
 }
 
+let custServicesCache = {};
+
 async function assignService() {
   if (!db) { toast('Firebase not connected', 'error'); return; }
   const custId = document.getElementById('sm-customer').value;
   const svcId = parseInt(document.getElementById('sm-service').value);
+  const status = document.getElementById('sm-status').value || 'active';
   const start = document.getElementById('sm-start').value;
   const completion = document.getElementById('sm-completion').value;
+  const notes = document.getElementById('sm-notes').value.trim();
   if (!custId || !svcId || !start) { toast('Fill all fields', 'error'); return; }
 
   try {
@@ -1641,7 +1686,7 @@ async function assignService() {
     ]);
 
     if (!custDoc.exists) { toast('Customer not found', 'error'); return; }
-    const svc = (svcDoc.data()?.items || []).find(s => s.id === svcId) || { name: 'Unknown', phase: 1 };
+    const svc = (svcDoc.data()?.items || []).find(s => String(s.id) === String(svcId)) || { name: 'Unknown', phase: 1 };
 
     await db.collection('customerServices').add({
       userId: custId,
@@ -1650,34 +1695,131 @@ async function assignService() {
       serviceId: svcId,
       serviceName: svc.name,
       phase: svc.phase,
-      status: 'pending',
+      status: status,
       startDate: new Date(start),
       completionDate: completion ? new Date(completion) : null,
       milestones: [],
-      notes: '',
+      notes: notes,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
     toast('✓ Service assigned', 'success');
     document.getElementById('sm-customer').value = '';
     document.getElementById('sm-service').value = '';
+    document.getElementById('sm-status').value = 'active';
     document.getElementById('sm-start').value = '';
     document.getElementById('sm-completion').value = '';
+    document.getElementById('sm-notes').value = '';
     await loadServiceMgmt();
   } catch(e) { toast('Assignment failed: ' + e.message, 'error'); }
 }
 
-async function editCustomerService(docId) {
-  // Modal for editing service details
-  AppUtils.showConfirm('Edit Service', 'Would you like to edit milestones or cancel this service?', async () => {
-    // Placeholder for edit modal
-    toast('Edit feature coming soon', 'info');
+async function setServiceStatus(docId, status) {
+  if (!db) { toast('Firebase not connected', 'error'); return; }
+  try {
+    const update = { status: status, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+    if (status === 'completed') update.completionDate = new Date();
+    await db.collection('customerServices').doc(docId).update(update);
+    toast(`✓ Service marked ${status}`, 'success');
+    await loadServiceMgmt();
+  } catch(e) { toast('Update failed: ' + e.message, 'error'); }
+}
+
+/* ── Edit service modal ── */
+let editingSvcId = null;
+let editingMilestones = [];
+
+function editCustomerService(docId) {
+  const d = custServicesCache[docId];
+  if (!d) { toast('Service not found', 'error'); return; }
+  editingSvcId = docId;
+  editingMilestones = (Array.isArray(d.milestones) ? d.milestones : []).map(m => ({
+    title: m.title || '',
+    date: toDateInputValue(m.date),
+    completed: !!m.completed
+  }));
+
+  document.getElementById('se-title').textContent = `${d.serviceName || 'Service'} — ${d.customerName || ''}`;
+  document.getElementById('se-status').value = d.status || 'pending';
+  document.getElementById('se-start').value = toDateInputValue(d.startDate);
+  document.getElementById('se-completion').value = toDateInputValue(d.completionDate);
+  document.getElementById('se-notes').value = d.notes || '';
+  renderEditMilestones();
+  document.getElementById('svcEditModal').classList.add('open');
+}
+
+function closeSvcEditModal() {
+  document.getElementById('svcEditModal').classList.remove('open');
+  editingSvcId = null;
+}
+
+function renderEditMilestones() {
+  const wrap = document.getElementById('se-milestones');
+  if (!editingMilestones.length) {
+    wrap.innerHTML = '<div style="font-size:12px;color:var(--text-dim);padding:6px 0">No milestones yet.</div>';
+    return;
+  }
+  wrap.innerHTML = editingMilestones.map((m, i) => `
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+      <input type="checkbox" ${m.completed ? 'checked' : ''} onchange="editingMilestones[${i}].completed=this.checked" title="Completed">
+      <input type="text" value="${escHtml(m.title)}" placeholder="Milestone title" style="flex:2" oninput="editingMilestones[${i}].title=this.value">
+      <input type="date" value="${m.date}" style="flex:1" onchange="editingMilestones[${i}].date=this.value">
+      <button class="btn-reject" onclick="editingMilestones.splice(${i},1);renderEditMilestones()" title="Remove">✕</button>
+    </div>
+  `).join('');
+}
+
+function addEditMilestone() {
+  editingMilestones.push({ title: '', date: '', completed: false });
+  renderEditMilestones();
+}
+
+async function saveSvcEdit() {
+  if (!db || !editingSvcId) return;
+  try {
+    const start = document.getElementById('se-start').value;
+    const completion = document.getElementById('se-completion').value;
+    await db.collection('customerServices').doc(editingSvcId).update({
+      status: document.getElementById('se-status').value,
+      startDate: start ? new Date(start) : null,
+      completionDate: completion ? new Date(completion) : null,
+      notes: document.getElementById('se-notes').value.trim(),
+      milestones: editingMilestones
+        .filter(m => m.title.trim())
+        .map(m => ({ title: m.title.trim(), date: m.date ? new Date(m.date) : null, completed: !!m.completed })),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    toast('✓ Service updated', 'success');
+    closeSvcEditModal();
+    await loadServiceMgmt();
+  } catch(e) { toast('Save failed: ' + e.message, 'error'); }
+}
+
+async function deleteSvcEdit() {
+  if (!db || !editingSvcId) return;
+  const docId = editingSvcId;
+  const d = custServicesCache[docId] || {};
+  AppUtils.showConfirm('Remove Service', `Remove "${d.serviceName || 'this service'}" from ${d.customerName || 'this customer'}? This cannot be undone.`, async () => {
+    try {
+      await db.collection('customerServices').doc(docId).delete();
+      toast('✓ Service removed', 'success');
+      closeSvcEditModal();
+      await loadServiceMgmt();
+    } catch(e) { toast('Delete failed: ' + e.message, 'error'); }
   });
+}
+
+function toDateInputValue(v) {
+  if (!v) return '';
+  const date = v.toDate ? v.toDate() : (v instanceof Date ? v : new Date(v));
+  if (isNaN(date)) return '';
+  return date.toISOString().split('T')[0];
 }
 
 function formatDate(timestamp) {
   if (!timestamp) return '—';
-  const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
+  const date = timestamp.toDate ? timestamp.toDate() : (timestamp instanceof Date ? timestamp : new Date(timestamp));
+  if (isNaN(date)) return '—';
   return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 

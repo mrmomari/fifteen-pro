@@ -1631,6 +1631,10 @@ function renderDashboard() {
 
   // KPI: Active Services
   const activeServices = servicesData.filter(s => s.status === 'active').length;
+  const pendingServices = servicesData.filter(s => s.status === 'pending').length;
+  const servicesSub = pendingServices > 0
+    ? `${servicesData.length} total · ${pendingServices} pending`
+    : `${servicesData.length} service${servicesData.length !== 1 ? 's' : ''} total`;
 
   // KPI: Open Tickets
   const openTickets = ticketsData.filter(t => t.status === 'open' || t.status === 'in-progress').length;
@@ -1666,7 +1670,7 @@ function renderDashboard() {
       <div class="kpi-icon"><i class="fa-solid fa-rocket"></i></div>
       <div class="kpi-value">${activeServices}</div>
       <div class="kpi-label">Active Services</div>
-      <div class="kpi-sub">${servicesData.length} service${servicesData.length !== 1 ? 's' : ''} total</div>
+      <div class="kpi-sub">${servicesSub}</div>
     </div>
     <div class="kpi-card">
       <div class="kpi-icon"><i class="fa-solid fa-ticket"></i></div>
