@@ -450,6 +450,9 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
           <button class="sb-tab" onclick="switchTab('services-mgmt')">
             <i class="fa-solid fa-briefcase"></i> Services
           </button>
+          <button class="sb-tab" onclick="switchTab('invoices')">
+            <i class="fa-solid fa-receipt"></i> Invoices
+          </button>
           <button class="sb-tab" onclick="switchTab('audit')">
             <i class="fa-solid fa-clock-rotate-left"></i> Audit Logs
           </button>
@@ -869,6 +872,70 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
           </div>
         </div>
 
+        <!-- ═══ INVOICES PANEL ═══ -->
+        <div class="dash-panel" id="panel-invoices">
+          <div class="panel-heading">Invoices</div>
+          <div class="panel-sub">Bill customers for completed or in-progress work. Customers see these in their portal Billing tab.</div>
+
+          <div class="form-card">
+            <div class="form-card-title">Create Invoice</div>
+            <div class="form-grid one">
+              <div class="f-field"><label>Customer</label><select id="inv-customer"></select></div>
+              <div class="f-field"><label>Description</label><input id="inv-desc" placeholder="e.g. Website Creation — final milestone"></div>
+              <div class="form-grid">
+                <div class="f-field"><label>Amount</label><input id="inv-amount" type="number" min="0" step="0.01" placeholder="0.00"></div>
+                <div class="f-field"><label>Currency</label><input id="inv-currency" value="$" maxlength="5"></div>
+              </div>
+              <div class="f-field"><label>Due Date</label><input id="inv-due" type="date"></div>
+              <button class="form-save" onclick="createInvoice()">Create Invoice</button>
+            </div>
+          </div>
+
+          <div class="stats-row">
+            <div class="stat-tile">
+              <div class="stat-tile-num" id="invTotal">—</div>
+              <div class="stat-tile-label">Total</div>
+            </div>
+            <div class="stat-tile">
+              <div class="stat-tile-num orange" id="invPending">—</div>
+              <div class="stat-tile-label">Pending</div>
+            </div>
+            <div class="stat-tile">
+              <div class="stat-tile-num red" id="invOverdue">—</div>
+              <div class="stat-tile-label">Overdue</div>
+            </div>
+            <div class="stat-tile">
+              <div class="stat-tile-num green" id="invPaid">—</div>
+              <div class="stat-tile-label">Paid</div>
+            </div>
+          </div>
+
+          <div class="data-table-wrap">
+            <table class="data-table" id="invoiceTable">
+              <thead>
+                <tr>
+                  <th>Customer</th>
+                  <th>Description</th>
+                  <th>Amount</th>
+                  <th>Due Date</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="invoiceTableBody">
+                <tr>
+                  <td colspan="6">
+                    <div class="empty-state">
+                      <i class="fa-regular fa-clock"></i>
+                      Loading invoices…
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <!-- ═══ AUDIT LOGS PANEL ═══ -->
         <div class="dash-panel" id="panel-audit">
           <div class="panel-heading">Audit Logs</div>
@@ -983,6 +1050,19 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
     <div class="modal-actions">
       <button class="modal-cancel" onclick="closeModal()">Cancel</button>
       <button class="modal-confirm" id="modalConfirmBtn" onclick="modalConfirmAction()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Application Detail Modal ══ -->
+<div class="modal-overlay" id="applicationModal">
+  <div class="modal-box" style="width:560px;max-width:92vw;max-height:88vh;overflow-y:auto;text-align:left">
+    <h3 id="app-title">Application</h3>
+    <div id="app-meta" style="font-size:12px;color:var(--text-muted);line-height:1.9;margin-top:10px"></div>
+    <div style="font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);margin:18px 0 4px">Quiz Responses</div>
+    <div id="app-answers"></div>
+    <div class="modal-actions" style="margin-top:18px">
+      <button class="modal-cancel" onclick="closeApplicationModal()">Close</button>
     </div>
   </div>
 </div>
@@ -1198,6 +1278,7 @@ async function showDashboard() {
   await loadTickets();
   await loadCustomers();
   await loadServiceMgmt();
+  await loadInvoices();
   await loadAuditLogs();
   await loadNotifications();
 }
@@ -1205,7 +1286,7 @@ async function showDashboard() {
 /* ══════════════════════════════════════════════
    SIDEBAR TABS
 ══════════════════════════════════════════════ */
-const TABS = ['applications','orders','tickets','company','pricing','services','access','expertise','services-mgmt','audit','notifications'];
+const TABS = ['applications','orders','tickets','company','pricing','services','access','expertise','services-mgmt','invoices','audit','notifications'];
 
 function switchTab(name) {
   TABS.forEach(t => {
@@ -1222,6 +1303,7 @@ function switchTab(name) {
   if (name === 'orders') loadOrders();
   if (name === 'tickets') loadTickets();
   if (name === 'services-mgmt') loadServiceMgmt();
+  if (name === 'invoices') loadInvoices();
   if (name === 'audit') loadAuditLogs();
   if (name === 'notifications') loadNotifications();
 }
@@ -1290,13 +1372,13 @@ function renderApplications() {
     if (status === 'approved') badgeClass = 'status-approved';
     if (status === 'rejected') badgeClass = 'status-rejected';
 
-    let actions = '';
+    let actions = `<button class="btn-approve" style="background:rgba(0,0,0,.04);color:var(--text-muted);border-color:rgba(0,0,0,.12)" onclick="viewApplication('${app.docId}')">View</button>`;
     if (status === 'pending' || !status) {
-      actions = `<button class="btn-approve" onclick="openApproveModal('${app.docId}','${escHtml(app.name || '')}','${escHtml(app.email || '')}','${escHtml(app.industry || '')}')">Approve</button><button class="btn-reject" onclick="rejectApp('${app.docId}')">Reject</button>`;
+      actions += `<button class="btn-approve" style="margin-left:6px" onclick="openApproveModal('${app.docId}','${escHtml(app.name || '')}','${escHtml(app.email || '')}','${escHtml(app.industry || '')}')">Approve</button><button class="btn-reject" onclick="rejectApp('${app.docId}')">Reject</button>`;
     } else if (status === 'approved') {
-      actions = `<span class="action-done" style="color:var(--green)">&#10003; Approved</span>`;
+      actions += `<span class="action-done" style="color:var(--green);margin-left:8px">&#10003; Approved</span>`;
     } else {
-      actions = `<span class="action-done">&#10007; Rejected</span>`;
+      actions += `<span class="action-done" style="margin-left:8px">&#10007; Rejected</span>`;
     }
 
     return `<tr>
@@ -1321,6 +1403,62 @@ function fmtDate(ts) {
 
 function escHtml(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* ── Quiz question/option labels (mirrors index.html#apply) so admin
+   can read a submitted application's answers in plain English ── */
+const QUIZ_MAP = [
+  { q: 'What is the current state of your brand identity?', o: { strong: 'We have a strong, complete brand identity.', 'logo-only': 'We have a logo, but need full brand guidelines (colors, fonts, etc.).', zero: 'We are starting from absolute zero and need a full Visual Identity Creation.' } },
+  { q: 'Which digital platforms do you currently operate on?', o: { facebook: 'Facebook', instagram: 'Instagram', tiktok: 'TikTok', website: 'Website', ecommerce: 'E-commerce Store', none: 'None yet' } },
+  { q: 'What digital "raw materials" do you already have ready to use?', o: { photos: 'High-quality product or lifestyle photos.', video: 'Raw video footage waiting to be edited.', database: 'A database of customer emails / phone numbers.', none: 'None of the above — needs everything built from scratch.' } },
+  { q: 'Which DESIGN & IDENTITY services do you need?', o: { 'logo-identity': 'Logo & Visual Identity Creation', 'digital-arts': 'Digital Arts & AI Designs', editorial: 'Editorial / Print Designs (Flyers, Billboards, Business Cards)', none: 'None needed right now.' } },
+  { q: 'Which CONTENT & MEDIA services do you need?', o: { photography: 'Professional Photography (Product or Lifestyle)', reels: 'Reels & Short Video Production', motion: 'Motion Videos (Animated Explainers)', animations: 'Animations (Dynamic visual experiences)', none: 'None needed right now.' } },
+  { q: 'Which SOCIAL & OUTREACH services do you need?', o: { 'platform-mgmt': 'Full Social Media Platform Management', 'branded-content': 'Branded Content / Influencer Marketing', newsletters: 'Newsletters / SMS Marketing Campaigns', none: 'None needed right now.' } },
+  { q: 'Which TECH & WEB services do you need?', o: { website: 'Website Creation / Landing Page Design', ecommerce: 'E-commerce Store Setup', app: 'Custom Mobile App Development', erp: 'Business Hub (ERP) / Statistics Dashboard Integration', none: 'None needed right now.' } },
+  { q: 'Which PERFORMANCE & SEARCH services do you need?', o: { 'social-ads': 'Facebook, Instagram & TikTok Ads (Media Buying)', 'google-ads': 'Google Ads (Search & Display) & Google My Business Management', seo: 'Ranking Control (SEO)', none: 'None needed right now.' } },
+  { q: 'Which OFFLINE & EVENT services do you need?', o: { 'field-marketing': 'Field Marketing / On-ground direct campaigns', events: 'Event & Conference Organization', parties: 'Party / Concert Organization & Photography', none: 'None needed right now.' } },
+  { q: 'If your brand was a person, how would it act?', o: { corporate: 'Highly corporate and professional (Talk like an adult).', creative: 'Creative, fun, and slightly edgy (Act like a kid).', community: 'Community-focused, warm, and welcoming.', luxury: 'Luxurious and highly exclusive.' } },
+  { q: 'What is your BIGGEST current pain point?', o: { 'no-awareness': 'Nobody knows we exist (Need brand awareness).', 'no-conversions': "People know us, but don't buy (Need conversions / sales).", 'outdated-content': 'Our visual content looks outdated or cheap.', 'need-event': 'We need to launch a physical event or on-ground campaign.' } },
+  { q: 'What is your primary goal for the FIRST 3 MONTHS?', o: { audience: 'Audience Optimization (Growing followers and reach).', content: 'Content Optimization (Establishing a high-end visual identity).', budget: 'Budget Optimization (Driving immediate leads / sales through ads).' } },
+  { q: "We don't work with direct competitors simultaneously. Are you ready to lock in your industry?", o: { 'yes-lock': 'Yes, wants to block competitors from working with us.', 'need-info': 'Needs to know who we currently work with first.' } },
+  { q: 'Which partnership bundle fits your current budget?', o: { '3-month': '3-Month Package', '6-month': '6-Month Package', '12-month': '12-Month Package', custom: 'Needs a custom quote outside of these bundles.' } },
+  { q: 'Aside from the monthly fee, do you have separate budgets for Ad Spend, Custom Websites, or specialized Photoshoots?', o: { yes: 'Yes, has separate budgets ready for these.', no: 'No, only has the monthly bundle fee right now.', discuss: "Not sure, wants to discuss on the call." } }
+];
+
+function formatQuizAnswer(qIndex, raw) {
+  const def = QUIZ_MAP[qIndex];
+  if (!def) return escHtml(Array.isArray(raw) ? raw.join(', ') : String(raw));
+  const vals = Array.isArray(raw) ? raw : [raw];
+  return vals.map(v => escHtml(def.o[v] || v)).join('<br>');
+}
+
+function viewApplication(docId) {
+  const app = applications.find(a => a.docId === docId);
+  if (!app) return;
+  const status = app.status || 'pending';
+  document.getElementById('app-title').textContent = app.name || 'Application';
+  document.getElementById('app-meta').innerHTML = `
+    <div><strong>Email:</strong> ${escHtml(app.email || '—')}</div>
+    <div><strong>Phone:</strong> ${escHtml(app.phone || '—')}</div>
+    <div><strong>Website:</strong> ${escHtml(app.website || '—')}</div>
+    <div><strong>Industry:</strong> ${escHtml(app.industry || '—')}</div>
+    <div><strong>Submitted:</strong> ${fmtDate(app.createdAt)} · <span class="status-badge ${status === 'approved' ? 'status-approved' : status === 'rejected' ? 'status-rejected' : 'status-pending'}">${escHtml(status)}</span></div>
+  `;
+  const answers = app.quizAnswers || {};
+  const rows = QUIZ_MAP.map((def, i) => {
+    const raw = answers['q' + i];
+    if (raw === undefined || raw === null || (Array.isArray(raw) && !raw.length)) return '';
+    return `<div style="padding:9px 0;border-bottom:1px solid rgba(0,0,0,.06)">
+      <div style="font-size:11px;font-weight:700;color:var(--text-dim);margin-bottom:3px">${escHtml(def.q)}</div>
+      <div style="font-size:13px;color:var(--text)">${formatQuizAnswer(i, raw)}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('app-answers').innerHTML = rows || '<div style="font-size:12px;color:var(--text-dim);padding:8px 0">No quiz responses recorded.</div>';
+  document.getElementById('applicationModal').classList.add('open');
+}
+
+function closeApplicationModal() {
+  document.getElementById('applicationModal').classList.remove('open');
 }
 
 /* ── Approve flow ── */
@@ -2290,6 +2428,141 @@ function formatDate(timestamp) {
 }
 
 /* ══════════════════════════════════════════════
+   INVOICES
+══════════════════════════════════════════════ */
+let invoices = [];
+let invoiceCustomers = {};
+
+async function loadInvoices() {
+  const custSelect = document.getElementById('inv-customer');
+  const tbody = document.getElementById('invoiceTableBody');
+  if (!db) {
+    if (tbody) tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><i class="fa-solid fa-database"></i>Firebase not connected.</div></td></tr>`;
+    return;
+  }
+  try {
+    const [invSnap, cSnap] = await Promise.all([
+      db.collection('invoices').orderBy('createdAt', 'desc').get().catch(() => db.collection('invoices').get()),
+      db.collection('customers').get()
+    ]);
+
+    invoiceCustomers = {};
+    if (custSelect) custSelect.innerHTML = '<option value="">Select customer...</option>';
+    cSnap.docs.forEach(d => {
+      invoiceCustomers[d.id] = d.data();
+      if (custSelect) {
+        const opt = document.createElement('option');
+        opt.value = d.id;
+        opt.text = d.data().name || d.data().email || 'Unknown';
+        custSelect.appendChild(opt);
+      }
+    });
+
+    invoices = invSnap.docs.map(d => ({ docId: d.id, ...d.data() }));
+    invoices.sort((a, b) => {
+      const ta = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+      const tb = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+      return tb - ta;
+    });
+    renderInvoices();
+  } catch(e) {
+    if (tbody) tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><i class="fa-solid fa-triangle-exclamation"></i>Error loading: ${escHtml(e.message)}</div></td></tr>`;
+  }
+}
+
+function invoiceAmountStr(inv) {
+  return (inv.currency || '$') + (parseFloat(inv.amount) || 0).toLocaleString();
+}
+
+function renderInvoices() {
+  document.getElementById('invTotal').textContent   = invoices.length;
+  document.getElementById('invPending').textContent = invoices.filter(i => i.status === 'pending' || !i.status).length;
+  document.getElementById('invOverdue').textContent = invoices.filter(i => i.status === 'overdue').length;
+  document.getElementById('invPaid').textContent    = invoices.filter(i => i.status === 'paid').length;
+
+  const tbody = document.getElementById('invoiceTableBody');
+  if (!invoices.length) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><i class="fa-regular fa-file-invoice"></i>No invoices yet.</div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = invoices.map(inv => {
+    const status = inv.status || 'pending';
+    const badgeClass = status === 'paid' ? 'status-approved' : status === 'overdue' ? 'status-rejected' : 'status-pending';
+    const cust = invoiceCustomers[inv.userId] || {};
+    let actions = '';
+    if (status !== 'paid') actions += `<button class="btn-approve" onclick="setInvoiceStatus('${inv.docId}','paid')">Mark Paid</button>`;
+    if (status === 'pending') actions += `<button class="btn-reject" style="margin-left:6px" onclick="setInvoiceStatus('${inv.docId}','overdue')">Mark Overdue</button>`;
+    if (status !== 'pending') actions += `<button class="btn-approve" style="margin-left:6px;background:rgba(0,0,0,.04);color:var(--text-muted);border-color:rgba(0,0,0,.12)" onclick="setInvoiceStatus('${inv.docId}','pending')">Reopen</button>`;
+    actions += `<button class="btn-reject" style="margin-left:6px" onclick="deleteInvoice('${inv.docId}')">Delete</button>`;
+    return `<tr>
+      <td><strong>${escHtml(cust.name || inv.customerName || 'Unknown')}</strong>${cust.email ? `<div style="font-size:11px;color:var(--text-dim)">${escHtml(cust.email)}</div>` : ''}</td>
+      <td>${escHtml(inv.description || '—')}</td>
+      <td><strong>${escHtml(invoiceAmountStr(inv))}</strong></td>
+      <td class="td-date">${inv.dueDate ? formatDate(inv.dueDate) : '—'}</td>
+      <td><span class="status-badge ${badgeClass}">${escHtml(status)}</span></td>
+      <td style="white-space:nowrap">${actions}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function createInvoice() {
+  if (!db) { toast('Firebase not connected', 'error'); return; }
+  const custId   = document.getElementById('inv-customer').value;
+  const desc     = document.getElementById('inv-desc').value.trim();
+  const amount   = parseFloat(document.getElementById('inv-amount').value);
+  const currency = document.getElementById('inv-currency').value.trim() || '$';
+  const due      = document.getElementById('inv-due').value;
+  if (!custId || !desc || !(amount > 0) || !due) { toast('Fill in customer, description, amount and due date', 'error'); return; }
+
+  try {
+    const cust = invoiceCustomers[custId] || {};
+    await db.collection('invoices').add({
+      userId: custId,
+      customerName: cust.name || '',
+      description: desc,
+      amount,
+      currency,
+      status: 'pending',
+      dueDate: new Date(due),
+      paidDate: null,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    toast('✓ Invoice created', 'success');
+    document.getElementById('inv-customer').value = '';
+    document.getElementById('inv-desc').value = '';
+    document.getElementById('inv-amount').value = '';
+    document.getElementById('inv-currency').value = '$';
+    document.getElementById('inv-due').value = '';
+    await loadInvoices();
+  } catch(e) { toast('Failed to create invoice: ' + e.message, 'error'); }
+}
+
+async function setInvoiceStatus(docId, status) {
+  if (!db) return;
+  try {
+    const update = { status, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+    update.paidDate = status === 'paid' ? new Date() : null;
+    await db.collection('invoices').doc(docId).update(update);
+    const inv = invoices.find(x => x.docId === docId);
+    if (inv) { inv.status = status; inv.paidDate = update.paidDate; }
+    renderInvoices();
+    toast(`✓ Invoice marked ${status}`, 'success');
+  } catch(e) { toast('Update failed: ' + e.message, 'error'); }
+}
+
+function deleteInvoice(docId) {
+  const inv = invoices.find(x => x.docId === docId);
+  AppUtils.showConfirm('Delete Invoice', `Delete the "${(inv && inv.description) || 'this'}" invoice? This cannot be undone.`, async () => {
+    try {
+      await db.collection('invoices').doc(docId).delete();
+      toast('✓ Invoice deleted', 'success');
+      await loadInvoices();
+    } catch(e) { toast('Delete failed: ' + e.message, 'error'); }
+  });
+}
+
+/* ══════════════════════════════════════════════
    AUDIT LOGS
 ══════════════════════════════════════════════ */
 async function loadAuditLogs() {
@@ -2465,6 +2738,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   document.getElementById('ticketModal').addEventListener('click', e => {
     if (e.target === document.getElementById('ticketModal')) closeTicketModal();
+  });
+  document.getElementById('applicationModal').addEventListener('click', e => {
+    if (e.target === document.getElementById('applicationModal')) closeApplicationModal();
   });
 
   await initFirebase();
