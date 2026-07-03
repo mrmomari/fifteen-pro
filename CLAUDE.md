@@ -71,6 +71,7 @@ settings/company        — company info, logo URL, social links
 settings/pricing        — currency, tax, bundle discount, promo codes
 settings/access         — partner logins
 settings/team           — { members: [name, ...] } — internal team roster for milestone "Assigned To"; no login, admin-managed (admin.html Tasks tab)
+settings/industryContacts — { mapping: { industryName: phoneNumber, ... } } — per-industry WhatsApp routing for application quiz reports (admin.html Applications tab)
 catalog/services        — 15 services with pricing (falls back to prices.json)
 content/team            — 3 team member profiles + photos
 admins/{uid}            — admin registry (doc id = Firebase Auth UID); managed via Firebase console
@@ -142,7 +143,7 @@ invoices/{id}           — billing invoices per customer
 **New partner applies:**
 1. Completes 15-question quiz on `index.html#apply`
 2. Sees personalized recommendation, fills contact info → saved to `applications` collection
-3. Admin sees it in `admin.html` → Applications tab → **View** shows the full quiz Q&A (readable labels, not raw `q0`..`q14` keys) alongside phone/website
+3. Admin sees it in `admin.html` → Applications tab → **View** shows the full quiz Q&A (readable labels, not raw `q0`..`q14` keys) alongside phone/website, plus a **Send Report via WhatsApp** button that routes the full report to whichever number is configured for that application's industry in the Industry WhatsApp Routing card (`settings/industryContacts`) — e.g. the team member or group handling that sector
 4. Admin clicks Approve → Firebase Auth account created → password-reset email sent → a `customers/{uid}` doc is created
 5. Customer sets password → logs in at `portal.html`
 6. **Approving does NOT assign any service or create anything billable.** Nothing shows up for that customer in Service Mgmt, Orders, or Invoices until admin explicitly does step 7/8 below — the quiz answers are only a signal of what to sell them.
