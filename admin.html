@@ -908,11 +908,11 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
         <!-- ═══ TASKS PANEL ═══ -->
         <div class="dash-panel" id="panel-tasks">
           <div class="panel-heading">Tasks</div>
-          <div class="panel-sub">Follow up on outstanding milestones across every customer, and manage who's assigned to what.</div>
+          <div class="panel-sub">The backbone for all work — create, assign, and complete tasks here. Completing a priced task automatically invoices the customer.</div>
 
           <div class="form-card" style="max-width:680px">
             <div class="form-card-title">Team Members</div>
-            <p style="font-size:12px;color:var(--text-dim);margin:-6px 0 14px">Names here populate the "Assigned To" list on milestones — no login required, just for internal follow-up.</p>
+            <p style="font-size:12px;color:var(--text-dim);margin:-6px 0 14px">Names here populate the "Assigned To" list on tasks — no login required, just for internal follow-up.</p>
             <div id="teamList"></div>
             <button class="as-add" onclick="addTeamRow()"><i class="fa-solid fa-plus"></i> Add Team Member</button>
             <div style="margin-top:14px">
@@ -921,11 +921,49 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
           </div>
 
           <div class="form-card">
-            <div class="form-card-title">Pending Tasks</div>
-            <div class="form-grid one" style="margin-bottom:10px">
-              <div class="f-field" style="max-width:260px"><label>Filter by Assignee</label>
+            <div class="form-card-title">New Task</div>
+            <div class="form-grid one">
+              <div class="form-grid">
+                <div class="f-field"><label>Customer (optional)</label>
+                  <select id="task-customer" onchange="onTaskCustomerChange()">
+                    <option value="">No customer / internal</option>
+                  </select>
+                </div>
+                <div class="f-field"><label>Linked Service (optional)</label>
+                  <select id="task-service">
+                    <option value="">No linked service</option>
+                  </select>
+                </div>
+              </div>
+              <div class="f-field"><label>Title</label><input id="task-title" placeholder="e.g. Deliver homepage mockup"></div>
+              <div class="f-field"><label>Description (optional)</label><textarea id="task-desc" rows="2" placeholder="Extra detail for whoever's assigned"></textarea></div>
+              <div class="form-grid">
+                <div class="f-field"><label>Due Date</label><input id="task-due" type="date"></div>
+                <div class="f-field"><label>Assigned To</label>
+                  <select id="task-assignee"><option value="">Unassigned</option></select>
+                </div>
+              </div>
+              <div class="form-grid">
+                <div class="f-field"><label>Invoice Amount on Completion (optional)</label><input id="task-price" type="number" min="0" step="0.01" placeholder="0.00"></div>
+                <div class="f-field"><label>Currency</label><input id="task-currency" value="$" maxlength="5"></div>
+              </div>
+              <button class="form-save" onclick="createTask()">Create Task</button>
+            </div>
+          </div>
+
+          <div class="form-card">
+            <div class="form-card-title">All Tasks</div>
+            <div class="form-grid" style="margin-bottom:10px">
+              <div class="f-field"><label>Filter by Assignee</label>
                 <select id="task-filter" onchange="renderTasksTable()">
                   <option value="">Everyone</option>
+                </select>
+              </div>
+              <div class="f-field"><label>Filter by Status</label>
+                <select id="task-status-filter" onchange="renderTasksTable()">
+                  <option value="pending">Pending</option>
+                  <option value="completed">Completed</option>
+                  <option value="">All</option>
                 </select>
               </div>
             </div>
@@ -935,15 +973,17 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
                   <tr>
                     <th>Customer</th>
                     <th>Service</th>
-                    <th>Milestone</th>
+                    <th>Task</th>
                     <th>Due</th>
                     <th>Assigned To</th>
+                    <th>Invoice</th>
+                    <th>Status</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody id="tasksBody">
                   <tr>
-                    <td colspan="6">
+                    <td colspan="8">
                       <div class="empty-state">
                         <i class="fa-solid fa-list-check"></i>
                         Loading tasks…
@@ -1035,6 +1075,7 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
                 <option value="service">Services</option>
                 <option value="ticket">Tickets</option>
                 <option value="invoice">Invoices</option>
+                <option value="task">Tasks</option>
               </select></div>
               <div class="f-field"><label>Action</label><select id="audit-action">
                 <option value="">All</option>
@@ -1190,6 +1231,19 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
       <button class="modal-cancel" onclick="closeSvcEditModal()">Cancel</button>
       <button class="btn-reject" style="flex:1;padding:11px" onclick="deleteSvcEdit()">Remove Service</button>
       <button class="modal-confirm" onclick="saveSvcEdit()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Task Complete Modal ══ -->
+<div class="modal-overlay" id="taskCompleteModal">
+  <div class="modal-box" style="width:480px;max-width:92vw;text-align:left">
+    <h3 id="tc-title">Complete Task</h3>
+    <div id="tc-summary" style="font-size:12px;color:var(--text-muted);margin:8px 0 14px;line-height:1.6"></div>
+    <div class="f-field"><label>What was achieved / delivered (optional)</label><textarea id="tc-note" rows="3" placeholder="Shown to the customer if this task is linked to a service"></textarea></div>
+    <div class="modal-actions" style="margin-top:16px">
+      <button class="modal-cancel" onclick="closeTaskCompleteModal()">Cancel</button>
+      <button class="modal-confirm" onclick="confirmCompleteTask()">Mark Complete</button>
     </div>
   </div>
 </div>
@@ -2746,80 +2800,275 @@ async function saveTeamMembers() {
 }
 
 /* ══════════════════════════════════════════════
-   TASKS (pending milestones across all customers)
+   TASKS — independent collection, the backbone for internal work.
+   Optionally linked to a customer + service; completing a priced
+   task auto-invoices that customer and mirrors into the service's
+   milestone list so the portal progress bar stays in sync.
 ══════════════════════════════════════════════ */
 let allTasks = [];
+let taskCustomers = {};
+let completingTaskId = null;
+
+function currentAdminIdentity() {
+  return (auth && auth.currentUser) ? (auth.currentUser.email || auth.currentUser.uid) : 'admin';
+}
 
 async function loadTasks() {
   if (!db) return;
   await loadTeamMembers();
-  await loadServiceMgmt();
+  await loadServiceMgmt(); // populates custServicesCache for the linked-service picker
 
-  allTasks = [];
-  Object.keys(custServicesCache).forEach(docId => {
-    const d = custServicesCache[docId];
-    (Array.isArray(d.milestones) ? d.milestones : []).forEach((m, i) => {
-      if (!m.completed && (m.title || '').trim()) {
-        allTasks.push({
-          docId,
-          customerName: d.customerName || 'Unknown',
-          serviceName: d.serviceName || 'Unknown',
-          title: m.title,
-          date: m.date || null,
-          assignedTo: m.assignedTo || ''
-        });
-      }
-    });
-  });
+  try {
+    const [tasksSnap, custSnap] = await Promise.all([
+      db.collection('tasks').orderBy('createdAt', 'desc').get().catch(() => db.collection('tasks').get()),
+      db.collection('customers').get()
+    ]);
+    taskCustomers = {};
+    custSnap.docs.forEach(d => { taskCustomers[d.id] = d.data(); });
+    allTasks = tasksSnap.docs.map(d => ({ docId: d.id, ...d.data() }));
+  } catch(e) { console.error(e); allTasks = []; }
+
   allTasks.sort((a, b) => {
-    const da = a.date ? (a.date.toDate ? a.date.toDate() : new Date(a.date)) : null;
-    const db_ = b.date ? (b.date.toDate ? b.date.toDate() : new Date(b.date)) : null;
+    const da = a.dueDate ? (a.dueDate.toDate ? a.dueDate.toDate() : new Date(a.dueDate)) : null;
+    const db_ = b.dueDate ? (b.dueDate.toDate ? b.dueDate.toDate() : new Date(b.dueDate)) : null;
     if (!da && !db_) return 0;
     if (!da) return 1;
     if (!db_) return -1;
     return da - db_;
   });
 
+  const custSel = document.getElementById('task-customer');
+  const custCurrent = custSel.value;
+  custSel.innerHTML = '<option value="">No customer / internal</option>' +
+    Object.keys(taskCustomers).map(id => `<option value="${id}">${escHtml(taskCustomers[id].name || 'Unknown')}</option>`).join('');
+  custSel.value = Object.prototype.hasOwnProperty.call(taskCustomers, custCurrent) ? custCurrent : '';
+  onTaskCustomerChange();
+
+  const assigneeSel = document.getElementById('task-assignee');
+  const assigneeCurrent = assigneeSel.value;
+  assigneeSel.innerHTML = '<option value="">Unassigned</option>' +
+    teamMembers.map(name => `<option value="${escHtml(name)}">${escHtml(name)}</option>`).join('');
+  assigneeSel.value = teamMembers.includes(assigneeCurrent) ? assigneeCurrent : '';
+
   const filterSel = document.getElementById('task-filter');
-  const current = filterSel.value;
+  const filterCurrent = filterSel.value;
   filterSel.innerHTML = '<option value="">Everyone</option>' +
     teamMembers.map(name => `<option value="${escHtml(name)}">${escHtml(name)}</option>`).join('') +
     '<option value="__unassigned__">Unassigned</option>';
-  filterSel.value = current;
+  filterSel.value = filterCurrent;
 
   renderTasksTable();
+}
+
+function onTaskCustomerChange() {
+  const custId = document.getElementById('task-customer').value;
+  const svcSel = document.getElementById('task-service');
+  const current = svcSel.value;
+  const matches = Object.keys(custServicesCache).filter(docId => {
+    const d = custServicesCache[docId];
+    return !custId || d.customerId === custId || d.userId === custId;
+  });
+  svcSel.innerHTML = '<option value="">No linked service</option>' + matches.map(docId => {
+    const d = custServicesCache[docId];
+    const label = custId ? (d.serviceName || 'Unknown') : `${d.serviceName || 'Unknown'} — ${d.customerName || ''}`;
+    return `<option value="${docId}">${escHtml(label)}</option>`;
+  }).join('');
+  svcSel.value = matches.includes(current) ? current : '';
+}
+
+async function createTask() {
+  if (!db) { toast('Firebase not connected', 'error'); return; }
+  const title = document.getElementById('task-title').value.trim();
+  if (!title) { toast('Enter a task title', 'error'); return; }
+
+  const svcId = document.getElementById('task-service').value;
+  const svc = svcId ? custServicesCache[svcId] : null;
+  let custId = document.getElementById('task-customer').value;
+  if (!custId && svc) custId = svc.customerId || svc.userId || '';
+  const cust = custId ? taskCustomers[custId] : null;
+
+  const due = document.getElementById('task-due').value;
+  const assignedTo = document.getElementById('task-assignee').value;
+  const description = document.getElementById('task-desc').value.trim();
+  const price = parseFloat(document.getElementById('task-price').value) || 0;
+  const currency = document.getElementById('task-currency').value.trim() || '$';
+
+  try {
+    const task = {
+      customerId: custId || null,
+      customerName: cust ? (cust.name || '') : (svc ? (svc.customerName || '') : ''),
+      serviceId: svcId || null,
+      serviceName: svc ? (svc.serviceName || '') : '',
+      title,
+      description,
+      dueDate: due ? new Date(due) : null,
+      assignedTo,
+      price,
+      currency,
+      status: 'pending',
+      note: '',
+      completedAt: null,
+      invoiceId: null,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    const ref = await db.collection('tasks').add(task);
+
+    if (svcId) {
+      await db.collection('customerServices').doc(svcId).update({
+        milestones: firebase.firestore.FieldValue.arrayUnion({
+          taskId: ref.id,
+          title,
+          date: due ? new Date(due) : null,
+          completed: false,
+          assignedTo,
+          note: ''
+        })
+      });
+    }
+
+    await AppUtils.logAudit(currentAdminIdentity(), 'create', ref.id, 'task', { title, customerId: custId || null });
+
+    toast('✓ Task created', 'success');
+    document.getElementById('task-title').value = '';
+    document.getElementById('task-desc').value = '';
+    document.getElementById('task-due').value = '';
+    document.getElementById('task-price').value = '';
+    await loadTasks();
+  } catch(e) { toast('Failed to create task: ' + e.message, 'error'); }
 }
 
 function renderTasksTable() {
   const tbody = document.getElementById('tasksBody');
   if (!tbody) return;
-  const filter = document.getElementById('task-filter').value;
+  const assigneeFilter = document.getElementById('task-filter').value;
+  const statusFilter = document.getElementById('task-status-filter').value;
   const rows = allTasks.filter(t => {
-    if (!filter) return true;
-    if (filter === '__unassigned__') return !t.assignedTo;
-    return t.assignedTo === filter;
+    if (statusFilter && (t.status || 'pending') !== statusFilter) return false;
+    if (!assigneeFilter) return true;
+    if (assigneeFilter === '__unassigned__') return !t.assignedTo;
+    return t.assignedTo === assigneeFilter;
   });
 
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><i class="fa-solid fa-circle-check"></i>No pending tasks' + (filter ? ' for this filter' : '') + '.</div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><i class="fa-solid fa-circle-check"></i>No tasks match this filter.</div></td></tr>';
     return;
   }
 
-  tbody.innerHTML = rows.map(t => `
+  tbody.innerHTML = rows.map(t => {
+    const isDone = (t.status || 'pending') === 'completed';
+    const invoiceCell = t.price > 0
+      ? `${escHtml(t.currency || '$')}${Number(t.price).toFixed(2)}${t.invoiceId ? ' <span style="color:var(--text-dim);font-size:10px">(invoiced)</span>' : ''}`
+      : '—';
+    return `
     <tr>
-      <td>${escHtml(t.customerName)}</td>
-      <td>${escHtml(t.serviceName)}</td>
-      <td>${escHtml(t.title)}</td>
-      <td class="td-date">${t.date ? formatDate(t.date) : '—'}</td>
+      <td>${escHtml(t.customerName || '—')}</td>
+      <td>${escHtml(t.serviceName || '—')}</td>
+      <td>${escHtml(t.title)}${t.description ? `<div style="font-size:11px;color:var(--text-dim)">${escHtml(t.description)}</div>` : ''}</td>
+      <td class="td-date">${t.dueDate ? formatDate(t.dueDate) : '—'}</td>
       <td>${t.assignedTo ? escHtml(t.assignedTo) : '<span style="color:var(--text-dim)">Unassigned</span>'}</td>
-      <td><button class="btn-reject" onclick="openTaskService('${t.docId}')">Open</button></td>
-    </tr>
-  `).join('');
+      <td>${invoiceCell}</td>
+      <td><span class="status-badge ${isDone ? 'status-approved' : 'status-pending'}">${isDone ? 'Completed' : 'Pending'}</span></td>
+      <td style="white-space:nowrap">
+        ${isDone ? '' : `<button class="btn-approve" onclick="openTaskCompleteModal('${t.docId}')">Complete</button>`}
+        <button class="btn-reject" onclick="deleteTask('${t.docId}')">Delete</button>
+      </td>
+    </tr>`;
+  }).join('');
 }
 
-function openTaskService(docId) {
-  switchTab('services-mgmt');
-  editCustomerService(docId);
+function openTaskCompleteModal(docId) {
+  const t = allTasks.find(x => x.docId === docId);
+  if (!t) return;
+  completingTaskId = docId;
+  document.getElementById('tc-title').textContent = `Complete: ${t.title}`;
+
+  let invoiceNote;
+  if (t.price > 0 && t.customerId) {
+    invoiceNote = `Will auto-create a <strong>${escHtml(t.currency || '$')}${Number(t.price).toFixed(2)}</strong> pending invoice for this customer.`;
+  } else if (t.price > 0) {
+    invoiceNote = `<span style="color:var(--orange)">Price is set but no customer is linked — no invoice will be created.</span>`;
+  } else {
+    invoiceNote = 'No invoice amount set for this task.';
+  }
+  document.getElementById('tc-summary').innerHTML =
+    (t.customerName ? `Customer: <strong>${escHtml(t.customerName)}</strong><br>` : '') +
+    (t.serviceName ? `Service: <strong>${escHtml(t.serviceName)}</strong><br>` : '') +
+    invoiceNote;
+  document.getElementById('tc-note').value = t.note || '';
+  document.getElementById('taskCompleteModal').classList.add('open');
+}
+
+function closeTaskCompleteModal() {
+  document.getElementById('taskCompleteModal').classList.remove('open');
+  completingTaskId = null;
+}
+
+async function confirmCompleteTask() {
+  if (!db || !completingTaskId) return;
+  const t = allTasks.find(x => x.docId === completingTaskId);
+  if (!t) return;
+  const note = document.getElementById('tc-note').value.trim();
+
+  try {
+    const update = {
+      status: 'completed',
+      note,
+      completedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    let invoiceId = null;
+    if (t.price > 0 && t.customerId) {
+      const invRef = await db.collection('invoices').add({
+        userId: t.customerId,
+        customerName: t.customerName || '',
+        description: t.serviceName ? `${t.title} — ${t.serviceName}` : t.title,
+        amount: t.price,
+        currency: t.currency || '$',
+        status: 'pending',
+        dueDate: t.dueDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        paidDate: null,
+        source: 'task',
+        taskId: t.docId,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      invoiceId = invRef.id;
+      update.invoiceId = invoiceId;
+    }
+
+    await db.collection('tasks').doc(completingTaskId).update(update);
+
+    if (t.serviceId) {
+      const svcDoc = await db.collection('customerServices').doc(t.serviceId).get();
+      if (svcDoc.exists) {
+        const milestones = (Array.isArray(svcDoc.data().milestones) ? svcDoc.data().milestones : []).map(m =>
+          m.taskId === completingTaskId ? { ...m, completed: true, note } : m
+        );
+        await db.collection('customerServices').doc(t.serviceId).update({ milestones });
+      }
+    }
+
+    await AppUtils.logAudit(currentAdminIdentity(), 'update', completingTaskId, 'task', {
+      status: 'completed', invoiceCreated: !!invoiceId
+    });
+
+    toast(invoiceId ? '✓ Task completed — invoice created' : '✓ Task completed', 'success');
+    closeTaskCompleteModal();
+    await loadTasks();
+    await loadInvoices();
+    if (t.serviceId) await loadServiceMgmt();
+  } catch(e) { toast('Failed to complete task: ' + e.message, 'error'); }
+}
+
+function deleteTask(docId) {
+  const t = allTasks.find(x => x.docId === docId);
+  AppUtils.showConfirm('Delete Task', `Delete "${(t && t.title) || 'this task'}"? This cannot be undone.`, async () => {
+    try {
+      await db.collection('tasks').doc(docId).delete();
+      await AppUtils.logAudit(currentAdminIdentity(), 'delete', docId, 'task', {});
+      toast('✓ Task deleted', 'success');
+      await loadTasks();
+    } catch(e) { toast('Delete failed: ' + e.message, 'error'); }
+  });
 }
 
 function formatDate(timestamp) {
