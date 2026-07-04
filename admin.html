@@ -910,80 +910,60 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
           <div class="panel-heading">Tasks</div>
           <div class="panel-sub">The backbone for all work — create, assign, and complete tasks here. Completing a priced task automatically invoices the customer.</div>
 
-          <div class="form-card" style="max-width:680px">
-            <div class="form-card-title">Team Members</div>
-            <p style="font-size:12px;color:var(--text-dim);margin:-6px 0 14px">Names here populate the "Assigned To" list on tasks — no login required, just for internal follow-up.</p>
-            <div id="teamList"></div>
-            <button class="as-add" onclick="addTeamRow()"><i class="fa-solid fa-plus"></i> Add Team Member</button>
-            <div style="margin-top:14px">
-              <button class="form-save" onclick="saveTeamMembers()">Save Team</button>
+          <div class="stats-row">
+            <div class="stat-tile">
+              <div class="stat-tile-num" id="taskStatPending">—</div>
+              <div class="stat-tile-label">Pending</div>
+            </div>
+            <div class="stat-tile">
+              <div class="stat-tile-num red" id="taskStatOverdue">—</div>
+              <div class="stat-tile-label">Overdue</div>
+            </div>
+            <div class="stat-tile">
+              <div class="stat-tile-num orange" id="taskStatUnassigned">—</div>
+              <div class="stat-tile-label">Unassigned</div>
+            </div>
+            <div class="stat-tile">
+              <div class="stat-tile-num green" id="taskStatCompleted">—</div>
+              <div class="stat-tile-label">Completed</div>
             </div>
           </div>
 
           <div class="form-card">
-            <div class="form-card-title">New Task</div>
-            <div class="form-grid one">
-              <div class="form-grid">
-                <div class="f-field"><label>Customer (optional)</label>
-                  <select id="task-customer" onchange="onTaskCustomerChange()">
-                    <option value="">No customer / internal</option>
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
+              <div class="form-grid" style="flex:1;min-width:280px;margin-bottom:0">
+                <div class="f-field"><label>Filter by Assignee</label>
+                  <select id="task-filter" onchange="renderTasksTable()">
+                    <option value="">Everyone</option>
                   </select>
                 </div>
-                <div class="f-field"><label>Linked Service (optional)</label>
-                  <select id="task-service">
-                    <option value="">No linked service</option>
+                <div class="f-field"><label>Filter by Status</label>
+                  <select id="task-status-filter" onchange="renderTasksTable()">
+                    <option value="pending">Pending</option>
+                    <option value="completed">Completed</option>
+                    <option value="">All</option>
                   </select>
                 </div>
               </div>
-              <div class="f-field"><label>Title</label><input id="task-title" placeholder="e.g. Deliver homepage mockup"></div>
-              <div class="f-field"><label>Description (optional)</label><textarea id="task-desc" rows="2" placeholder="Extra detail for whoever's assigned"></textarea></div>
-              <div class="form-grid">
-                <div class="f-field"><label>Due Date</label><input id="task-due" type="date"></div>
-                <div class="f-field"><label>Assigned To</label>
-                  <select id="task-assignee"><option value="">Unassigned</option></select>
-                </div>
-              </div>
-              <div class="form-grid">
-                <div class="f-field"><label>Invoice Amount on Completion (optional)</label><input id="task-price" type="number" min="0" step="0.01" placeholder="0.00"></div>
-                <div class="f-field"><label>Currency</label><input id="task-currency" value="$" maxlength="5"></div>
-              </div>
-              <button class="form-save" onclick="createTask()">Create Task</button>
-            </div>
-          </div>
-
-          <div class="form-card">
-            <div class="form-card-title">All Tasks</div>
-            <div class="form-grid" style="margin-bottom:10px">
-              <div class="f-field"><label>Filter by Assignee</label>
-                <select id="task-filter" onchange="renderTasksTable()">
-                  <option value="">Everyone</option>
-                </select>
-              </div>
-              <div class="f-field"><label>Filter by Status</label>
-                <select id="task-status-filter" onchange="renderTasksTable()">
-                  <option value="pending">Pending</option>
-                  <option value="completed">Completed</option>
-                  <option value="">All</option>
-                </select>
+              <div style="display:flex;gap:8px;flex-shrink:0">
+                <button class="btn-reject" style="margin-left:0" onclick="openTeamModal()"><i class="fa-solid fa-users"></i> Team</button>
+                <button class="form-save" onclick="openNewTaskModal()"><i class="fa-solid fa-plus"></i> New Task</button>
               </div>
             </div>
-            <div style="overflow-x: auto;">
+            <div style="overflow-x: auto;margin-top:6px">
               <table class="data-table" id="tasksTable">
                 <thead>
                   <tr>
-                    <th>Customer</th>
-                    <th>Service</th>
                     <th>Task</th>
                     <th>Due</th>
-                    <th>Assigned To</th>
-                    <th>Invoice</th>
+                    <th>Assigned</th>
                     <th>Status</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody id="tasksBody">
                   <tr>
-                    <td colspan="8">
+                    <td colspan="5">
                       <div class="empty-state">
                         <i class="fa-solid fa-list-check"></i>
                         Loading tasks…
@@ -1231,6 +1211,57 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
       <button class="modal-cancel" onclick="closeSvcEditModal()">Cancel</button>
       <button class="btn-reject" style="flex:1;padding:11px" onclick="deleteSvcEdit()">Remove Service</button>
       <button class="modal-confirm" onclick="saveSvcEdit()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ New Task Modal ══ -->
+<div class="modal-overlay" id="newTaskModal">
+  <div class="modal-box" style="width:560px;max-width:92vw;max-height:88vh;overflow-y:auto;text-align:left">
+    <h3>New Task</h3>
+    <div class="form-grid one" style="margin-top:14px">
+      <div class="form-grid">
+        <div class="f-field"><label>Customer (optional)</label>
+          <select id="task-customer" onchange="onTaskCustomerChange()">
+            <option value="">No customer / internal</option>
+          </select>
+        </div>
+        <div class="f-field"><label>Linked Service (optional)</label>
+          <select id="task-service">
+            <option value="">No linked service</option>
+          </select>
+        </div>
+      </div>
+      <div class="f-field"><label>Title</label><input id="task-title" placeholder="e.g. Deliver homepage mockup"></div>
+      <div class="f-field"><label>Description (optional)</label><textarea id="task-desc" rows="2" placeholder="Extra detail for whoever's assigned"></textarea></div>
+      <div class="form-grid">
+        <div class="f-field"><label>Due Date</label><input id="task-due" type="date"></div>
+        <div class="f-field"><label>Assigned To</label>
+          <select id="task-assignee"><option value="">Unassigned</option></select>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="f-field"><label>Invoice Amount on Completion (optional)</label><input id="task-price" type="number" min="0" step="0.01" placeholder="0.00"></div>
+        <div class="f-field"><label>Currency</label><input id="task-currency" value="$" maxlength="5"></div>
+      </div>
+    </div>
+    <div class="modal-actions" style="margin-top:18px">
+      <button class="modal-cancel" onclick="closeNewTaskModal()">Cancel</button>
+      <button class="modal-confirm" onclick="createTask()">Create Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Manage Team Modal ══ -->
+<div class="modal-overlay" id="teamModal">
+  <div class="modal-box" style="width:480px;max-width:92vw;max-height:88vh;overflow-y:auto;text-align:left">
+    <h3>Team Members</h3>
+    <p style="font-size:12px;color:var(--text-dim);margin:8px 0 14px">Names here populate the "Assigned To" list on tasks — no login required, just for internal follow-up.</p>
+    <div id="teamList"></div>
+    <button class="as-add" onclick="addTeamRow()"><i class="fa-solid fa-plus"></i> Add Team Member</button>
+    <div class="modal-actions" style="margin-top:18px">
+      <button class="modal-cancel" onclick="closeTeamModal()">Close</button>
+      <button class="modal-confirm" onclick="saveTeamMembers()">Save Team</button>
     </div>
   </div>
 </div>
@@ -2795,8 +2826,17 @@ async function saveTeamMembers() {
     teamMembers = collectTeamMembers();
     await db.collection('settings').doc('team').set({ members: teamMembers, updatedAt: new Date().toISOString() }, { merge: true });
     toast('✓ Team saved', 'success');
+    closeTeamModal();
     renderTasksTable();
   } catch(e) { toast('Save failed: ' + e.message, 'error'); }
+}
+
+function openTeamModal() {
+  document.getElementById('teamModal').classList.add('open');
+}
+
+function closeTeamModal() {
+  document.getElementById('teamModal').classList.remove('open');
 }
 
 /* ══════════════════════════════════════════════
@@ -2857,7 +2897,25 @@ async function loadTasks() {
     '<option value="__unassigned__">Unassigned</option>';
   filterSel.value = filterCurrent;
 
+  updateTaskStats();
   renderTasksTable();
+}
+
+function updateTaskStats() {
+  const now = new Date();
+  const pending = allTasks.filter(t => (t.status || 'pending') !== 'completed');
+  const overdue = pending.filter(t => {
+    if (!t.dueDate) return false;
+    const due = t.dueDate.toDate ? t.dueDate.toDate() : new Date(t.dueDate);
+    return due < now;
+  });
+  const unassigned = pending.filter(t => !t.assignedTo);
+  const completed = allTasks.filter(t => t.status === 'completed');
+
+  document.getElementById('taskStatPending').textContent = pending.length;
+  document.getElementById('taskStatOverdue').textContent = overdue.length;
+  document.getElementById('taskStatUnassigned').textContent = unassigned.length;
+  document.getElementById('taskStatCompleted').textContent = completed.length;
 }
 
 function onTaskCustomerChange() {
@@ -2874,6 +2932,22 @@ function onTaskCustomerChange() {
     return `<option value="${docId}">${escHtml(label)}</option>`;
   }).join('');
   svcSel.value = matches.includes(current) ? current : '';
+}
+
+function openNewTaskModal() {
+  document.getElementById('task-title').value = '';
+  document.getElementById('task-desc').value = '';
+  document.getElementById('task-due').value = '';
+  document.getElementById('task-price').value = '';
+  document.getElementById('task-currency').value = '$';
+  document.getElementById('task-customer').value = '';
+  onTaskCustomerChange();
+  document.getElementById('task-assignee').value = '';
+  document.getElementById('newTaskModal').classList.add('open');
+}
+
+function closeNewTaskModal() {
+  document.getElementById('newTaskModal').classList.remove('open');
 }
 
 async function createTask() {
@@ -2929,10 +3003,7 @@ async function createTask() {
     await AppUtils.logAudit(currentAdminIdentity(), 'create', ref.id, 'task', { title, customerId: custId || null });
 
     toast('✓ Task created', 'success');
-    document.getElementById('task-title').value = '';
-    document.getElementById('task-desc').value = '';
-    document.getElementById('task-due').value = '';
-    document.getElementById('task-price').value = '';
+    closeNewTaskModal();
     await loadTasks();
   } catch(e) { toast('Failed to create task: ' + e.message, 'error'); }
 }
@@ -2950,27 +3021,37 @@ function renderTasksTable() {
   });
 
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><i class="fa-solid fa-circle-check"></i>No tasks match this filter.</div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><i class="fa-solid fa-circle-check"></i>No tasks match this filter.</div></td></tr>';
     return;
   }
 
   tbody.innerHTML = rows.map(t => {
     const isDone = (t.status || 'pending') === 'completed';
-    const invoiceCell = t.price > 0
-      ? `${escHtml(t.currency || '$')}${Number(t.price).toFixed(2)}${t.invoiceId ? ' <span style="color:var(--text-dim);font-size:10px">(invoiced)</span>' : ''}`
-      : '—';
+    const now = new Date();
+    const dueDate = t.dueDate ? (t.dueDate.toDate ? t.dueDate.toDate() : new Date(t.dueDate)) : null;
+    const isOverdue = !isDone && dueDate && dueDate < now;
+
+    const forLine = t.customerName
+      ? `${escHtml(t.customerName)}${t.serviceName ? ' · ' + escHtml(t.serviceName) : ''}`
+      : 'Internal task';
+    const invoiceBadge = t.price > 0
+      ? `<span style="color:var(--text-dim)"> · ${escHtml(t.currency || '$')}${Number(t.price).toFixed(2)}${t.invoiceId ? ' invoiced' : ''}</span>`
+      : '';
+
     return `
     <tr>
-      <td>${escHtml(t.customerName || '—')}</td>
-      <td>${escHtml(t.serviceName || '—')}</td>
-      <td>${escHtml(t.title)}${t.description ? `<div style="font-size:11px;color:var(--text-dim)">${escHtml(t.description)}</div>` : ''}</td>
-      <td class="td-date">${t.dueDate ? formatDate(t.dueDate) : '—'}</td>
+      <td title="${escHtml(t.description || '')}">
+        <strong>${escHtml(t.title)}</strong>
+        <div style="font-size:11px;color:var(--text-dim)">${forLine}</div>
+      </td>
+      <td class="td-date" style="${isOverdue ? 'color:#dc3545;font-weight:700' : ''}">${dueDate ? formatDate(t.dueDate) : '—'}</td>
       <td>${t.assignedTo ? escHtml(t.assignedTo) : '<span style="color:var(--text-dim)">Unassigned</span>'}</td>
-      <td>${invoiceCell}</td>
-      <td><span class="status-badge ${isDone ? 'status-approved' : 'status-pending'}">${isDone ? 'Completed' : 'Pending'}</span></td>
+      <td>
+        <span class="status-badge ${isDone ? 'status-approved' : 'status-pending'}">${isDone ? 'Completed' : 'Pending'}</span>${invoiceBadge}
+      </td>
       <td style="white-space:nowrap">
-        ${isDone ? '' : `<button class="btn-approve" onclick="openTaskCompleteModal('${t.docId}')">Complete</button>`}
-        <button class="btn-reject" onclick="deleteTask('${t.docId}')">Delete</button>
+        ${isDone ? '' : `<button class="btn-approve" title="Mark complete" onclick="openTaskCompleteModal('${t.docId}')"><i class="fa-solid fa-check"></i></button>`}
+        <button class="btn-reject" title="Delete task" onclick="deleteTask('${t.docId}')"><i class="fa-solid fa-trash"></i></button>
       </td>
     </tr>`;
   }).join('');
