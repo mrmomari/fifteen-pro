@@ -100,8 +100,11 @@ customerServices/{id}   — services assigned to a customer
   userId, serviceId, serviceName, phase
   status: 'pending' | 'active' | 'completed'
   startDate, completionDate
-  milestones: [{title, date, completed, assignedTo, note}]
-    assignedTo — name from settings/team, for internal follow-up (admin.html Tasks tab)
+  milestones: [{taskId, title, date, completed, assignedTo, note}]
+    taskId     — set when the milestone was created from a linked task (admin.html Tasks tab); kept
+                 in sync when that task is completed. Milestones can still be added directly in the
+                 Service Mgmt edit modal without a taskId.
+    assignedTo — name from settings/team, for internal follow-up
     note       — admin-written "what was achieved" text, shown once completed (customer-visible in portal.html)
   notes
   customerPhone — for the "Send Progress Update via WhatsApp" button in admin.html
@@ -118,6 +121,20 @@ invoices/{id}           — billing invoices per customer
   userId, description, amount, currency
   status: 'paid' | 'pending' | 'overdue'
   dueDate, paidDate
+  source, taskId          — present when auto-created by completing a task (see tasks/{id} below)
+
+tasks/{id}              — internal work backbone (admin.html Tasks tab), independent of any service
+  customerId, customerName   — optional; null for internal/no-customer tasks
+  serviceId, serviceName     — optional link to a customerServices doc
+  title, description, dueDate, assignedTo
+  price, currency            — invoice amount to bill on completion (0 = no auto-invoice)
+  status: 'pending' | 'completed'
+  note                       — "what was achieved", set on completion
+  completedAt, invoiceId     — set when the task is marked complete
+  createdAt
+  — Marking a task complete: creates a pending invoice for customerId (if price > 0 and a customer is
+    linked) and, if serviceId is set, mirrors completion into that service's milestones[] entry
+    (matched by taskId) so portal.html's per-service progress bar/"Achieved" badge stays in sync.
 ```
 
 ## Auth
@@ -167,14 +184,20 @@ invoices/{id}           — billing invoices per customer
 
 **Admin invoices a customer:**
 1. Admin → Invoices → Create Invoice → pick customer, description, amount, currency, due date → saved to `invoices` collection (status `pending`)
+   — or automatically, by completing a priced task in the Tasks tab (see below)
 2. Customer sees it immediately in `portal.html` → Billing tab (amount, due date, status) and in the dashboard's Outstanding Invoices KPI
 3. Admin marks it `paid` / `overdue` / back to `pending` from the Invoices tab as money comes in or a due date passes (no automatic overdue detection — no backend/Cloud Functions in this stack)
 
+**Admin completes a task and bills the customer:**
+1. Admin → Tasks → New Task → title, optional customer + linked service, due date, assignee, and an optional invoice amount → saved to `tasks` collection (status `pending`); if a service is linked, a matching entry is also pushed into that service's `milestones[]` so the portal progress bar reflects it
+2. Admin → Tasks → Complete → optional "what was achieved" note → task marked `completed`; if it had a price and a linked customer, a `pending` invoice is auto-created in `invoices` for that amount; if linked to a service, that service's matching milestone is marked completed with the same note (customer sees the "Achieved" badge in `portal.html`)
+3. Every create/complete/delete on a task writes an entry to `auditLogs` (Audit tab)
+
 **Admin manages content:**
 - Sidebar → Admin → `admin.html` → signs in (email/password) → tabs: Applications / Orders / Tickets / Company / Pricing / Services / Access / Expertise / Service Mgmt / Tasks / Invoices / Audit / Notifications
-- Service Mgmt: assign services to customers, edit status/notes, and manage the milestone checklist per service (progress bar + `x/y complete` shown both in the Active Services table and the edit modal) — this is what the customer sees in their portal. Each milestone can be assigned to a team member and, once checked complete, given a free-text "what was achieved" note — both are editable from the same edit modal, which also has a "Send Progress Update via WhatsApp" button.
-- Tasks: internal follow-up view — a "Team Members" roster (`settings/team`, name-only, no login) feeds the "Assigned To" dropdown on milestones; the Pending Tasks table flattens every incomplete milestone across all customers/services, filterable by assignee, with an Open button that jumps to that service's edit modal in Service Mgmt
-- Invoices: bill a customer for completed/in-progress work; customer sees it in their portal Billing tab in real time
+- Service Mgmt: assign services to customers, edit status/notes, and manage the milestone checklist per service (progress bar + `x/y complete` shown both in the Active Services table and the edit modal) — this is what the customer sees in their portal. Each milestone can be assigned to a team member and, once checked complete, given a free-text "what was achieved" note — both are editable from the same edit modal, which also has a "Send Progress Update via WhatsApp" button. Milestones can still be added here directly (without a task), for backwards-compatible fine-grained editing.
+- Tasks: the backbone for all internal work — independent of any customer/service. A "Team Members" roster (`settings/team`, name-only, no login) feeds the "Assigned To" dropdown. Admin creates tasks directly (with an optional linked customer + service, due date, assignee, and invoice amount), completes them inline with a "what was achieved" note, and every priced task auto-invoices the linked customer on completion — no more jumping to Service Mgmt just to check something off. Filterable by assignee and status (pending/completed/all).
+- Invoices: bill a customer for completed/in-progress work (manually, or automatically from a completed task); customer sees it in their portal Billing tab in real time
 
 ## Firebase Console Requirements
 - **Authentication → Email/Password** → Enable
