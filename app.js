@@ -1,34 +1,6 @@
-// Shared utilities for admin.html and portal.html
+// Shared utilities for admin.html
 
 const AppUtils = {
-  // Get current timestamp (consistent across app)
-  getCurrentTimestamp() {
-    return new Date().toISOString();
-  },
-
-  // Format timestamp for display
-  formatDate(timestamp) {
-    if (!timestamp) return '—';
-    const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  },
-
-  formatDateTime(timestamp) {
-    if (!timestamp) return '—';
-    const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  },
-
   // Escape HTML to prevent XSS
   escapeHtml(str) {
     if (!str) return '';
@@ -53,49 +25,6 @@ const AppUtils = {
     } catch (error) {
       console.error('Audit log error:', error);
     }
-  },
-
-  // Send notification (email/SMS stub for Cloud Functions)
-  async sendNotification(type, recipient, subject, data) {
-    try {
-      const db = firebase.firestore();
-      await db.collection('notifications').add({
-        type: type, // 'email', 'sms', 'in-app'
-        recipient: recipient,
-        subject: subject,
-        data: data,
-        status: 'pending',
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        sentAt: null,
-        error: null
-      });
-    } catch (error) {
-      console.error('Notification error:', error);
-    }
-  },
-
-  // Show toast notification
-  showToast(message, type = 'info') {
-    const toast = document.createElement('div');
-    toast.className = `toast toast-${type}`;
-    toast.textContent = message;
-    toast.style.cssText = `
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      padding: 12px 16px;
-      border-radius: 6px;
-      color: white;
-      font-size: 14px;
-      z-index: 10000;
-      animation: slideIn 0.3s ease-out;
-      background-color: ${type === 'success' ? '#26915E' : type === 'error' ? '#D32F2F' : '#1976D2'};
-    `;
-    document.body.appendChild(toast);
-    setTimeout(() => {
-      toast.style.animation = 'slideOut 0.3s ease-out forwards';
-      setTimeout(() => toast.remove(), 300);
-    }, 3000);
   },
 
   // Modal confirmation
@@ -156,91 +85,5 @@ const AppUtils = {
 
     backdrop.appendChild(modal);
     document.body.appendChild(backdrop);
-  },
-
-  // Fetch Firestore config
-  async getConfig(path) {
-    try {
-      const db = firebase.firestore();
-      const doc = await db.doc(path).get();
-      return doc.exists ? doc.data() : null;
-    } catch (error) {
-      console.error('Config fetch error:', error);
-      return null;
-    }
-  },
-
-  // Set Firestore config
-  async setConfig(path, data) {
-    try {
-      const db = firebase.firestore();
-      await db.doc(path).set(data, { merge: true });
-      return true;
-    } catch (error) {
-      console.error('Config set error:', error);
-      return false;
-    }
-  },
-
-  // Fetch collection with optional filters
-  async fetchCollection(collectionPath, filters = []) {
-    try {
-      const db = firebase.firestore();
-      let query = db.collection(collectionPath);
-
-      filters.forEach(({ field, operator, value }) => {
-        query = query.where(field, operator, value);
-      });
-
-      const snapshot = await query.get();
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    } catch (error) {
-      console.error('Collection fetch error:', error);
-      return [];
-    }
-  },
-
-  // Delete document with audit log
-  async deleteWithAudit(collectionPath, docId, userId, resourceType) {
-    try {
-      const db = firebase.firestore();
-      await db.doc(`${collectionPath}/${docId}`).delete();
-      await this.logAudit(userId, 'delete', docId, resourceType, {});
-      return true;
-    } catch (error) {
-      console.error('Delete error:', error);
-      return false;
-    }
   }
 };
-
-// Inject modal styles globally
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    const style = document.createElement('style');
-    style.textContent = `
-      @keyframes slideIn {
-        from { transform: translateX(400px); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-      }
-      @keyframes slideOut {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(400px); opacity: 0; }
-      }
-    `;
-    document.head.appendChild(style);
-  });
-} else {
-  const style = document.createElement('style');
-  style.textContent = `
-    @keyframes slideIn {
-      from { transform: translateX(400px); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
-    }
-    @keyframes slideOut {
-      from { transform: translateX(0); opacity: 1; }
-      to { transform: translateX(400px); opacity: 0; }
-    }
-  `;
-  document.head.appendChild(style);
-}

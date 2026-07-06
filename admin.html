@@ -1119,8 +1119,8 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
             <div class="form-card-title">Notification Recipients</div>
             <div id="notif-recipients">
               <div class="drow">
-                <input type="email" id="notif-email-1" placeholder="admin@email.com" style="flex:1">
-                <button class="ddel" onclick="removeNotifEmail(1)"><i class="fa-solid fa-trash"></i></button>
+                <input type="email" placeholder="admin@email.com" style="flex:1">
+                <button class="ddel" onclick="this.closest('.drow').remove()"><i class="fa-solid fa-trash"></i></button>
               </div>
             </div>
             <button class="as-add" onclick="addNotifEmail()"><i class="fa-solid fa-plus"></i> Add Email</button>
@@ -2266,8 +2266,6 @@ async function loadServicesLocal() {
   } catch(e) { services = [...DEFAULTS]; }
 }
 
-function renderSolGrid() { /* no-op on admin page */ }
-
 function renderSvcTable() {
   const body = document.getElementById('svcBody');
   if (!body) return;
@@ -2600,6 +2598,7 @@ function editCustomerService(docId) {
   if (!d) { toast('Service not found', 'error'); return; }
   editingSvcId = docId;
   editingMilestones = (Array.isArray(d.milestones) ? d.milestones : []).map(m => ({
+    taskId: m.taskId || null, // keep the task link so completing the task still syncs this milestone
     title: m.title || '',
     date: toDateInputValue(m.date),
     completed: !!m.completed,
@@ -2679,7 +2678,7 @@ function renderEditMilestones() {
 }
 
 function addEditMilestone() {
-  editingMilestones.push({ title: '', date: '', completed: false, assignedTo: '', note: '' });
+  editingMilestones.push({ taskId: null, title: '', date: '', completed: false, assignedTo: '', note: '' });
   renderEditMilestones();
   const wrap = document.getElementById('se-milestones');
   wrap.scrollTop = wrap.scrollHeight;
@@ -2707,6 +2706,7 @@ async function saveSvcEdit() {
       milestones: editingMilestones
         .filter(hasMilestoneContent)
         .map(m => ({
+          taskId: m.taskId || null,
           title: m.title.trim() || 'Milestone',
           date: m.date ? new Date(m.date) : null,
           completed: !!m.completed,
@@ -3369,30 +3369,19 @@ async function loadNotifications() {
 
       const recipientsDiv = document.getElementById('notif-recipients');
       recipientsDiv.innerHTML = '';
-      (d.emailRecipients || []).forEach((email, idx) => {
-        addNotifEmail(email, idx + 1);
-      });
+      (d.emailRecipients || []).forEach(email => addNotifEmail(email));
     }
   } catch(e) { console.error(e); }
 }
 
-function addNotifEmail(email = '', idx = null) {
-  if (idx === null) {
-    const existing = document.querySelectorAll('#notif-recipients input').length;
-    idx = existing + 1;
-  }
+function addNotifEmail(email = '') {
   const div = document.createElement('div');
   div.className = 'drow';
   div.innerHTML = `
     <input type="email" placeholder="recipient@email.com" value="${escHtml(email || '')}" style="flex:1">
-    <button class="ddel" onclick="removeNotifEmail(${idx})"><i class="fa-solid fa-trash"></i></button>
+    <button class="ddel" onclick="this.closest('.drow').remove()"><i class="fa-solid fa-trash"></i></button>
   `;
   document.getElementById('notif-recipients').appendChild(div);
-}
-
-function removeNotifEmail(idx) {
-  const rows = document.querySelectorAll('#notif-recipients .drow');
-  if (rows[idx - 1]) rows[idx - 1].remove();
 }
 
 async function saveNotifications() {

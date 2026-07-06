@@ -516,10 +516,6 @@ const DEFAULTS = [
 
 /* ─── Firebase helpers ─── */
 function getFbConfig() {
-  try {
-    const stored = JSON.parse(localStorage.getItem('fifteen_fb_config') || 'null');
-    if (stored && stored.apiKey && stored.apiKey !== 'YOUR_API_KEY') return stored;
-  } catch(e) {}
   if (typeof FIREBASE_CONFIG !== 'undefined' && FIREBASE_CONFIG.apiKey !== 'YOUR_API_KEY') return FIREBASE_CONFIG;
   return null;
 }
@@ -608,7 +604,7 @@ function renderCard(s) {
     <div class="fan-card" id="card${s.id}" onclick="toggleCart(${s.id})">
       <div class="card-inner">
         <div class="cart-badge">✓</div>
-        <div class="card-num">0${s.id < 10 ? '' : ''}${s.id}</div>
+        <div class="card-num">${String(s.id).padStart(2, '0')}</div>
         <div class="card-name">${s.name}</div>
         <div class="card-desc">${s.description}</div>
         <div class="card-price">${fmt(s.price)}<span class="card-price-type">${typeLabel}</span></div>
@@ -698,7 +694,7 @@ function openQuote() {
   list.innerHTML = items.map(s => `
     <div class="quote-service-row">
       <div class="qs-left">
-        <span class="qs-num">0${s.id < 10 ? '' : ''}${s.id}</span>
+        <span class="qs-num">${String(s.id).padStart(2, '0')}</span>
         <span class="qs-name">${s.name}<span class="qs-type">${s.type==='monthly'?'· monthly':'· one-time'}</span></span>
       </div>
       <span class="qs-price">${fmt(s.price)}${s.type==='monthly'?'/mo':''}</span>
