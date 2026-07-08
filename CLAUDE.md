@@ -18,7 +18,9 @@ B2B digital solutions website for **15fifteen15 / Fifteen**. One partner per ind
 | `admin.html` | Admin dashboard at `/admin.html` — linked from sidebar (muted, below divider) |
 | `portal.html` | Customer partner portal — Firebase Auth protected, linked from sidebar |
 | `shop.html` | Interactive service configurator / quote builder |
+| `questionnaire.html` | Public, no-login discovery questionnaire form — opened via a unique `?id=` link admin.html generates per customer (admin.html Questionnaires tab) |
 | `firebase-config.js` | Firebase project credentials (project: `fifteen-pro`) |
+| `app.js` | Shared admin.html utilities (`AppUtils`: HTML escaping, audit logging, confirm-modal helper) |
 | `prices.json` | Service catalog fallback (loaded if Firestore unavailable) |
 | `firestore.rules` | Firestore security rules (paste into Firebase console) |
 | `storage.rules` | Firebase Storage security rules (paste into Firebase console) |
@@ -135,6 +137,24 @@ tasks/{id}              — internal work backbone (admin.html Tasks tab), indep
   — Marking a task complete: creates a pending invoice for customerId (if price > 0 and a customer is
     linked) and, if serviceId is set, mirrors completion into that service's milestones[] entry
     (matched by taskId) so portal.html's per-service progress bar/"Achieved" badge stays in sync.
+
+questionnaires/{id}     — discovery questionnaires (admin.html Questionnaires tab + questionnaire.html)
+  title, intro            — form heading/subtitle shown on questionnaire.html
+  customerId, customerName — optional link to a customers/{uid} doc
+  businessName             — free-text label (for prospects with no customer account yet)
+  sections: [{ title, questions: [{ id, type, label, help, options, multi, columns, presetRows }] }]
+    type: 'short' | 'long' | 'choice' | 'table'
+    options, multi — choice-type only (multi = checkboxes vs radio)
+    columns, presetRows — table-type only (presetRows pre-fills the first cell of each starting row)
+  status: 'draft' | 'sent' | 'completed'
+  answers: { [questionId]: string | string[] | string[][] }   ← filled in by the respondent
+  createdAt, sentAt, completedAt
+  — Each questionnaire's content can be entirely different per customer — admin.html's builder can
+    start from the "Discovery Template" (DISCOVERY_TEMPLATE in admin.html) or from scratch, and every
+    section/question can be freely added, edited, or removed before sending.
+  — The link (questionnaire.html?id=...) requires no customer login: firestore.rules allows a public
+    `get` by direct doc id (not `list`) and a one-time `update` restricted to the answers/status/
+    completedAt fields, blocked once status is already 'completed'.
 ```
 
 ## Auth
@@ -193,8 +213,16 @@ tasks/{id}              — internal work backbone (admin.html Tasks tab), indep
 2. Admin → Tasks → Complete → optional "what was achieved" note → task marked `completed`; if it had a price and a linked customer, a `pending` invoice is auto-created in `invoices` for that amount; if linked to a service, that service's matching milestone is marked completed with the same note (customer sees the "Achieved" badge in `portal.html`)
 3. Every create/complete/delete on a task writes an entry to `auditLogs` (Audit tab)
 
+**Admin sends a customer a discovery questionnaire:**
+1. Admin → Questionnaires → New Questionnaire → optionally pick an existing customer (or just type a business name for a prospect), title, intro text
+2. **Load Discovery Template** pre-fills a full retail/farm-store-style questionnaire (16 sections) that admin then freely edits, trims, or extends — every questionnaire's questions can differ per customer
+3. Save Questionnaire → doc created in `questionnaires` with `status: 'draft'`
+4. Admin → **Copy Link** (or **View → Send via WhatsApp**) → generates `questionnaire.html?id=...` and flips status to `sent`; the customer opens it with no login required
+5. Customer fills it in (autosaved to their browser's localStorage as they go, in case they close the tab) and submits → `status: 'completed'`, answers saved back to the same doc — the link is then locked and can't be resubmitted
+6. Admin → Questionnaires → **View** shows every answered question grouped by section; **Send via WhatsApp** on a completed questionnaire sends the full Q&A report instead of just the link
+
 **Admin manages content:**
-- Sidebar → Admin → `admin.html` → signs in (email/password) → tabs: Applications / Orders / Tickets / Company / Pricing / Services / Access / Expertise / Service Mgmt / Tasks / Invoices / Audit / Notifications
+- Sidebar → Admin → `admin.html` → signs in (email/password) → tabs: Applications / Orders / Tickets / Access / Service Mgmt / Tasks / Invoices / Questionnaires / Company / Pricing / Services / Expertise / Audit / Notifications
 - Service Mgmt: assign services to customers, edit status/notes, and manage the milestone checklist per service (progress bar + `x/y complete` shown both in the Active Services table and the edit modal) — this is what the customer sees in their portal. Each milestone can be assigned to a team member and, once checked complete, given a free-text "what was achieved" note — both are editable from the same edit modal, which also has a "Send Progress Update via WhatsApp" button. Milestones can still be added here directly (without a task), for backwards-compatible fine-grained editing.
 - Tasks: the backbone for all internal work — independent of any customer/service. A "Team Members" roster (`settings/team`, name-only, no login) feeds the "Assigned To" dropdown. Admin creates tasks directly (with an optional linked customer + service, due date, assignee, and invoice amount), completes them inline with a "what was achieved" note, and every priced task auto-invoices the linked customer on completion — no more jumping to Service Mgmt just to check something off. Filterable by assignee and status (pending/completed/all).
 - Invoices: bill a customer for completed/in-progress work (manually, or automatically from a completed task); customer sees it in their portal Billing tab in real time

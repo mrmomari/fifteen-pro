@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Questionnaire — Fifteen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+:root{
+  --green:#26915E;
+  --green-dim:#1d7a4c;
+  --orange:#E36C44;
+  --cream:#E0E8CF;
+  --cream-alt:#D5DFBE;
+  --text:#1C2416;
+  --text-muted:#5A6B4E;
+  --text-dim:#7A8B6A;
+  --radius:12px;
+  --radius-lg:16px;
+}
+body{
+  background:var(--cream);
+  color:var(--text);
+  font-family:'Inter',system-ui,sans-serif;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+
+/* ── Shell states ── */
+.qf-shell{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px}
+.qf-card{background:#fff;border-radius:var(--radius-lg);box-shadow:0 8px 40px rgba(0,0,0,0.12);padding:44px 38px;width:100%;max-width:420px;text-align:center}
+.qf-card i.big{font-size:34px;color:var(--green);margin-bottom:16px;display:block}
+.qf-card.err i.big{color:var(--orange)}
+.qf-card h2{font-size:20px;font-weight:800;letter-spacing:-.02em;margin-bottom:10px}
+.qf-card p{font-size:13.5px;color:var(--text-muted)}
+.spinner{width:30px;height:30px;border:3px solid rgba(38,145,94,.2);border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Page header ── */
+.qf-page{max-width:760px;margin:0 auto;padding:40px 20px 80px}
+.qf-header{text-align:center;margin-bottom:32px}
+.qf-logo{display:inline-flex;align-items:center;gap:8px;text-decoration:none;margin-bottom:22px}
+.qf-logo img{max-height:56px;width:auto;object-fit:contain;display:none}
+.qf-logo-text{font-size:24px;font-weight:900;letter-spacing:-.04em;color:var(--text)}
+.qf-logo-text span{color:var(--green)}
+.qf-title{font-size:26px;font-weight:900;letter-spacing:-.03em;line-height:1.25;margin-bottom:8px}
+.qf-sub{font-size:14px;color:var(--text-muted);max-width:520px;margin:0 auto}
+.qf-meta-line{margin-top:14px;font-size:12px;color:var(--text-dim)}
+
+/* ── Sections ── */
+.qf-section{background:#fff;border-radius:var(--radius);box-shadow:0 2px 14px rgba(0,0,0,.05);margin-bottom:20px;overflow:hidden}
+.qf-section-head{padding:18px 26px;border-bottom:1px solid rgba(0,0,0,.06);display:flex;align-items:center;gap:10px}
+.qf-section-num{font-size:11px;font-weight:800;letter-spacing:.08em;color:#fff;background:var(--green);border-radius:99px;width:24px;height:24px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.qf-section-title{font-size:15px;font-weight:800;letter-spacing:-.01em}
+.qf-section-body{padding:22px 26px 6px}
+
+.qf-q{margin-bottom:22px}
+.qf-q-label{font-size:13.5px;font-weight:700;color:var(--text);margin-bottom:9px;line-height:1.45}
+.qf-q-help{font-size:11.5px;color:var(--text-dim);margin-top:-5px;margin-bottom:9px}
+.qf-input{width:100%;padding:11px 14px;border:1.5px solid rgba(0,0,0,.12);border-radius:8px;font-size:14px;font-family:inherit;color:var(--text);outline:none;transition:border-color .15s,box-shadow .15s;background:#fff}
+.qf-input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(38,145,94,.1)}
+textarea.qf-input{resize:vertical;min-height:76px}
+
+.qf-opts{display:flex;flex-direction:column;gap:8px}
+.qf-opt{display:flex;align-items:flex-start;gap:12px;background:var(--cream);border:1.5px solid rgba(0,0,0,.08);border-radius:9px;padding:11px 15px;cursor:pointer;transition:border-color .15s,background .15s;user-select:none}
+.qf-opt:hover{border-color:rgba(38,145,94,.35)}
+.qf-opt.sel{border-color:var(--green);background:rgba(38,145,94,.08)}
+.qf-opt input{display:none}
+.qf-opt-mark{width:18px;height:18px;border-radius:50%;border:2px solid rgba(0,0,0,.18);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all .15s;background:#fff}
+.qf-opt.sel .qf-opt-mark{background:var(--green);border-color:var(--green)}
+.qf-opt-mark::after{content:'';width:6px;height:6px;border-radius:50%;background:#fff;display:none}
+.qf-opt.sel .qf-opt-mark::after{display:block}
+.qf-opts.multi .qf-opt-mark{border-radius:5px}
+.qf-opts.multi .qf-opt-mark::after{content:'\2713';width:auto;height:auto;border-radius:0;background:transparent;color:#fff;font-size:10px;font-weight:900;line-height:1}
+.qf-opt-text{font-size:13.5px;color:var(--text);line-height:1.5}
+
+.qf-table-wrap{overflow-x:auto;border:1px solid rgba(0,0,0,.08);border-radius:8px}
+.qf-table{width:100%;border-collapse:collapse;min-width:480px}
+.qf-table th{background:var(--cream-alt);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted);text-align:left;padding:9px 10px;white-space:nowrap}
+.qf-table td{padding:6px;border-top:1px solid rgba(0,0,0,.06)}
+.qf-table input{width:100%;border:none;background:transparent;padding:7px 6px;font-size:13px;font-family:inherit;color:var(--text);outline:none;border-radius:5px}
+.qf-table input:focus{background:rgba(38,145,94,.08)}
+.qf-table-add{margin-top:10px;background:none;border:1.5px dashed rgba(0,0,0,.18);color:var(--text-muted);font-size:12px;font-weight:700;padding:7px 14px;border-radius:7px;cursor:pointer;font-family:inherit}
+.qf-table-add:hover{border-color:var(--green);color:var(--green)}
+
+.qf-footer-note{font-size:12px;color:var(--text-dim);text-align:center;margin:24px 0 18px;max-width:520px;margin-left:auto;margin-right:auto}
+.qf-submit{width:100%;padding:15px;border:none;border-radius:9px;background:var(--green);color:#fff;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;transition:background .15s}
+.qf-submit:hover{background:var(--green-dim)}
+.qf-submit:disabled{opacity:.6;cursor:not-allowed}
+.qf-save-hint{text-align:center;font-size:11.5px;color:var(--text-dim);margin-top:10px}
+
+@media(max-width:640px){
+  .qf-section-body{padding:18px 16px 4px}
+  .qf-section-head{padding:15px 16px}
+  .qf-title{font-size:21px}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ LOADING ═══ -->
+<div class="qf-shell" id="loadingScreen">
+  <div class="qf-card">
+    <div class="spinner"></div>
+    <p>Loading questionnaire…</p>
+  </div>
+</div>
+
+<!-- ═══ ERROR ═══ -->
+<div class="qf-shell" id="errorScreen" style="display:none">
+  <div class="qf-card err">
+    <i class="fa-solid fa-triangle-exclamation big"></i>
+    <h2>Link Not Found</h2>
+    <p>This questionnaire link is invalid or has been removed. Please check the link or contact whoever sent it to you.</p>
+  </div>
+</div>
+
+<!-- ═══ ALREADY SUBMITTED / DONE ═══ -->
+<div class="qf-shell" id="doneScreen" style="display:none">
+  <div class="qf-card">
+    <i class="fa-solid fa-circle-check big"></i>
+    <h2 id="doneTitle">Thank You!</h2>
+    <p id="doneMsg">Your answers have been submitted. We'll be in touch shortly.</p>
+  </div>
+</div>
+
+<!-- ═══ FORM ═══ -->
+<div class="qf-page" id="formScreen" style="display:none">
+  <div class="qf-header">
+    <a href="https://15fifteen15.com" class="qf-logo" id="qfLogo">
+      <img id="qfLogoImg" alt="Fifteen">
+      <span class="qf-logo-text" id="qfLogoText">FIFTEEN<span>.</span></span>
+    </a>
+    <h1 class="qf-title" id="qfTitle">Discovery Questionnaire</h1>
+    <p class="qf-sub" id="qfSub">Help us understand your business so we can build the right website and marketing plan for you. There are no wrong answers — leave anything blank you're not sure about.</p>
+    <div class="qf-meta-line" id="qfMeta"></div>
+  </div>
+
+  <div id="qSections"></div>
+
+  <p class="qf-footer-note">Once you submit, this form is locked and can't be edited — if you'd like to review your answers first, take a screenshot or use your browser's print/save-as-PDF option before submitting.</p>
+  <button class="qf-submit" id="qfSubmitBtn">Submit Questionnaire</button>
+  <p class="qf-save-hint" id="qfSaveHint">Your answers are saved automatically on this device as you type.</p>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+(function(){
+
+function escHtml(str) {
+  return String(str == null ? '' : str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+function show(id) {
+  ['loadingScreen','errorScreen','doneScreen','formScreen'].forEach(s => {
+    document.getElementById(s).style.display = (s === id) ? (s === 'formScreen' ? 'block' : 'flex') : 'none';
+  });
+}
+
+const params = new URLSearchParams(location.search);
+const qid = params.get('id');
+
+if (!qid || typeof FIREBASE_CONFIG === 'undefined' || !FIREBASE_CONFIG.apiKey) {
+  show('errorScreen');
+  return;
+}
+
+firebase.initializeApp(FIREBASE_CONFIG);
+const db = firebase.firestore();
+
+const draftKey = 'fifteen_qf_draft_' + qid;
+let questionnaire = null;
+let answers = {};
+
+function loadDraft() {
+  try {
+    const raw = localStorage.getItem(draftKey);
+    return raw ? JSON.parse(raw) : {};
+  } catch(e) { return {}; }
+}
+
+function saveDraft() {
+  try { localStorage.setItem(draftKey, JSON.stringify(answers)); } catch(e) {}
+}
+
+db.collection('settings').doc('company').get().then(doc => {
+  if (!doc.exists) return;
+  const logoUrl = (doc.data().logo || '').trim();
+  if (!logoUrl) return;
+  const img = document.getElementById('qfLogoImg');
+  img.onload = () => { img.style.display = 'block'; document.getElementById('qfLogoText').style.display = 'none'; };
+  img.onerror = () => {};
+  img.src = logoUrl;
+}).catch(() => {});
+
+db.collection('questionnaires').doc(qid).get().then(doc => {
+  if (!doc.exists) { show('errorScreen'); return; }
+  questionnaire = doc.data();
+
+  if (questionnaire.status === 'completed') {
+    document.getElementById('doneTitle').textContent = 'Already Submitted';
+    document.getElementById('doneMsg').textContent = 'This questionnaire has already been completed. Thank you — we have everything we need.';
+    localStorage.removeItem(draftKey);
+    show('doneScreen');
+    return;
+  }
+
+  answers = loadDraft();
+
+  document.getElementById('qfTitle').textContent = questionnaire.title || 'Discovery Questionnaire';
+  if (questionnaire.intro) document.getElementById('qfSub').textContent = questionnaire.intro;
+  document.getElementById('qfMeta').textContent = questionnaire.businessName
+    ? `Prepared for: ${questionnaire.businessName}`
+    : (questionnaire.customerName ? `Prepared for: ${questionnaire.customerName}` : '');
+
+  renderSections();
+  show('formScreen');
+}).catch(err => {
+  console.error(err);
+  show('errorScreen');
+});
+
+function renderSections() {
+  const wrap = document.getElementById('qSections');
+  const sections = Array.isArray(questionnaire.sections) ? questionnaire.sections : [];
+  wrap.innerHTML = sections.map((sec, si) => `
+    <div class="qf-section">
+      <div class="qf-section-head">
+        <span class="qf-section-num">${si + 1}</span>
+        <span class="qf-section-title">${escHtml(sec.title || '')}</span>
+      </div>
+      <div class="qf-section-body">
+        ${(sec.questions || []).map(q => renderQuestion(q)).join('')}
+      </div>
+    </div>
+  `).join('');
+
+  sections.forEach(sec => (sec.questions || []).forEach(q => bindQuestion(q)));
+
+  document.getElementById('qfSubmitBtn').addEventListener('click', submitForm);
+}
+
+function renderQuestion(q) {
+  const label = `<div class="qf-q-label">${escHtml(q.label || '')}</div>`;
+  const help = q.help ? `<div class="qf-q-help">${escHtml(q.help)}</div>` : '';
+
+  if (q.type === 'long') {
+    const val = answers[q.id] || '';
+    return `<div class="qf-q">${label}${help}<textarea class="qf-input" id="q-${q.id}" rows="3">${escHtml(val)}</textarea></div>`;
+  }
+  if (q.type === 'choice') {
+    const opts = Array.isArray(q.options) ? q.options : [];
+    const multi = !!q.multi;
+    const selected = answers[q.id] || (multi ? [] : '');
+    const selArr = multi ? (Array.isArray(selected) ? selected : []) : [selected];
+    const optsHtml = opts.map((o, oi) => `
+      <label class="qf-opt${selArr.includes(o) ? ' sel' : ''}" data-opt="${escHtml(o)}">
+        <input type="${multi ? 'checkbox' : 'radio'}" name="q-${q.id}" value="${escHtml(o)}" ${selArr.includes(o) ? 'checked' : ''}>
+        <span class="qf-opt-mark"></span>
+        <span class="qf-opt-text">${escHtml(o)}</span>
+      </label>
+    `).join('');
+    return `<div class="qf-q">${label}${help}<div class="qf-opts${multi ? ' multi' : ''}" id="q-${q.id}">${optsHtml}</div></div>`;
+  }
+  if (q.type === 'table') {
+    const cols = Array.isArray(q.columns) ? q.columns : [];
+    let rows = Array.isArray(answers[q.id]) ? answers[q.id] : null;
+    if (!rows) {
+      const preset = Array.isArray(q.presetRows) ? q.presetRows : [];
+      rows = preset.length ? preset.map(label0 => [label0, ...Array(cols.length - 1).fill('')]) : [Array(cols.length).fill('')];
+    }
+    return `<div class="qf-q">${label}${help}
+      <div class="qf-table-wrap"><table class="qf-table" id="q-${q.id}">
+        <thead><tr>${cols.map(c => `<th>${escHtml(c)}</th>`).join('')}</tr></thead>
+        <tbody>${rows.map(row => tableRowHtml(cols, row)).join('')}</tbody>
+      </table></div>
+      <button type="button" class="qf-table-add" data-for="${q.id}" data-cols="${cols.length}"><i class="fa-solid fa-plus"></i> Add row</button>
+    </div>`;
+  }
+  // default: short text
+  const val = answers[q.id] || '';
+  return `<div class="qf-q">${label}${help}<input class="qf-input" id="q-${q.id}" type="text" value="${escHtml(val)}"></div>`;
+}
+
+function tableRowHtml(cols, row) {
+  return `<tr>${cols.map((_, ci) => `<td><input type="text" value="${escHtml(row[ci] || '')}"></td>`).join('')}</tr>`;
+}
+
+function bindQuestion(q) {
+  const el = document.getElementById('q-' + q.id);
+  if (!el) return;
+
+  if (q.type === 'long' || q.type === undefined || q.type === 'short') {
+    el.addEventListener('input', () => { answers[q.id] = el.value; saveDraft(); });
+    return;
+  }
+  if (q.type === 'choice') {
+    el.querySelectorAll('input').forEach(input => {
+      input.addEventListener('change', () => {
+        if (q.multi) {
+          const arr = new Set(Array.isArray(answers[q.id]) ? answers[q.id] : []);
+          if (input.checked) arr.add(input.value); else arr.delete(input.value);
+          answers[q.id] = Array.from(arr);
+        } else {
+          answers[q.id] = input.value;
+        }
+        el.querySelectorAll('.qf-opt').forEach(o => {
+          const v = o.getAttribute('data-opt');
+          const isSel = q.multi ? (answers[q.id] || []).includes(v) : answers[q.id] === v;
+          o.classList.toggle('sel', isSel);
+        });
+        saveDraft();
+      });
+    });
+    return;
+  }
+  if (q.type === 'table') {
+    const cols = Array.isArray(q.columns) ? q.columns : [];
+    const syncFromDom = () => {
+      const rows = Array.from(el.querySelectorAll('tbody tr')).map(tr =>
+        Array.from(tr.querySelectorAll('input')).map(i => i.value)
+      );
+      answers[q.id] = rows;
+      saveDraft();
+    };
+    el.addEventListener('input', syncFromDom);
+    const addBtn = document.querySelector(`.qf-table-add[data-for="${q.id}"]`);
+    if (addBtn) addBtn.addEventListener('click', () => {
+      const tbody = el.querySelector('tbody');
+      tbody.insertAdjacentHTML('beforeend', tableRowHtml(cols, []));
+      syncFromDom();
+    });
+  }
+}
+
+async function submitForm() {
+  const btn = document.getElementById('qfSubmitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Submitting…';
+  try {
+    await db.collection('questionnaires').doc(qid).update({
+      answers: answers,
+      status: 'completed',
+      completedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    localStorage.removeItem(draftKey);
+    document.getElementById('doneTitle').textContent = 'Thank You!';
+    document.getElementById('doneMsg').textContent = 'Your answers have been submitted successfully. We\'ll be in touch shortly.';
+    show('doneScreen');
+  } catch(e) {
+    console.error(e);
+    btn.disabled = false;
+    btn.textContent = 'Submit Questionnaire';
+    alert('Something went wrong submitting your answers. Please try again: ' + e.message);
+  }
+}
+
+})();
+</script>
+</body>
+</html>

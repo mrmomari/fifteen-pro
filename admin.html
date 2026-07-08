@@ -457,6 +457,9 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
           <button class="sb-tab" onclick="switchTab('invoices')">
             <i class="fa-solid fa-receipt"></i> Invoices
           </button>
+          <button class="sb-tab" onclick="switchTab('questionnaires')">
+            <i class="fa-solid fa-list-ol"></i> Questionnaires
+          </button>
         </nav>
 
         <div class="sb-divider"></div>
@@ -1040,6 +1043,41 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
           </div>
         </div>
 
+        <!-- ═══ QUESTIONNAIRES PANEL ═══ -->
+        <div class="dash-panel" id="panel-questionnaires">
+          <div class="panel-heading">Questionnaires</div>
+          <div class="panel-sub">Build a discovery questionnaire for a customer, send them the link, and review their answers when they're done — no login required on their end.</div>
+
+          <div class="form-card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+            <div style="font-size:12.5px;color:var(--text-dim);max-width:520px">Each questionnaire is its own document, so questions can be different for every customer — build one from scratch or start from a template and edit freely.</div>
+            <button class="form-save" style="margin:0" onclick="openQuestionnaireBuilder()"><i class="fa-solid fa-plus"></i> New Questionnaire</button>
+          </div>
+
+          <div class="data-table-wrap">
+            <table class="data-table" id="qnTable">
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Customer</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="qnTableBody">
+                <tr>
+                  <td colspan="5">
+                    <div class="empty-state">
+                      <i class="fa-solid fa-list-ol"></i>
+                      Loading questionnaires…
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <!-- ═══ AUDIT LOGS PANEL ═══ -->
         <div class="dash-panel" id="panel-audit">
           <div class="panel-heading">Audit Logs</div>
@@ -1309,6 +1347,53 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
   </div>
 </div>
 
+<!-- ══ Questionnaire Builder Modal ══ -->
+<div class="modal-overlay" id="qnBuilderModal">
+  <div class="modal-box modal-box-full" style="overflow-y:auto;text-align:left">
+    <h3 id="qnBuilderTitle">New Questionnaire</h3>
+    <div class="form-grid" style="margin-top:14px">
+      <div class="f-field"><label>Customer (optional)</label>
+        <select id="qn-customer"><option value="">No customer / prospect</option></select>
+      </div>
+      <div class="f-field"><label>Business Name <span style="font-weight:400;color:var(--text-dim)">(shown on the form; optional if a customer is picked)</span></label>
+        <input id="qn-business" placeholder="e.g. Geneva Grocery & Feed">
+      </div>
+    </div>
+    <div class="f-field"><label>Questionnaire Title</label><input id="qn-title" placeholder="e.g. Business Discovery Questionnaire"></div>
+    <div class="f-field"><label>Intro Text <span style="font-weight:400;color:var(--text-dim)">(shown at the top of the form, optional)</span></label><textarea id="qn-intro" rows="2" placeholder="Help us understand your business so we can build the right website and marketing plan for you."></textarea></div>
+
+    <div style="display:flex;gap:10px;align-items:center;margin:16px 0 12px;flex-wrap:wrap">
+      <button type="button" class="btn-reject" onclick="loadDiscoveryTemplate()"><i class="fa-solid fa-file-import"></i> Load Discovery Template</button>
+      <span style="font-size:11px;color:var(--text-dim)">Pre-fills a full retail / farm-store discovery questionnaire — edit or delete anything before saving.</span>
+    </div>
+
+    <div id="qnSectionsWrap"></div>
+    <button type="button" class="btn-approve" style="margin-top:4px" onclick="addQnSection()">+ Add Section</button>
+
+    <div class="modal-actions" style="margin-top:18px">
+      <button class="modal-cancel" onclick="closeQuestionnaireBuilder()">Cancel</button>
+      <button class="modal-confirm" onclick="saveQuestionnaire()">Save Questionnaire</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Questionnaire View Modal ══ -->
+<div class="modal-overlay" id="qnViewModal">
+  <div class="modal-box" style="width:640px;max-width:92vw;max-height:88vh;overflow-y:auto;text-align:left">
+    <h3 id="qnv-title">Questionnaire</h3>
+    <div id="qnv-meta" style="font-size:12px;color:var(--text-muted);margin:8px 0 14px;line-height:1.8"></div>
+    <div id="qnv-body"></div>
+    <div class="f-field" style="margin-top:14px"><label>Send to WhatsApp Number</label>
+      <input id="qnv-phone" type="tel" placeholder="+1 555 123 4567">
+    </div>
+    <div class="modal-actions" style="margin-top:14px;flex-wrap:wrap">
+      <button class="modal-cancel" onclick="closeQnViewModal()">Close</button>
+      <button class="btn-reject" onclick="copyQuestionnaireLink(viewingQnDocId)"><i class="fa-solid fa-link"></i> Copy Link</button>
+      <button class="btn-whatsapp" style="width:auto" onclick="sendQuestionnaireWhatsApp()"><i class="fa-brands fa-whatsapp"></i> Send via WhatsApp</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ Toast ══ -->
 <div class="t-toast" id="toast"></div>
 
@@ -1469,7 +1554,7 @@ async function showDashboard() {
 /* ══════════════════════════════════════════════
    SIDEBAR TABS
 ══════════════════════════════════════════════ */
-const TABS = ['applications','orders','tickets','access','services-mgmt','tasks','invoices','company','pricing','services','expertise','audit','notifications'];
+const TABS = ['applications','orders','tickets','access','services-mgmt','tasks','invoices','questionnaires','company','pricing','services','expertise','audit','notifications'];
 
 function switchTab(name) {
   TABS.forEach(t => {
@@ -1488,6 +1573,7 @@ function switchTab(name) {
   if (name === 'services-mgmt') loadServiceMgmt();
   if (name === 'tasks') loadTasks();
   if (name === 'invoices') loadInvoices();
+  if (name === 'questionnaires') loadQuestionnaires();
   if (name === 'audit') loadAuditLogs();
   if (name === 'notifications') loadNotifications();
 }
@@ -1656,6 +1742,132 @@ const INDUSTRY_LIST = [
   'Construction & Contracting', 'Other'
 ];
 let industryContacts = {};
+
+/* ── Discovery questionnaire template (Questionnaires tab → Load Discovery Template) ──
+   A retail / farm-&-feed-store style business discovery form. Meant as a
+   starting point — admin edits, trims, or extends it per customer before saving. */
+function mkQ(type, label, extra) {
+  return Object.assign({ type, label, help: '', options: [], multi: false, columns: [], presetRows: [] }, extra || {});
+}
+const DISCOVERY_TEMPLATE = {
+  title: 'Business Discovery Questionnaire',
+  intro: 'Help us understand your business so we can build the right website and marketing plan for you. There are no wrong answers — leave anything blank you\'re not sure about.',
+  sections: [
+    { title: 'Business Overview', questions: [
+      mkQ('short', 'How long has your business been in operation?'),
+      mkQ('long', 'How would you describe your store in one sentence to someone who has never heard of you?'),
+      mkQ('choice', 'Do you currently have any website or online presence?', { multi: true, options: ['No website at all','Facebook page only','Basic website but no online ordering','Existing e-commerce site','Instagram','Google Business page','Other'] }),
+      mkQ('short', 'If applicable, list your website / Facebook / Instagram / Google Business URLs or handles'),
+      mkQ('long', 'What do you consider your #1 advantage over other stores in your area?'),
+      mkQ('short', 'Are there any other locations of your business, or just this one?'),
+    ]},
+    { title: 'Animal Feed', questions: [
+      mkQ('table', 'List every feed brand you carry', { columns: ['Brand','Animal Type (poultry, horse, cattle, dog, cat, etc.)','Product Names / Lines','Bag Sizes Available'], presetRows: ['Purina','DuMOR','Nutrena'] }),
+      mkQ('choice', 'What animal categories do you carry feed for?', { multi: true, options: ['Poultry / chickens','Horses','Cattle / livestock','Pigs / hogs','Goats / sheep','Rabbits','Dogs','Cats','Fish / pond','Wild bird seed','Other'] }),
+      mkQ('choice', 'Do you sell feed in bulk (loose, by the pound, tote bags) or only bagged?', { options: ['Bagged only','Both bagged and bulk','Bulk only'] }),
+      mkQ('long', 'Do you carry any specialty feed? (organic, non-GMO, soy-free, medicated, etc.)'),
+      mkQ('short', 'What is your best-selling feed product?'),
+      mkQ('short', 'What feed product has the best profit margin?'),
+    ]},
+    { title: 'Hay, Bedding & Forage', questions: [
+      mkQ('choice', 'Do you carry any of the following?', { multi: true, options: ['Hay','Straw','Wood shavings / pine pellets','Other bedding'] }),
+      mkQ('short', 'If you carry hay, what type(s)?'),
+      mkQ('choice', 'Sold by:', { options: ['Bale','By the pound','Both','Other'] }),
+    ]},
+    { title: 'Farm Supplies & Equipment', questions: [
+      mkQ('choice', 'Poultry supplies you carry', { multi: true, options: ['Chicken coops / hen houses','Chicken wire / hardware cloth','Waterers (manual & automatic)','Feeders','Nesting boxes','Heat lamps / brooder supplies','Incubators','Egg cartons / egg handling','Poultry health supplements / dewormers','Leg bands / identification','Other'] }),
+      mkQ('choice', 'Horse & livestock supplies you carry', { multi: true, options: ['Tack / saddles / bridles','Halters / lead ropes','Brushes / grooming kits','Hoof picks / farrier tools','Salt / mineral blocks','Livestock dewormers','Syringes / needles','Fly spray / pest control','Bandages / first aid','Other'] }),
+      mkQ('choice', 'Fencing you carry', { multi: true, options: ['Wire (barbed, woven, welded)','Electric fencing (chargers, wire, insulators)','T-posts / wood posts','Gates','Fence panels','Other'] }),
+      mkQ('choice', 'General farm supplies you carry', { multi: true, options: ['Shovels / pitchforks / wheelbarrows','Buckets / tubs / troughs','Water tanks','Sprayers','Tarps','Work gloves / boots','Rope / twine / baling wire','Other'] }),
+    ]},
+    { title: 'Seeds, Fertilizer & Gardening', questions: [
+      mkQ('choice', 'Do you carry any of the following?', { multi: true, options: ['Garden seeds (vegetable, herb, flower)','Grass seed','Pasture seed','Fertilizer','Potting soil / mulch','Pesticides / herbicides','Plant pots / trays','Other'] }),
+      mkQ('short', 'If you carry fertilizer, what brands?'),
+    ]},
+    { title: 'Pet Supplies', questions: [
+      mkQ('choice', 'Do you carry dog/cat supplies beyond food?', { multi: true, options: ['Treats','Toys','Leashes / collars','Beds','Flea/tick products','Other'] }),
+    ]},
+    { title: 'Seasonal & Special Items', questions: [
+      mkQ('long', 'Do you carry anything seasonally? (list by season — spring, summer, fall, winter)'),
+      mkQ('long', 'Do you sell any locally-made or unique products? (honey, jams, crafts, etc.)'),
+      mkQ('long', 'Is there anything you DON\'T carry but customers ask for frequently?'),
+    ]},
+    { title: 'Pricing & Payment', questions: [
+      mkQ('choice', 'How do customers currently pay in-store?', { multi: true, options: ['Cash','Credit/debit cards','Checks','Account/charge (for regular customers)','Other'] }),
+      mkQ('choice', 'Do you offer accounts for regular customers who buy on credit?', { options: ['Yes','No','Would like to start'] }),
+      mkQ('short', 'If yes, roughly how many accounts?'),
+      mkQ('long', 'Do you offer any bulk discount pricing? Explain how it works.'),
+      mkQ('choice', 'For the website, what payment methods are you comfortable accepting online?', { multi: true, options: ['Credit/debit cards','PayPal','Apple Pay / Google Pay','Online bank transfer / ACH','"Pay in store" only','Not sure — need your recommendation'] }),
+      mkQ('long', 'Do you charge sales tax on all items? Any exemptions you currently handle?'),
+    ]},
+    { title: 'Delivery & Fulfillment', questions: [
+      mkQ('choice', 'Do you currently deliver to customers?', { options: ['No delivery at all','Yes — free within a set radius','Yes — paid delivery','Yes — only for large/bulk orders','Sometimes — case by case'] }),
+      mkQ('short', 'If you deliver, what\'s the radius, fee, or minimum order?'),
+      mkQ('choice', 'If you deliver, what do you deliver?', { multi: true, options: ['Feed only','Hay / bedding only','Supplies / equipment','Everything we sell','Other'] }),
+      mkQ('choice', 'What is your maximum delivery radius?', { options: ['Under 15 miles','15-30 miles','30-50 miles','50+ miles','Varies by order size'] }),
+      mkQ('short', 'Do you have your own delivery vehicle, or do you outsource?'),
+      mkQ('choice', 'For the website, which fulfillment options do you want to offer?', { multi: true, options: ['In-store pickup only','Local delivery','Ship via UPS/FedEx/USPS','Freight shipping (pallets, large equipment)','Need your recommendation'] }),
+      mkQ('short', 'What are your store hours?'),
+      mkQ('long', 'Can customers place a phone order now for pickup? How does that work currently?'),
+    ]},
+    { title: 'Inventory & Operations', questions: [
+      mkQ('choice', 'Roughly how many total SKUs (individual products) do you carry?', { options: ['Under 200','200-500','500-1,000','1,000+','No idea'] }),
+      mkQ('choice', 'How do you currently track inventory?', { options: ['By eye / memory','Paper ledger / notebook','Cash register with inventory tracking','Dedicated inventory software','Spreadsheet','Other'] }),
+      mkQ('choice', 'How often does inventory change?', { options: ['Daily','Weekly','A few times per month','Seasonally'] }),
+      mkQ('choice', 'Do you have product photos already?', { options: ['Yes — digital photos of most products','Some — but not everything','No photos at all','Can get photos from manufacturers/distributors'] }),
+      mkQ('long', 'Do you have a list of all products with prices? (price list, catalog, spreadsheet — anything)'),
+      mkQ('short', 'How many employees help run the store? Will any of them help with online orders?'),
+    ]},
+    { title: 'Your Customers', questions: [
+      mkQ('choice', 'Who are your main customers?', { multi: true, options: ['Hobby farmers / homesteaders','Commercial / large-scale farmers','4-H / FFA students and families','Horse owners / boarders','Backyard chicken keepers','Cattle ranchers','Gardeners / landscapers','General pet owners','Homeowners buying grass seed / fertilizer','Other'] }),
+      mkQ('choice', 'How far do customers typically drive to your store?', { options: ['Under 10 miles','10-30 miles','30-60 miles','60+ miles'] }),
+      mkQ('choice', 'Roughly what percentage are repeat customers vs. first-timers?', { options: ['Mostly repeat (80%+)','Mix (50/50)','Mostly new customers','Not sure'] }),
+      mkQ('long', 'What are the top 10 questions customers ask you in the store?'),
+      mkQ('long', 'What reasons do customers give for NOT buying something? (too expensive, don\'t know which product, go to a competitor instead, etc.)'),
+      mkQ('short', 'Do customers ever ask if you have a website or if they can order online?'),
+    ]},
+    { title: 'Competitors', questions: [
+      mkQ('table', 'Who are your main competitors?', { columns: ['Competitor','Location','What do they do well?','What do they do WORSE than you?'] }),
+      mkQ('long', 'Why does someone choose you instead of the big box stores or Amazon?'),
+      mkQ('long', 'Is there anything competitors offer that you WISH you offered?'),
+      mkQ('long', 'Have you lost customers to online ordering? (people buying from Amazon, Chewy, etc.)'),
+    ]},
+    { title: 'Website Goals', questions: [
+      mkQ('choice', 'What are your top goals for the website? (check your top 3)', { multi: true, options: ['Sell products online with delivery','Let customers order online for in-store pickup','Show products & prices so people know what\'s in stock','Attract new customers to visit the store','Build credibility / look professional','Compete with big box stores online','Serve existing customers better (reordering, convenience)','Other'] }),
+      mkQ('choice', 'For online ordering, what\'s your preference?', { options: ['Full e-commerce: customer pays online, we fulfill','Order online, pay at pickup/delivery','Show inventory + prices, customer calls to order','Need your recommendation'] }),
+      mkQ('choice', 'Do you want any of these website features?', { multi: true, options: ['"Reorder my usual" button','Customer accounts (order history, addresses)','Quantity discounts shown automatically','"In stock / Out of stock" live inventory','Product search bar','Customer reviews on products','Blog / tips / seasonal advice','Email newsletter signup','Loyalty points / rewards program','"Shop by category" browsing','Seasonal deals / clearance section','Other'] }),
+      mkQ('short', 'Do you want the website to look like a modern online store, or a simple extension of your physical store?'),
+    ]},
+    { title: 'Marketing & Advertising', questions: [
+      mkQ('choice', 'How do you currently get new customers?', { multi: true, options: ['Word of mouth only','Storefront / road sign visibility','Facebook posts (organic)','Facebook or Instagram ads (paid)','Google Business profile','Local flyers / bulletin boards','Community events / sponsorships','Other'] }),
+      mkQ('choice', 'What is your monthly marketing/advertising budget?', { options: ['$0 — nothing currently','$100 - $300/month','$300 - $800/month','$800 - $2,000/month','$2,000+/month','Flexible — depends on what works'] }),
+      mkQ('choice', 'What is your busiest time of year?', { options: ['Spring (Feb-May)','Summer (Jun-Aug)','Fall (Sep-Nov)','Winter (Dec-Jan)','Fairly steady year-round'] }),
+      mkQ('short', 'What is your slowest time of year?'),
+      mkQ('long', 'Are there products that only sell in certain seasons? (list by season)'),
+      mkQ('long', 'Have you ever run paid ads (Facebook, Google, etc.)? What happened?'),
+      mkQ('short', 'Do you have a logo? In what format? (vector, PNG, JPEG, or just on the sign?)'),
+      mkQ('choice', 'Do you have professional photos of:', { multi: true, options: ['The store exterior / sign','Store interior / aisles','Products on shelves','Staff / owner','None — need photos taken'] }),
+      mkQ('long', 'Do you have any customer testimonials or Google/Facebook reviews you\'re proud of?'),
+      mkQ('choice', 'Do you have an existing customer email or phone list?', { options: ['Email list','Phone list','Neither','Not organized but could be'] }),
+    ]},
+    { title: 'Practical Details', questions: [
+      mkQ('short', 'Main contact for this project — name'),
+      mkQ('short', 'Main contact — phone'),
+      mkQ('short', 'Main contact — email'),
+      mkQ('short', 'Preferred contact method & best time to reach'),
+      mkQ('choice', 'Who will handle day-to-day website tasks?', { options: ['Owner','Staff member','Need help / want us to handle it','Will figure it out'] }),
+      mkQ('short', 'Do you have reliable internet at the store?'),
+      mkQ('short', 'Target launch date for the website?'),
+      mkQ('long', 'Any hard deadlines? (e.g. need to be live before a specific season)'),
+      mkQ('short', 'Do you own the domain name? If yes, what is it?'),
+    ]},
+    { title: 'Final Thoughts', questions: [
+      mkQ('long', 'If this website and marketing campaign is a TOTAL SUCCESS, what does your business look like in 12 months? Be specific.'),
+      mkQ('long', 'What is your biggest concern or worry about selling online?'),
+      mkQ('long', 'Is there anything else we should know that wasn\'t covered?'),
+    ]},
+  ]
+};
 
 async function loadIndustryContacts() {
   if (!db) return;
@@ -3405,6 +3617,338 @@ async function saveNotifications() {
 }
 
 /* ══════════════════════════════════════════════
+   QUESTIONNAIRES
+══════════════════════════════════════════════ */
+let questionnaires = [];
+let qnCustomers = {};
+let editingSections = [];
+let editingQnId = null;
+let viewingQnDocId = null;
+
+async function loadQuestionnaires() {
+  if (!db) return;
+  try {
+    const [qnSnap, custSnap] = await Promise.all([
+      db.collection('questionnaires').orderBy('createdAt', 'desc').get().catch(() => db.collection('questionnaires').get()),
+      db.collection('customers').get()
+    ]);
+    qnCustomers = {};
+    custSnap.docs.forEach(d => { qnCustomers[d.id] = d.data(); });
+    questionnaires = qnSnap.docs.map(d => ({ docId: d.id, ...d.data() }));
+  } catch(e) { console.error(e); questionnaires = []; }
+
+  const custSel = document.getElementById('qn-customer');
+  const custCurrent = custSel.value;
+  custSel.innerHTML = '<option value="">No customer / prospect</option>' +
+    Object.keys(qnCustomers).map(id => `<option value="${id}">${escHtml(qnCustomers[id].name || 'Unknown')}</option>`).join('');
+  custSel.value = Object.prototype.hasOwnProperty.call(qnCustomers, custCurrent) ? custCurrent : '';
+
+  renderQnTable();
+}
+
+function renderQnTable() {
+  const tbody = document.getElementById('qnTableBody');
+  if (!questionnaires.length) {
+    tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><i class="fa-solid fa-list-ol"></i>No questionnaires yet — create one to send to a customer.</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = '';
+  questionnaires.forEach(qn => {
+    const status = qn.status || 'draft';
+    const badgeClass = status === 'completed' ? 'status-approved' : status === 'sent' ? 'status-pending' : 'status-rejected';
+    const dateVal = qn.status === 'completed' ? qn.completedAt : (qn.sentAt || qn.createdAt);
+    const row = tbody.insertRow();
+    row.innerHTML = `
+      <td>${escHtml(qn.title || 'Untitled')}</td>
+      <td>${escHtml(qn.businessName || qn.customerName || '—')}</td>
+      <td><span class="status-badge ${badgeClass}">${escHtml(status)}</span></td>
+      <td class="td-date">${fmtDate(dateVal)}</td>
+      <td style="white-space:nowrap">
+        <button class="btn-approve" onclick="viewQuestionnaire('${qn.docId}')">View</button>
+        ${status === 'draft' ? `<button class="btn-reject" onclick="openQuestionnaireBuilder('${qn.docId}')">Edit</button>` : ''}
+        <button class="btn-reject" onclick="copyQuestionnaireLink('${qn.docId}')">Copy Link</button>
+        <button class="btn-reject" onclick="deleteQuestionnaire('${qn.docId}')"><i class="fa-solid fa-trash"></i></button>
+      </td>
+    `;
+  });
+}
+
+/* ── Builder ── */
+function openQuestionnaireBuilder(docId) {
+  editingQnId = docId || null;
+  const qn = docId ? questionnaires.find(q => q.docId === docId) : null;
+
+  document.getElementById('qnBuilderTitle').textContent = qn ? 'Edit Questionnaire' : 'New Questionnaire';
+  document.getElementById('qn-customer').value = (qn && qn.customerId) || '';
+  document.getElementById('qn-business').value = (qn && qn.businessName) || '';
+  document.getElementById('qn-title').value = (qn && qn.title) || '';
+  document.getElementById('qn-intro').value = (qn && qn.intro) || '';
+  editingSections = qn ? JSON.parse(JSON.stringify(qn.sections || [])) : [];
+  renderQnBuilder();
+  document.getElementById('qnBuilderModal').classList.add('open');
+}
+
+function closeQuestionnaireBuilder() {
+  document.getElementById('qnBuilderModal').classList.remove('open');
+  editingQnId = null;
+  editingSections = [];
+}
+
+function addQnSection() {
+  editingSections.push({ title: '', questions: [] });
+  renderQnBuilder();
+}
+
+function addQnQuestion(si) {
+  editingSections[si].questions.push({ type: 'short', label: '', help: '', options: [], multi: true, columns: [], presetRows: [] });
+  renderQnBuilder();
+}
+
+function renderQnBuilder() {
+  const wrap = document.getElementById('qnSectionsWrap');
+  if (!editingSections.length) {
+    wrap.innerHTML = '<div class="empty-state" style="padding:20px"><i class="fa-solid fa-list-ol"></i>No sections yet — add one, or load the discovery template above.</div>';
+    return;
+  }
+  wrap.innerHTML = editingSections.map((sec, si) => `
+    <div style="border:1.5px solid rgba(0,0,0,.1);border-radius:10px;padding:14px 16px;margin-bottom:12px;background:var(--cream-alt)">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+        <span style="font-size:11px;font-weight:800;color:var(--text-dim);width:18px">${si + 1}.</span>
+        <input value="${escHtml(sec.title)}" placeholder="Section title" style="flex:1;font-weight:700" oninput="editingSections[${si}].title=this.value">
+        <button type="button" class="btn-reject" onclick="editingSections.splice(${si},1);renderQnBuilder()" title="Remove section"><i class="fa-solid fa-trash"></i></button>
+      </div>
+      ${(sec.questions || []).map((q, qi) => renderQnQuestionRow(si, qi, q)).join('') || '<div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">No questions in this section yet.</div>'}
+      <button type="button" class="btn-approve" onclick="addQnQuestion(${si})">+ Add Question</button>
+    </div>
+  `).join('');
+}
+
+function renderQnQuestionRow(si, qi, q) {
+  return `<div style="background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:8px;padding:10px 12px;margin-bottom:8px">
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+      <input value="${escHtml(q.label)}" placeholder="Question" style="flex:2" oninput="editingSections[${si}].questions[${qi}].label=this.value">
+      <select style="flex:0 0 140px" onchange="editingSections[${si}].questions[${qi}].type=this.value;renderQnBuilder()">
+        <option value="short" ${q.type === 'short' ? 'selected' : ''}>Short answer</option>
+        <option value="long" ${q.type === 'long' ? 'selected' : ''}>Long answer</option>
+        <option value="choice" ${q.type === 'choice' ? 'selected' : ''}>Choice list</option>
+        <option value="table" ${q.type === 'table' ? 'selected' : ''}>Table</option>
+      </select>
+      <button type="button" class="btn-reject" onclick="editingSections[${si}].questions.splice(${qi},1);renderQnBuilder()" title="Remove question"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <input value="${escHtml(q.help || '')}" placeholder="Hint text shown under the question (optional)" style="width:100%;margin-bottom:8px;font-size:12px" oninput="editingSections[${si}].questions[${qi}].help=this.value">
+    ${q.type === 'choice' ? `
+      <textarea placeholder="One option per line" rows="3" style="width:100%;font-size:12px;margin-bottom:6px" oninput="editingSections[${si}].questions[${qi}].options=this.value.split('\\n').map(s=>s.trim()).filter(Boolean)">${escHtml((q.options || []).join('\n'))}</textarea>
+      <label style="font-size:11.5px;color:var(--text-muted);display:flex;align-items:center;gap:6px">
+        <input type="checkbox" ${q.multi ? 'checked' : ''} onchange="editingSections[${si}].questions[${qi}].multi=this.checked">
+        Allow multiple selections
+      </label>
+    ` : ''}
+    ${q.type === 'table' ? `
+      <input value="${escHtml((q.columns || []).join(', '))}" placeholder="Columns, comma-separated" style="width:100%;font-size:12px;margin-bottom:6px" oninput="editingSections[${si}].questions[${qi}].columns=this.value.split(',').map(s=>s.trim()).filter(Boolean)">
+      <textarea placeholder="Preset row labels, one per line (optional)" rows="2" style="width:100%;font-size:12px" oninput="editingSections[${si}].questions[${qi}].presetRows=this.value.split('\\n').map(s=>s.trim()).filter(Boolean)">${escHtml((q.presetRows || []).join('\n'))}</textarea>
+    ` : ''}
+  </div>`;
+}
+
+function loadDiscoveryTemplate() {
+  if (!document.getElementById('qn-title').value.trim()) {
+    document.getElementById('qn-title').value = DISCOVERY_TEMPLATE.title;
+  }
+  if (!document.getElementById('qn-intro').value.trim()) {
+    document.getElementById('qn-intro').value = DISCOVERY_TEMPLATE.intro;
+  }
+  editingSections = JSON.parse(JSON.stringify(DISCOVERY_TEMPLATE.sections));
+  renderQnBuilder();
+  toast('✓ Template loaded — edit or remove anything before saving', 'success');
+}
+
+async function saveQuestionnaire() {
+  if (!db) { toast('Firebase not connected', 'error'); return; }
+  const title = document.getElementById('qn-title').value.trim();
+  if (!title) { toast('Enter a questionnaire title', 'error'); return; }
+  if (!editingSections.length) { toast('Add at least one section', 'error'); return; }
+
+  const custId = document.getElementById('qn-customer').value;
+  const businessName = document.getElementById('qn-business').value.trim();
+  const intro = document.getElementById('qn-intro').value.trim();
+
+  const sections = editingSections
+    .filter(sec => sec.title.trim())
+    .map((sec, si) => ({
+      title: sec.title.trim(),
+      questions: (sec.questions || [])
+        .filter(q => q.label.trim())
+        .map((q, qi) => ({
+          id: `s${si}q${qi}`,
+          type: q.type || 'short',
+          label: q.label.trim(),
+          help: q.help ? q.help.trim() : '',
+          options: q.type === 'choice' ? (q.options || []) : [],
+          multi: q.type === 'choice' ? !!q.multi : false,
+          columns: q.type === 'table' ? (q.columns || []) : [],
+          presetRows: q.type === 'table' ? (q.presetRows || []) : []
+        }))
+    }));
+
+  try {
+    const payload = {
+      title,
+      customerId: custId || null,
+      customerName: custId ? (qnCustomers[custId]?.name || '') : '',
+      businessName,
+      intro,
+      sections
+    };
+
+    if (editingQnId) {
+      await db.collection('questionnaires').doc(editingQnId).update(payload);
+      await AppUtils.logAudit(currentAdminIdentity(), 'update', editingQnId, 'questionnaire', { title });
+      toast('✓ Questionnaire updated', 'success');
+    } else {
+      payload.status = 'draft';
+      payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+      const ref = await db.collection('questionnaires').add(payload);
+      await AppUtils.logAudit(currentAdminIdentity(), 'create', ref.id, 'questionnaire', { title });
+      toast('✓ Questionnaire saved — copy its link to send it', 'success');
+    }
+    closeQuestionnaireBuilder();
+    await loadQuestionnaires();
+  } catch(e) { toast('Save failed: ' + e.message, 'error'); }
+}
+
+/* ── Link / send / view ── */
+function getQuestionnaireLink(docId) {
+  return new URL('questionnaire.html?id=' + encodeURIComponent(docId), location.href).href;
+}
+
+async function copyQuestionnaireLink(docId) {
+  const link = getQuestionnaireLink(docId);
+  try {
+    await navigator.clipboard.writeText(link);
+    toast('✓ Link copied', 'success');
+  } catch(e) {
+    window.prompt('Copy this link:', link);
+  }
+  const qn = questionnaires.find(q => q.docId === docId);
+  if (qn && (!qn.status || qn.status === 'draft')) {
+    try {
+      await db.collection('questionnaires').doc(docId).update({
+        status: 'sent',
+        sentAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      await loadQuestionnaires();
+    } catch(e) { /* link is already copied either way */ }
+  }
+}
+
+function formatQnAnswer(q, a) {
+  if (q.type === 'table' && Array.isArray(a)) {
+    return a
+      .filter(row => Array.isArray(row) && row.some(c => (c || '').trim()))
+      .map(row => row.map((c, i) => c ? `${q.columns[i] || ''}: ${c}` : '').filter(Boolean).join(' · '))
+      .join('\n');
+  }
+  if (Array.isArray(a)) return a.join(', ');
+  return String(a);
+}
+
+function viewQuestionnaire(docId) {
+  const qn = questionnaires.find(q => q.docId === docId);
+  if (!qn) return;
+  viewingQnDocId = docId;
+  const status = qn.status || 'draft';
+  document.getElementById('qnv-title').textContent = qn.title || 'Questionnaire';
+  document.getElementById('qnv-meta').innerHTML = `
+    <div><strong>For:</strong> ${escHtml(qn.businessName || qn.customerName || '—')}</div>
+    <div><strong>Status:</strong> <span class="status-badge ${status === 'completed' ? 'status-approved' : status === 'sent' ? 'status-pending' : 'status-rejected'}">${escHtml(status)}</span></div>
+    <div><strong>Created:</strong> ${fmtDate(qn.createdAt)}${qn.completedAt ? ' · <strong>Completed:</strong> ' + fmtDate(qn.completedAt) : ''}</div>
+    <div><strong>Link:</strong> <span style="word-break:break-all">${escHtml(getQuestionnaireLink(docId))}</span></div>
+  `;
+  const answers = qn.answers || {};
+  const hasAnswers = Object.keys(answers).length > 0;
+  document.getElementById('qnv-body').innerHTML = hasAnswers
+    ? (qn.sections || []).map((sec, si) => {
+        const rows = (sec.questions || []).map(q => {
+          const a = answers[q.id];
+          if (a === undefined || a === null || a === '' || (Array.isArray(a) && !a.length)) return '';
+          return `<div style="padding:9px 0;border-bottom:1px solid rgba(0,0,0,.06)">
+            <div style="font-size:11px;font-weight:700;color:var(--text-dim);margin-bottom:3px">${escHtml(q.label)}</div>
+            <div style="font-size:13px;color:var(--text);white-space:pre-wrap">${escHtml(formatQnAnswer(q, a))}</div>
+          </div>`;
+        }).join('');
+        if (!rows) return '';
+        return `<div style="margin-bottom:14px"><div style="font-size:12px;font-weight:800;color:var(--green);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">${si + 1}. ${escHtml(sec.title)}</div>${rows}</div>`;
+      }).join('') || '<div class="empty-state" style="padding:24px"><i class="fa-regular fa-clock"></i>No answered questions yet.</div>'
+    : '<div class="empty-state" style="padding:24px"><i class="fa-regular fa-clock"></i>No responses yet — share the link with your customer.</div>';
+
+  document.getElementById('qnv-phone').value = '';
+  document.getElementById('qnViewModal').classList.add('open');
+}
+
+function closeQnViewModal() {
+  document.getElementById('qnViewModal').classList.remove('open');
+  viewingQnDocId = null;
+}
+
+function buildQuestionnaireMessage(qn, docId) {
+  const link = getQuestionnaireLink(docId);
+  if (qn.status === 'completed') {
+    const lines = [`*${qn.title || 'Questionnaire'} — Responses*`];
+    if (qn.businessName || qn.customerName) lines.push(`For: ${qn.businessName || qn.customerName}`);
+    lines.push('');
+    (qn.sections || []).forEach((sec, si) => {
+      const qLines = [];
+      (sec.questions || []).forEach(q => {
+        const a = (qn.answers || {})[q.id];
+        if (a === undefined || a === null || a === '' || (Array.isArray(a) && !a.length)) return;
+        qLines.push(q.label);
+        qLines.push(`→ ${formatQnAnswer(q, a)}`);
+      });
+      if (qLines.length) {
+        lines.push(`*${si + 1}. ${sec.title}*`);
+        lines.push(...qLines);
+        lines.push('');
+      }
+    });
+    lines.push('— Fifteen');
+    return lines.join('\n');
+  }
+  return `Hi! Please take a few minutes to fill out this short questionnaire so we can build the right plan for your business:\n${link}\n\n— Fifteen`;
+}
+
+async function sendQuestionnaireWhatsApp() {
+  const qn = questionnaires.find(q => q.docId === viewingQnDocId);
+  if (!qn) { toast('Questionnaire not found', 'error'); return; }
+  const phoneRaw = document.getElementById('qnv-phone').value.trim();
+  const digits = phoneRaw.replace(/[^\d]/g, '');
+  if (!digits) { toast('Enter a WhatsApp number first', 'error'); return; }
+  const text = encodeURIComponent(buildQuestionnaireMessage(qn, viewingQnDocId));
+  window.open(`https://wa.me/${digits}?text=${text}`, '_blank', 'noopener');
+
+  if (!qn.status || qn.status === 'draft') {
+    try {
+      await db.collection('questionnaires').doc(viewingQnDocId).update({
+        status: 'sent',
+        sentAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      await loadQuestionnaires();
+    } catch(e) {}
+  }
+}
+
+function deleteQuestionnaire(docId) {
+  const qn = questionnaires.find(q => q.docId === docId);
+  AppUtils.showConfirm('Delete Questionnaire', `Delete "${(qn && qn.title) || 'this questionnaire'}"? This cannot be undone.`, async () => {
+    try {
+      await db.collection('questionnaires').doc(docId).delete();
+      await AppUtils.logAudit(currentAdminIdentity(), 'delete', docId, 'questionnaire', {});
+      toast('✓ Questionnaire deleted', 'success');
+      await loadQuestionnaires();
+    } catch(e) { toast('Delete failed: ' + e.message, 'error'); }
+  });
+}
+
+/* ══════════════════════════════════════════════
    TOAST
 ══════════════════════════════════════════════ */
 function toast(msg, type) {
@@ -3462,6 +4006,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   document.getElementById('applicationModal').addEventListener('click', e => {
     if (e.target === document.getElementById('applicationModal')) closeApplicationModal();
+  });
+  document.getElementById('qnBuilderModal').addEventListener('click', e => {
+    if (e.target === document.getElementById('qnBuilderModal')) closeQuestionnaireBuilder();
+  });
+  document.getElementById('qnViewModal').addEventListener('click', e => {
+    if (e.target === document.getElementById('qnViewModal')) closeQnViewModal();
   });
 
   await initFirebase();
