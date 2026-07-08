@@ -139,6 +139,22 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // ── Discovery questionnaires (admin.html Questionnaires tab) ──
+    // Each questionnaire is a unique link the admin sends to one customer/
+    // prospect; anyone holding that link may open and fill it in without
+    // logging in, but the collection can't be listed or browsed, and once
+    // filled in it can no longer be edited by the respondent.
+    match /questionnaires/{id} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin()
+        || (resource.data.status != 'completed'
+            && request.resource.data.status == 'completed'
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['answers', 'status', 'completedAt', 'respondentName', 'respondentEmail']));
+    }
+
     // ── Audit logs (append-only) ──
     match /auditLogs/{id} {
       allow read: if isAdmin() || isOwner(resource.data.userId);
