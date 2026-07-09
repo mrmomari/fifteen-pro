@@ -18,7 +18,19 @@ jobs:
       - uses: actions/checkout@v4
       - name: Write service account key
         run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > "$RUNNER_TEMP/fb-sa.json"
-      - name: Deploy Firestore & Storage rules
+      - name: Deploy Firestore rules
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/fb-sa.json
-        run: npx --yes firebase-tools@13 deploy --only firestore:rules,storage:rules --project fifteen-pro --non-interactive
+        run: npx --yes firebase-tools@13 deploy --only firestore:rules --project fifteen-pro --non-interactive
+      - name: Deploy Storage rules
+        # Kept as a separate, non-blocking step: the deploy service account may
+        # only have Hosting-deploy permissions today (Storage deploy needs the
+        # Service Usage API enabled for its service account), and a missing
+        # Storage permission shouldn't prevent the more urgent Firestore rules
+        # from deploying. If this step fails, grant the service account the
+        # "Firebase Rules Admin" + "Service Usage Consumer" IAM roles in
+        # Google Cloud Console → IAM, then re-run this workflow.
+        continue-on-error: true
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/fb-sa.json
+        run: npx --yes firebase-tools@13 deploy --only storage:rules --project fifteen-pro --non-interactive
