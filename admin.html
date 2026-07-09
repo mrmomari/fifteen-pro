@@ -3863,7 +3863,10 @@ async function copyQuestionnaireLink(docId) {
 function formatQnAnswer(q, a) {
   if (q.type === 'table' && Array.isArray(a)) {
     return a
-      .filter(row => Array.isArray(row) && row.some(c => (c || '').trim()))
+      // rows are stored as plain objects ({0: val, 1: val, ...}) since Firestore
+      // rejects arrays-of-arrays; normalize back to arrays for rendering
+      .map(row => Array.isArray(row) ? row : (row && typeof row === 'object' ? Object.values(row) : []))
+      .filter(row => row.some(c => (c || '').trim()))
       .map(row => row.map((c, i) => c ? `${q.columns[i] || ''}: ${c}` : '').filter(Boolean).join(' · '))
       .join('\n');
   }

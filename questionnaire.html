@@ -343,13 +343,26 @@ function bindQuestion(q) {
   }
 }
 
+function toFirestoreSafeAnswers(raw) {
+  // Firestore rejects arrays-of-arrays (table answers are rows of cell arrays),
+  // so each row array is converted to a plain object ({0: val, 1: val, ...}) on submit.
+  const out = {};
+  Object.keys(raw).forEach(key => {
+    const val = raw[key];
+    out[key] = Array.isArray(val)
+      ? val.map(row => Array.isArray(row) ? Object.assign({}, row) : row)
+      : val;
+  });
+  return out;
+}
+
 async function submitForm() {
   const btn = document.getElementById('qfSubmitBtn');
   btn.disabled = true;
   btn.textContent = 'Submitting…';
   try {
     await db.collection('questionnaires').doc(qid).update({
-      answers: answers,
+      answers: toFirestoreSafeAnswers(answers),
       status: 'completed',
       completedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
