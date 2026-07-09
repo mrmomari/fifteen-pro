@@ -3723,6 +3723,23 @@ function renderQnBuilder() {
   `).join('');
 }
 
+function renderQnOptionPreviewHtml(q) {
+  const opts = q.options || [];
+  if (!opts.length) return '<div style="font-size:11px;color:var(--text-dim);font-style:italic">No options yet — type one per line above and they\'ll appear here as tick boxes.</div>';
+  const shape = q.multi ? '3px' : '50%';
+  return `<div style="display:flex;flex-wrap:wrap;gap:6px">
+    ${opts.map(o => `<span style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text);background:#fff;border:1px solid rgba(0,0,0,.12);border-radius:7px;padding:5px 10px">
+      <span style="width:13px;height:13px;flex-shrink:0;border:2px solid rgba(28,36,22,.45);border-radius:${shape};display:inline-block"></span>
+      ${escHtml(o)}
+    </span>`).join('')}
+  </div>`;
+}
+
+function renderQnOptionPreview(si, qi) {
+  const el = document.getElementById(`qopt-preview-${si}-${qi}`);
+  if (el) el.innerHTML = renderQnOptionPreviewHtml(editingSections[si].questions[qi]);
+}
+
 function renderQnQuestionRow(si, qi, q) {
   return `<div style="background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:8px;padding:10px 12px;margin-bottom:8px">
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
@@ -3737,11 +3754,13 @@ function renderQnQuestionRow(si, qi, q) {
     </div>
     <input value="${escHtml(q.help || '')}" placeholder="Hint text shown under the question (optional)" style="width:100%;margin-bottom:8px;font-size:12px" oninput="editingSections[${si}].questions[${qi}].help=this.value">
     ${q.type === 'choice' ? `
-      <textarea placeholder="One option per line" rows="3" style="width:100%;font-size:12px;margin-bottom:6px" oninput="editingSections[${si}].questions[${qi}].options=this.value.split('\\n').map(s=>s.trim()).filter(Boolean)">${escHtml((q.options || []).join('\n'))}</textarea>
-      <label style="font-size:11.5px;color:var(--text-muted);display:flex;align-items:center;gap:6px">
-        <input type="checkbox" ${q.multi ? 'checked' : ''} onchange="editingSections[${si}].questions[${qi}].multi=this.checked">
-        Allow multiple selections
+      <textarea placeholder="One option per line" rows="3" style="width:100%;font-size:12px;margin-bottom:6px" oninput="editingSections[${si}].questions[${qi}].options=this.value.split('\\n').map(s=>s.trim()).filter(Boolean);renderQnOptionPreview(${si},${qi})">${escHtml((q.options || []).join('\n'))}</textarea>
+      <label style="font-size:11.5px;color:var(--text-muted);display:flex;align-items:center;gap:6px;margin-bottom:8px">
+        <input type="checkbox" ${q.multi ? 'checked' : ''} onchange="editingSections[${si}].questions[${qi}].multi=this.checked;renderQnOptionPreview(${si},${qi})">
+        Allow multiple selections (checkboxes) — unchecked shows single-select (radio buttons)
       </label>
+      <div style="font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px">How this looks to the customer</div>
+      <div id="qopt-preview-${si}-${qi}">${renderQnOptionPreviewHtml(q)}</div>
     ` : ''}
     ${q.type === 'table' ? `
       <input value="${escHtml((q.columns || []).join(', '))}" placeholder="Columns, comma-separated" style="width:100%;font-size:12px;margin-bottom:6px" oninput="editingSections[${si}].questions[${qi}].columns=this.value.split(',').map(s=>s.trim()).filter(Boolean)">

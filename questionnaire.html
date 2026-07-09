@@ -68,16 +68,18 @@ body{
 textarea.qf-input{resize:vertical;min-height:76px}
 
 .qf-opts{display:flex;flex-direction:column;gap:8px}
-.qf-opt{display:flex;align-items:flex-start;gap:12px;background:var(--cream);border:1.5px solid rgba(0,0,0,.08);border-radius:9px;padding:11px 15px;cursor:pointer;transition:border-color .15s,background .15s;user-select:none}
-.qf-opt:hover{border-color:rgba(38,145,94,.35)}
-.qf-opt.sel{border-color:var(--green);background:rgba(38,145,94,.08)}
+.qf-opt{display:flex;align-items:flex-start;gap:12px;background:#fff;border:1.5px solid rgba(0,0,0,.14);border-radius:9px;padding:11px 15px;cursor:pointer;transition:border-color .15s,background .15s,box-shadow .15s;user-select:none}
+.qf-opt:hover{border-color:var(--green)}
+.qf-opt.sel{border-color:var(--green);background:rgba(38,145,94,.08);box-shadow:0 0 0 1px var(--green)}
 .qf-opt input{display:none}
-.qf-opt-mark{width:18px;height:18px;border-radius:50%;border:2px solid rgba(0,0,0,.18);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all .15s;background:#fff}
+.qf-opt-mark{width:20px;height:20px;border-radius:50%;border:2px solid rgba(28,36,22,.45);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all .15s;background:#fff;box-shadow:inset 0 0 0 1px #fff}
+.qf-opt:hover .qf-opt-mark{border-color:var(--green)}
 .qf-opt.sel .qf-opt-mark{background:var(--green);border-color:var(--green)}
-.qf-opt-mark::after{content:'';width:6px;height:6px;border-radius:50%;background:#fff;display:none}
+.qf-opt-mark::after{content:'';width:8px;height:8px;border-radius:50%;background:#fff;display:none}
 .qf-opt.sel .qf-opt-mark::after{display:block}
-.qf-opts.multi .qf-opt-mark{border-radius:5px}
-.qf-opts.multi .qf-opt-mark::after{content:'\2713';width:auto;height:auto;border-radius:0;background:transparent;color:#fff;font-size:10px;font-weight:900;line-height:1}
+.qf-opts.multi .qf-opt-mark{border-radius:6px}
+.qf-opts.multi .qf-opt-mark::after{content:'\2713';width:auto;height:auto;border-radius:0;background:transparent;color:#fff;font-size:12px;font-weight:900;line-height:1;display:block;opacity:0}
+.qf-opts.multi .qf-opt.sel .qf-opt-mark::after{opacity:1}
 .qf-opt-text{font-size:13.5px;color:var(--text);line-height:1.5}
 
 .qf-table-wrap{overflow-x:auto;border:1px solid rgba(0,0,0,.08);border-radius:8px}
