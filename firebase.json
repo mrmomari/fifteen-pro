@@ -15,5 +15,11 @@
       "storage.rules",
       "MD/**"
     ]
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "storage": {
+    "rules": "storage.rules"
   }
 }
