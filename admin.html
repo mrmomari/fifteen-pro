@@ -398,6 +398,7 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
       <input type="password" id="loginPw" placeholder="Enter admin password" autocomplete="current-password">
     </div>
     <button class="login-btn" onclick="doLogin()">Sign In &rarr;</button>
+    <a href="#" id="forgotPwLink" onclick="forgotPassword();return false" style="display:block;text-align:center;font-size:12px;color:var(--text-muted);margin-top:12px">Forgot password?</a>
     <div class="login-err" id="loginErr"></div>
     <div class="login-lock" id="loginLock"></div>
   </div>
@@ -1503,6 +1504,21 @@ async function doLogin() {
   }
 }
 
+async function forgotPassword() {
+  if (!auth) return;
+  const email = document.getElementById('loginEmail').value.trim();
+  if (!email) { loginFail('Enter your admin email above, then click "Forgot password?".', false); return; }
+  const err = document.getElementById('loginErr');
+  try {
+    await auth.sendPasswordResetEmail(email);
+    err.textContent = `Password reset email sent to ${email}. Check your inbox.`;
+    err.style.color = 'var(--green, #26915E)';
+    err.style.display = 'block';
+  } catch(e) {
+    loginFail('Could not send reset email. Confirm the address is correct.', false);
+  }
+}
+
 function loginFail(msg, countAttempt = true) {
   document.getElementById('loginPw').value = '';
   if (countAttempt) {
@@ -1512,6 +1528,7 @@ function loginFail(msg, countAttempt = true) {
   }
   const err = document.getElementById('loginErr');
   err.textContent = msg;
+  err.style.color = '';
   err.style.display = 'block';
   setTimeout(() => { err.style.display = 'none'; }, 2800);
   document.getElementById('loginPw').focus();
@@ -4039,7 +4056,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   await initFirebase();
   loadLogos();
 
-  if (!auth) document.getElementById('loginEmailField').style.display = 'none';
+  if (!auth) {
+    document.getElementById('loginEmailField').style.display = 'none';
+    document.getElementById('forgotPwLink').style.display = 'none';
+  }
 
   if (isLocked()) applyLockUI();
 
