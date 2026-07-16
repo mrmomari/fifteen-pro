@@ -267,11 +267,14 @@ if (vqId) {
   }).catch(err => { console.error(err); fail(); });
 
   function renderVendorForm() {
+    const metaBits = [];
+    if (vq.qnTitle) metaBits.push(vq.qnTitle);
+    if (vq.createdAt) metaBits.push('Requested ' + fmtDate(vq.createdAt));
     setHeader(
-      'Service Cost Sheet',
+      vq.business ? 'Cost Sheet — ' + vq.business : 'Service Cost Sheet',
       'Please enter your cost for each service below, then submit. Leave blank any service you can\'t quote.',
-      vq.createdAt ? 'Requested ' + fmtDate(vq.createdAt) : '',
-      ''
+      metaBits.join(' · '),
+      vq.business ? '<span class="rp-tag">For ' + escHtml(vq.business) + '</span>' : ''
     );
     const services = Array.isArray(vq.services) ? vq.services : [];
     const costs = vq.costs || {};
