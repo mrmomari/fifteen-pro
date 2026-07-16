@@ -1,0 +1,172 @@
+{
+  ".claude/launch.json": {
+    "mtime": 1783693388.1893692,
+    "ast_hash": "207ba0f550c004648739086c4bf12a87",
+    "semantic_hash": "207ba0f550c004648739086c4bf12a87"
+  },
+  "app.js": {
+    "mtime": 1783693388.4613693,
+    "ast_hash": "a6854cf52b3265a05c35ab2ab67746a0",
+    "semantic_hash": "a6854cf52b3265a05c35ab2ab67746a0"
+  },
+  "firebase-config.js": {
+    "mtime": 1783693388.4693692,
+    "ast_hash": "144a7c6caa6fbc068d36e812b3462611",
+    "semantic_hash": "144a7c6caa6fbc068d36e812b3462611"
+  },
+  "firebase.json": {
+    "mtime": 1783693388.4693692,
+    "ast_hash": "8c302204ace85f63924412fa964c8a21",
+    "semantic_hash": "8c302204ace85f63924412fa964c8a21"
+  },
+  "prices.json": {
+    "mtime": 1783693388.4693692,
+    "ast_hash": "48b1e83c632c6d7c96a27f920c60bc34",
+    "semantic_hash": "48b1e83c632c6d7c96a27f920c60bc34"
+  },
+  ".claude/skills/graphify/SKILL.md": {
+    "mtime": 1784173237.0403569,
+    "ast_hash": "f7f1087d99798a5f77fffb0a01e8e582",
+    "semantic_hash": "f7f1087d99798a5f77fffb0a01e8e582"
+  },
+  ".claude/skills/graphify/references/add-watch.md": {
+    "mtime": 1784173237.0419955,
+    "ast_hash": "d59d027fe449f06aa03905a01184e779",
+    "semantic_hash": "d59d027fe449f06aa03905a01184e779"
+  },
+  ".claude/skills/graphify/references/exports.md": {
+    "mtime": 1784173237.0426326,
+    "ast_hash": "9da2a2152e60a22f07f05fed5158f287",
+    "semantic_hash": "9da2a2152e60a22f07f05fed5158f287"
+  },
+  ".claude/skills/graphify/references/extraction-spec.md": {
+    "mtime": 1784173237.0426326,
+    "ast_hash": "42fef56a01698118f7fd722acdadea34",
+    "semantic_hash": "42fef56a01698118f7fd722acdadea34"
+  },
+  ".claude/skills/graphify/references/github-and-merge.md": {
+    "mtime": 1784173237.0426326,
+    "ast_hash": "cde13df085e4c492aeb7ba298a996d0d",
+    "semantic_hash": "cde13df085e4c492aeb7ba298a996d0d"
+  },
+  ".claude/skills/graphify/references/hooks.md": {
+    "mtime": 1784173237.0426326,
+    "ast_hash": "3f545db6ce646650bb9de588f5512a27",
+    "semantic_hash": "3f545db6ce646650bb9de588f5512a27"
+  },
+  ".claude/skills/graphify/references/query.md": {
+    "mtime": 1784173237.0426326,
+    "ast_hash": "3c46f8ad006874260614ed8657d02307",
+    "semantic_hash": "3c46f8ad006874260614ed8657d02307"
+  },
+  ".claude/skills/graphify/references/transcribe.md": {
+    "mtime": 1784173237.0426326,
+    "ast_hash": "67b6a5fa6c0974e18f60db9f8932fbd8",
+    "semantic_hash": "67b6a5fa6c0974e18f60db9f8932fbd8"
+  },
+  ".claude/skills/graphify/references/update.md": {
+    "mtime": 1784173237.0426326,
+    "ast_hash": "c698309979460d0f02ba616417844399",
+    "semantic_hash": "c698309979460d0f02ba616417844399"
+  },
+  ".github/workflows/firebase-hosting-merge.yml": {
+    "mtime": 1783693388.1923578,
+    "ast_hash": "2c6bbc72188d1eb86affafa75336f9e5",
+    "semantic_hash": "2c6bbc72188d1eb86affafa75336f9e5"
+  },
+  ".github/workflows/firebase-hosting-pull-request.yml": {
+    "mtime": 1783693388.1928906,
+    "ast_hash": "cc3b63d9b15e52d5729c9bfb9c9a7fc4",
+    "semantic_hash": "cc3b63d9b15e52d5729c9bfb9c9a7fc4"
+  },
+  ".github/workflows/firebase-rules-deploy.yml": {
+    "mtime": 1783693388.1928906,
+    "ast_hash": "c7cbdfd967ba969a2c6e6e2a7daec27f",
+    "semantic_hash": "c7cbdfd967ba969a2c6e6e2a7daec27f"
+  },
+  "CLAUDE.md": {
+    "mtime": 1784173237.043482,
+    "ast_hash": "103b02038abdefbd765c9ec7a7ed0e3f",
+    "semantic_hash": "103b02038abdefbd765c9ec7a7ed0e3f"
+  },
+  "MD/Company profile On Stage 2025.md": {
+    "mtime": 1783693388.3853693,
+    "ast_hash": "de216d0af2321c5a544d5977ba496d9d",
+    "semantic_hash": "de216d0af2321c5a544d5977ba496d9d"
+  },
+  "MD/Products Guide.md": {
+    "mtime": 1783693388.386957,
+    "ast_hash": "e22d88ee0f652184463128ab71724ca1",
+    "semantic_hash": "e22d88ee0f652184463128ab71724ca1"
+  },
+  "MD/Ultimate Guide.md": {
+    "mtime": 1783693388.386957,
+    "ast_hash": "b1f28eced31097d6c64e136813ee85bc",
+    "semantic_hash": "b1f28eced31097d6c64e136813ee85bc"
+  },
+  "MD/fifteen---bundle-flyer1.1.md": {
+    "mtime": 1783693388.386957,
+    "ast_hash": "3616a35ef7fc3d47ff0b35f835cab5ef",
+    "semantic_hash": "3616a35ef7fc3d47ff0b35f835cab5ef"
+  },
+  "SECURITY.md": {
+    "mtime": 1783693388.4293692,
+    "ast_hash": "90c4d8aeeb0765d40fca989a01347334",
+    "semantic_hash": "90c4d8aeeb0765d40fca989a01347334"
+  },
+  "admin.html": {
+    "mtime": 1784173237.043482,
+    "ast_hash": "27008cf0ebbd6ae00babc55542bddd60",
+    "semantic_hash": "27008cf0ebbd6ae00babc55542bddd60"
+  },
+  "index.html": {
+    "mtime": 1784173237.047482,
+    "ast_hash": "502fd4d9d0cf6ee34674a9d8ae8979eb",
+    "semantic_hash": "502fd4d9d0cf6ee34674a9d8ae8979eb"
+  },
+  "portal.html": {
+    "mtime": 1783693388.4693692,
+    "ast_hash": "5e8b16ba1f22449f9f68a466a946055a",
+    "semantic_hash": "5e8b16ba1f22449f9f68a466a946055a"
+  },
+  "questionnaire.html": {
+    "mtime": 1783693388.4733694,
+    "ast_hash": "cf98ac30ba76742d3f4df6f33636fd0e",
+    "semantic_hash": "cf98ac30ba76742d3f4df6f33636fd0e"
+  },
+  "shop.html": {
+    "mtime": 1783693388.4733694,
+    "ast_hash": "722e7e6a40cd70f0f50a7773039b5ead",
+    "semantic_hash": "722e7e6a40cd70f0f50a7773039b5ead"
+  },
+  "Company profile On Stage 2025.pdf": {
+    "mtime": 1783693388.3813694,
+    "ast_hash": "5f109952125678554492f04f297b17e5",
+    "semantic_hash": "5f109952125678554492f04f297b17e5"
+  },
+  "Products Guide.pdf": {
+    "mtime": 1783693388.4253693,
+    "ast_hash": "9691160c1add691a1d908c7fef4ca328",
+    "semantic_hash": "9691160c1add691a1d908c7fef4ca328"
+  },
+  "Ultimate Guide.pdf": {
+    "mtime": 1783693388.4573693,
+    "ast_hash": "430c14e852e232843f7a12d7bc31441a",
+    "semantic_hash": "430c14e852e232843f7a12d7bc31441a"
+  },
+  "fifteen---bundle-flyer1.1.pdf": {
+    "mtime": 1783693388.4693692,
+    "ast_hash": "60d24ef4ec5a223a9bc6b02c7a554581",
+    "semantic_hash": "60d24ef4ec5a223a9bc6b02c7a554581"
+  },
+  "Q.jpeg": {
+    "mtime": 1783693388.4293692,
+    "ast_hash": "22fae18e035ddb72cc27f6d99622adb4",
+    "semantic_hash": "22fae18e035ddb72cc27f6d99622adb4"
+  },
+  "WhatsApp Image 2026-06-14 at 17.51.08.jpeg": {
+    "mtime": 1783693388.4613693,
+    "ast_hash": "8fc8e3031a1e268d78a7414b50291f23",
+    "semantic_hash": "8fc8e3031a1e268d78a7414b50291f23"
+  }
+}
