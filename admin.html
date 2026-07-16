@@ -1413,6 +1413,7 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
       <button class="modal-cancel" onclick="closeQnAnalysisModal()">Close</button>
       <button class="btn-reject" onclick="copyQnAnalysisMarkdown()"><i class="fa-regular fa-copy"></i> Copy Markdown</button>
       <button class="btn-reject" onclick="downloadQnAnalysisMarkdown()"><i class="fa-solid fa-download"></i> Download .md</button>
+      <button class="btn-reject" onclick="exportQnAnalysisPdf()"><i class="fa-regular fa-file-pdf"></i> Export PDF</button>
       <button class="btn-whatsapp" style="width:auto" onclick="sendQnAnalysisWhatsApp()"><i class="fa-brands fa-whatsapp"></i> Send Summary</button>
     </div>
   </div>
@@ -4389,6 +4390,54 @@ function downloadQnAnalysisMarkdown() {
   aEl.click();
   aEl.remove();
   URL.revokeObjectURL(aEl.href);
+}
+
+/* ── PDF export ──
+   Opens a print-styled, branded report window and triggers the browser's
+   print dialog — "Save as PDF" there produces the file. No libraries needed. */
+function exportQnAnalysisPdf() {
+  if (!qnAnalysis) return;
+  const a = qnAnalysis;
+  const internal = qnAnalysisMode === 'internal';
+  const title = internal ? `Analysis — ${a.business}` : `Growth Plan — ${a.business}`;
+  const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const w = window.open('', '_blank');
+  if (!w) { toast('Popup blocked — allow popups for this site to export PDF', 'error'); return; }
+
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
+<title>${escHtml(title)}</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap">
+<style>
+  :root{--green:#26915E;--green-dim:#1d7a4c;--orange:#E36C44;--cream:#E0E8CF;--cream-alt:#D5DFBE;--text:#1C2416;--text-muted:#5A6B4E;--text-dim:#7A8B6A}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:#fff}
+  body{font-family:'Inter',system-ui,sans-serif;color:var(--text);max-width:780px;margin:0 auto;padding:36px 40px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .pdf-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;border-bottom:3px solid var(--green);padding-bottom:16px;margin-bottom:6px}
+  .pdf-brand{font-size:22px;font-weight:900;letter-spacing:-.02em;color:var(--green)}
+  .pdf-brand span{color:var(--orange)}
+  .pdf-title{font-size:19px;font-weight:800;margin-top:6px}
+  .pdf-sub{font-size:12px;color:var(--text-muted);margin-top:4px;line-height:1.7}
+  .pdf-tag{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#fff;background:${internal ? '#c0392b' : 'var(--green)'};border-radius:6px;padding:5px 10px;white-space:nowrap}
+  .pdf-foot{border-top:1.5px solid rgba(0,0,0,.1);margin-top:26px;padding-top:12px;font-size:11px;color:var(--text-dim);display:flex;justify-content:space-between}
+  #report div[style*="border-radius:8px"]{break-inside:avoid}
+  li{break-inside:avoid}
+  @page{size:A4;margin:14mm 12mm}
+  @media print{body{padding:0;max-width:none}}
+</style></head><body>
+  <div class="pdf-head">
+    <div>
+      <div class="pdf-brand">Fifteen<span>.</span></div>
+      <div class="pdf-title">${escHtml(title)}</div>
+      <div class="pdf-sub">${escHtml(a.qn.title || 'Questionnaire')} · ${a.answered}/${a.total} questions answered (${a.pct}%) · ${escHtml(today)}</div>
+    </div>
+    <div class="pdf-tag">${internal ? 'Internal — not for distribution' : 'Prepared for ' + escHtml(a.business)}</div>
+  </div>
+  <div id="report">${document.getElementById('qna-body').innerHTML}</div>
+  <div class="pdf-foot"><span>© 2026 Fifteen · 15fifteen15.com</span><span>${internal ? 'Confidential sales document' : 'We look forward to building this with you'}</span></div>
+  <scr` + `ipt>window.onload=function(){setTimeout(function(){window.print()},500)}</scr` + `ipt>
+</body></html>`);
+  w.document.close();
 }
 
 /* ── WhatsApp summary (compact internal digest) ── */
