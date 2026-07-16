@@ -170,8 +170,9 @@ qnReports/{id}          — saved, editable analysis reports (admin-only; seeded
   clientReportId, createdAt, updatedAt
 
 vendorQuotes/{id}       — 3rd-party cost sheet behind report.html?vq=... (one per report)
-  reportId, services: [{ key, name, phase, scope }]   — service list only: no customer identity,
-                                                        no internal analysis, no our prices
+  reportId, business, qnTitle                         — business name + questionnaire title, shown in
+                                                        the sheet header so the vendor knows the client
+  services: [{ key, name, phase, scope }]             — no internal analysis, no our prices
   passHash                — SHA-256 of the passcode (UI gate on report.html; same link-trust model
                             as questionnaires — treat the link itself as the secret)
   costs: { key: number }, vendorName, vendorNote      — filled in by the vendor
@@ -255,7 +256,7 @@ clientReports/{id}      — published engagement roadmap behind report.html?cr=.
 **Admin prices a report via a 3rd-party vendor and sends the roadmap:**
 1. Admin → Questionnaires → **Analyze** — first open seeds an editable report from the analyzer; every later open loads the saved `qnReports` doc instead (Reset rebuilds from the answers, keeping vendor costs/prices/links). Every line (facts, strengths, gaps, opportunities, risks, talking points) can be edited inline, added, or deleted; every service row can be deleted and has editable **3rd-party $** and **Client $** price fields next to the catalog price
 2. **Save Report** persists edits; **Open in New Tab** pops the current view (Internal or Client-Facing) full-screen via `report.html?rid=...`; **Export PDF** opens the same page with the print dialog
-3. Internal tab → **Create Vendor Link** builds a passcode-protected cost sheet (`vendorQuotes` + `report.html?vq=...`) listing only service names/scopes — Copy Link + Passcode or Send to Vendor via WhatsApp
+3. Internal tab → **Create Vendor Link** builds a passcode-protected cost sheet (`vendorQuotes` + `report.html?vq=...`) showing the business name, questionnaire title, and service names/scopes (no analysis, no our prices) — Copy Link + Passcode or Send to Vendor via WhatsApp
 4. The 3rd party opens the link, enters the passcode, fills in their cost per service and submits (one-time; the sheet locks). **Refresh Costs** (also run automatically when the report opens) pulls the submitted numbers into the 3rd-party column
 5. Admin marks up: type each Client $ by hand or use **Apply Markup %** (fills client price = vendor cost + markup), then fine-tunes
 6. Client-Facing tab → edit the intro/strengths/needs/next-steps, remove (and restore) services from the plan — prices shown are the marked-up client prices (catalog price when unset)
