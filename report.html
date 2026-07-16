@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Report — Fifteen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#26915E;
+  --green-dim:#1d7a4c;
+  --orange:#E36C44;
+  --cream:#E0E8CF;
+  --cream-alt:#D5DFBE;
+  --text:#1C2416;
+  --text-muted:#5A6B4E;
+  --text-dim:#7A8B6A;
+  --radius:12px;
+  --radius-lg:16px;
+}
+body{
+  background:var(--cream);
+  color:var(--text);
+  font-family:'Inter',system-ui,sans-serif;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+
+/* ── Shell states ── */
+.rp-shell{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px}
+.rp-card{background:#fff;border-radius:var(--radius-lg);box-shadow:0 8px 40px rgba(0,0,0,0.12);padding:44px 38px;width:100%;max-width:440px;text-align:center}
+.rp-card i.big{font-size:34px;color:var(--green);margin-bottom:16px;display:block}
+.rp-card.err i.big{color:var(--orange)}
+.rp-card h2{font-size:20px;font-weight:800;letter-spacing:-.02em;margin-bottom:10px}
+.rp-card p{font-size:13.5px;color:var(--text-muted)}
+.spinner{width:30px;height:30px;border:3px solid rgba(38,145,94,.2);border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.rp-input{width:100%;padding:12px 14px;border:1.5px solid rgba(0,0,0,.14);border-radius:9px;font-size:15px;font-family:inherit;color:var(--text);outline:none;transition:border-color .15s;text-align:center;letter-spacing:.15em;font-weight:700;margin-top:16px}
+.rp-input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(38,145,94,.1)}
+.rp-btn{width:100%;padding:13px;border:none;border-radius:9px;background:var(--green);color:#fff;font-size:14px;font-weight:800;font-family:inherit;cursor:pointer;transition:background .15s;margin-top:12px}
+.rp-btn:hover{background:var(--green-dim)}
+.rp-btn:disabled{opacity:.6;cursor:not-allowed}
+.rp-pass-err{color:#c0392b;font-size:12.5px;font-weight:600;margin-top:10px;display:none}
+
+/* ── Page ── */
+.rp-page{max-width:820px;margin:0 auto;padding:40px 20px 80px}
+.rp-header{text-align:center;margin-bottom:30px}
+.rp-logo{display:inline-flex;align-items:center;gap:8px;text-decoration:none;margin-bottom:22px}
+.rp-logo img{max-height:56px;width:auto;object-fit:contain;display:none}
+.rp-logo-text{font-size:24px;font-weight:900;letter-spacing:-.04em;color:var(--text)}
+.rp-logo-text span{color:var(--green)}
+.rp-title{font-size:26px;font-weight:900;letter-spacing:-.03em;line-height:1.25;margin-bottom:8px}
+.rp-sub{font-size:14px;color:var(--text-muted);max-width:560px;margin:0 auto}
+.rp-meta-line{margin-top:12px;font-size:12px;color:var(--text-dim)}
+.rp-tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#fff;background:var(--green);border-radius:6px;padding:5px 12px;margin-top:12px}
+.rp-tag.internal{background:#c0392b}
+
+.rp-box{background:#fff;border-radius:var(--radius);box-shadow:0 2px 14px rgba(0,0,0,.05);margin-bottom:18px;padding:22px 26px}
+.rp-sec-title{font-size:12px;font-weight:800;color:var(--green);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 8px}
+.rp-sec-title:first-child{margin-top:0}
+.rp-list{margin:0;padding-left:2px;list-style:none}
+.rp-list li{font-size:13.5px;padding:4px 0;display:flex;gap:9px}
+.rp-list li i{margin-top:4px;flex-shrink:0}
+.rp-svc{background:#fff;border:1px solid rgba(0,0,0,.09);border-radius:9px;padding:12px 14px;margin-bottom:8px}
+.rp-svc-head{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.rp-svc-phase{font-size:10px;font-weight:800;color:var(--text-dim);flex-shrink:0}
+.rp-svc-name{font-size:13.5px;font-weight:700;flex:1;min-width:140px}
+.rp-svc-price{font-size:13px;font-weight:800;color:var(--green);white-space:nowrap}
+.rp-svc-desc{font-size:12.5px;color:var(--text-muted);margin-top:4px}
+.rp-svc-ev{margin-top:7px;border-top:1px dashed rgba(0,0,0,.1);padding-top:6px}
+.rp-svc-ev div{font-size:11px;color:var(--text-dim);padding:2px 0}
+.rp-total{background:var(--cream-alt);border-radius:9px;padding:12px 16px;font-size:13.5px;margin-top:8px}
+.rp-cost-input{width:130px;padding:8px 10px;border:1.5px solid rgba(0,0,0,.14);border-radius:8px;font-size:13.5px;font-family:inherit;font-weight:700;color:var(--text);outline:none;text-align:right}
+.rp-cost-input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(38,145,94,.1)}
+.rp-field{margin-bottom:14px}
+.rp-field label{display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px}
+.rp-field input,.rp-field textarea{width:100%;padding:10px 13px;border:1.5px solid rgba(0,0,0,.12);border-radius:8px;font-size:13.5px;font-family:inherit;color:var(--text);outline:none}
+.rp-field input:focus,.rp-field textarea:focus{border-color:var(--green)}
+.rp-footer-note{font-size:12px;color:var(--text-dim);text-align:center;margin:22px auto 16px;max-width:520px}
+.rp-print{position:fixed;right:18px;bottom:18px;background:var(--text);color:#fff;border:none;border-radius:99px;padding:12px 20px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.25);display:flex;align-items:center;gap:8px}
+.rp-print:hover{background:#000}
+.rp-foot{border-top:1.5px solid rgba(0,0,0,.1);margin-top:26px;padding-top:12px;font-size:11px;color:var(--text-dim);display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}
+
+@media(max-width:640px){
+  .rp-box{padding:16px 16px}
+  .rp-title{font-size:21px}
+  .rp-cost-input{width:110px}
+}
+@media print{
+  body{background:#fff}
+  .rp-print{display:none}
+  .rp-box{box-shadow:none;border:1px solid rgba(0,0,0,.12);break-inside:avoid}
+  .rp-page{padding:10px 0}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ LOADING ═══ -->
+<div class="rp-shell" id="loadingScreen">
+  <div class="rp-card">
+    <div class="spinner"></div>
+    <p>Loading report…</p>
+  </div>
+</div>
+
+<!-- ═══ ERROR ═══ -->
+<div class="rp-shell" id="errorScreen" style="display:none">
+  <div class="rp-card err">
+    <i class="fa-solid fa-triangle-exclamation big"></i>
+    <h2 id="errTitle">Link Not Found</h2>
+    <p id="errMsg">This report link is invalid or has been removed. Please check the link or contact whoever sent it to you.</p>
+  </div>
+</div>
+
+<!-- ═══ PASSCODE GATE (vendor) ═══ -->
+<div class="rp-shell" id="passScreen" style="display:none">
+  <div class="rp-card">
+    <i class="fa-solid fa-lock big"></i>
+    <h2>Enter Passcode</h2>
+    <p>This cost sheet is protected. Enter the passcode you received with this link.</p>
+    <input class="rp-input" id="passInput" type="text" autocomplete="off" placeholder="••••••" maxlength="24">
+    <div class="rp-pass-err" id="passErr">Incorrect passcode — please try again.</div>
+    <button class="rp-btn" id="passBtn">Open Cost Sheet</button>
+  </div>
+</div>
+
+<!-- ═══ DONE (vendor submitted) ═══ -->
+<div class="rp-shell" id="doneScreen" style="display:none">
+  <div class="rp-card">
+    <i class="fa-solid fa-circle-check big"></i>
+    <h2 id="doneTitle">Thank You!</h2>
+    <p id="doneMsg">Your costs have been submitted. We'll be in touch shortly.</p>
+  </div>
+</div>
+
+<!-- ═══ REPORT PAGE ═══ -->
+<div class="rp-page" id="pageScreen" style="display:none">
+  <div class="rp-header">
+    <a href="https://15fifteen15.com" class="rp-logo">
+      <img id="rpLogoImg" alt="Fifteen">
+      <span class="rp-logo-text" id="rpLogoText">FIFTEEN<span>.</span></span>
+    </a>
+    <h1 class="rp-title" id="rpTitle">Report</h1>
+    <p class="rp-sub" id="rpSub"></p>
+    <div class="rp-meta-line" id="rpMeta"></div>
+    <div id="rpTagWrap"></div>
+  </div>
+  <div id="rpBody"></div>
+  <div class="rp-foot"><span>© 2026 Fifteen · 15fifteen15.com</span><span id="rpFootRight"></span></div>
+</div>
+
+<button class="rp-print" id="printBtn" style="display:none" onclick="window.print()"><i class="fa-solid fa-print"></i> Print / Save PDF</button>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+(function(){
+
+function escHtml(str) {
+  return String(str == null ? '' : str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+function show(id) {
+  ['loadingScreen','errorScreen','passScreen','doneScreen','pageScreen'].forEach(s => {
+    document.getElementById(s).style.display = (s === id) ? (s === 'pageScreen' ? 'block' : 'flex') : 'none';
+  });
+}
+
+function fail(title, msg) {
+  document.getElementById('errTitle').textContent = title || 'Link Not Found';
+  if (msg) document.getElementById('errMsg').textContent = msg;
+  show('errorScreen');
+}
+
+function fmtMoney(n) {
+  return '$' + Number(n || 0).toLocaleString();
+}
+
+function fmtDate(ts) {
+  try {
+    const d = ts && ts.toDate ? ts.toDate() : (ts ? new Date(ts) : null);
+    return d ? d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+  } catch(e) { return ''; }
+}
+
+async function sha256hex(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+const params = new URLSearchParams(location.search);
+const vqId = params.get('vq');       // vendor cost sheet
+const crId = params.get('cr');       // published client roadmap
+const rid  = params.get('rid');      // admin pop-out of a saved qnReports doc
+const view = params.get('view') === 'client' ? 'client' : 'internal';
+
+if ((!vqId && !crId && !rid) || typeof FIREBASE_CONFIG === 'undefined' || !FIREBASE_CONFIG.apiKey) {
+  fail();
+  return;
+}
+
+firebase.initializeApp(FIREBASE_CONFIG);
+const db = firebase.firestore();
+
+db.collection('settings').doc('company').get().then(doc => {
+  if (!doc.exists) return;
+  const logoUrl = (doc.data().logo || '').trim();
+  if (!logoUrl) return;
+  const img = document.getElementById('rpLogoImg');
+  img.onload = () => { img.style.display = 'block'; document.getElementById('rpLogoText').style.display = 'none'; };
+  img.onerror = () => {};
+  img.src = logoUrl;
+}).catch(() => {});
+
+function setHeader(title, sub, meta, tagHtml) {
+  document.title = title + ' — Fifteen';
+  document.getElementById('rpTitle').textContent = title;
+  document.getElementById('rpSub').textContent = sub || '';
+  document.getElementById('rpMeta').textContent = meta || '';
+  document.getElementById('rpTagWrap').innerHTML = tagHtml || '';
+}
+
+function listHtml(items, icon, color) {
+  return `<ul class="rp-list">${items.map(t =>
+    `<li><i class="fa-solid ${icon}" style="color:${color}"></i><span>${escHtml(t)}</span></li>`).join('')}</ul>`;
+}
+
+// admin.html's Export PDF opens this page with ?print=1
+function maybePrint() {
+  if (params.get('print')) setTimeout(() => window.print(), 600);
+}
+
+/* ════════ VENDOR COST SHEET (?vq=) ════════ */
+if (vqId) {
+  let vq = null;
+  db.collection('vendorQuotes').doc(vqId).get().then(doc => {
+    if (!doc.exists) { fail(); return; }
+    vq = doc.data();
+    if (vq.status === 'submitted') {
+      document.getElementById('doneTitle').textContent = 'Already Submitted';
+      document.getElementById('doneMsg').textContent = 'This cost sheet has already been submitted. Thank you — we have everything we need.';
+      show('doneScreen');
+      return;
+    }
+    if (vq.passHash) {
+      show('passScreen');
+      const tryPass = async () => {
+        const val = document.getElementById('passInput').value.trim();
+        if (!val) return;
+        const hash = await sha256hex(val);
+        if (hash === vq.passHash) { renderVendorForm(); }
+        else { document.getElementById('passErr').style.display = 'block'; }
+      };
+      document.getElementById('passBtn').addEventListener('click', tryPass);
+      document.getElementById('passInput').addEventListener('keydown', e => { if (e.key === 'Enter') tryPass(); });
+    } else {
+      renderVendorForm();
+    }
+  }).catch(err => { console.error(err); fail(); });
+
+  function renderVendorForm() {
+    setHeader(
+      'Service Cost Sheet',
+      'Please enter your cost for each service below, then submit. Leave blank any service you can\'t quote.',
+      vq.createdAt ? 'Requested ' + fmtDate(vq.createdAt) : '',
+      ''
+    );
+    const services = Array.isArray(vq.services) ? vq.services : [];
+    const costs = vq.costs || {};
+    document.getElementById('rpBody').innerHTML = `
+      <div class="rp-box">
+        ${services.map(s => `
+          <div class="rp-svc">
+            <div class="rp-svc-head">
+              <span class="rp-svc-phase">P${escHtml(String(s.phase || ''))}</span>
+              <span class="rp-svc-name">${escHtml(s.name)}</span>
+              <span style="display:flex;align-items:center;gap:7px">
+                <span style="font-size:12px;color:var(--text-dim);font-weight:700">Your cost $</span>
+                <input class="rp-cost-input" type="number" min="0" step="10" data-key="${escHtml(s.key)}" value="${costs[s.key] != null ? escHtml(String(costs[s.key])) : ''}" placeholder="0">
+              </span>
+            </div>
+            ${s.scope ? `<div class="rp-svc-desc">${escHtml(s.scope)}</div>` : ''}
+          </div>`).join('')}
+      </div>
+      <div class="rp-box">
+        <div class="rp-field"><label>Your name / company</label><input id="vendorName" type="text" placeholder="e.g. Studio XYZ" value="${escHtml(vq.vendorName || '')}"></div>
+        <div class="rp-field" style="margin-bottom:0"><label>Notes (optional)</label><textarea id="vendorNote" rows="3" placeholder="Anything we should know about these costs — assumptions, timelines, exclusions…">${escHtml(vq.vendorNote || '')}</textarea></div>
+      </div>
+      <p class="rp-footer-note">Once you submit, this sheet is locked and can't be edited. Please double-check your numbers first.</p>
+      <button class="rp-btn" id="vqSubmitBtn" style="margin-top:0"><i class="fa-solid fa-paper-plane"></i> Submit Costs</button>
+    `;
+    document.getElementById('vqSubmitBtn').addEventListener('click', submitVendorCosts);
+    document.getElementById('rpFootRight').textContent = 'Confidential — for the addressed vendor only';
+    show('pageScreen');
+  }
+
+  async function submitVendorCosts() {
+    const btn = document.getElementById('vqSubmitBtn');
+    const costs = {};
+    document.querySelectorAll('.rp-cost-input').forEach(inp => {
+      const v = parseFloat(inp.value);
+      if (!isNaN(v) && v >= 0) costs[inp.getAttribute('data-key')] = v;
+    });
+    if (!Object.keys(costs).length) { alert('Please enter a cost for at least one service before submitting.'); return; }
+    btn.disabled = true;
+    btn.textContent = 'Submitting…';
+    try {
+      await db.collection('vendorQuotes').doc(vqId).update({
+        costs,
+        vendorName: document.getElementById('vendorName').value.trim(),
+        vendorNote: document.getElementById('vendorNote').value.trim(),
+        status: 'submitted',
+        submittedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      document.getElementById('doneTitle').textContent = 'Thank You!';
+      document.getElementById('doneMsg').textContent = 'Your costs have been submitted successfully. We\'ll be in touch shortly.';
+      show('doneScreen');
+    } catch(e) {
+      console.error(e);
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Costs';
+      alert('Something went wrong submitting your costs. Please try again: ' + e.message);
+    }
+  }
+  return;
+}
+
+/* ════════ PUBLISHED CLIENT ROADMAP (?cr=) ════════ */
+if (crId) {
+  db.collection('clientReports').doc(crId).get().then(doc => {
+    if (!doc.exists) { fail(); return; }
+    renderClientRoadmap(doc.data());
+  }).catch(err => { console.error(err); fail(); });
+  return;
+}
+
+function renderClientRoadmap(cr) {
+  setHeader(
+    cr.title || 'Engagement Roadmap',
+    cr.business ? 'Prepared for ' + cr.business : '',
+    cr.publishedAt ? fmtDate(cr.publishedAt) : '',
+    '<span class="rp-tag">Your Growth Plan</span>'
+  );
+  let html = '';
+  if (cr.intro) html += `<div class="rp-box" style="font-size:13.5px;line-height:1.7">${escHtml(cr.intro)}</div>`;
+  if ((cr.strengths || []).length) html += `<div class="rp-box"><div class="rp-sec-title">What You're Doing Right</div>${listHtml(cr.strengths, 'fa-circle-check', 'var(--green)')}</div>`;
+  if ((cr.needs || []).length) html += `<div class="rp-box"><div class="rp-sec-title">Where We Can Help</div>${listHtml(cr.needs, 'fa-arrow-trend-up', 'var(--orange)')}</div>`;
+
+  const phases = Array.isArray(cr.phases) ? cr.phases : [];
+  if (phases.length) {
+    html += `<div class="rp-box"><div class="rp-sec-title">Your Recommended Plan</div>`;
+    phases.forEach(ph => {
+      html += `<div style="font-size:11px;font-weight:800;color:var(--green);text-transform:uppercase;letter-spacing:.06em;margin:12px 0 6px">Phase ${escHtml(String(ph.phase))}${ph.label ? ' — ' + escHtml(ph.label) : ''}</div>`;
+      (ph.items || []).forEach(it => {
+        html += `<div class="rp-svc">
+          <div class="rp-svc-head">
+            <span class="rp-svc-name">${escHtml(it.name)}</span>
+            ${cr.showPrices && it.price != null ? `<span class="rp-svc-price">${fmtMoney(it.price)}${it.type === 'monthly' ? '/mo' : ''}</span>` : ''}
+          </div>
+          ${it.desc ? `<div class="rp-svc-desc">${escHtml(it.desc)}</div>` : ''}
+        </div>`;
+      });
+    });
+    if (cr.showPrices && cr.totals && (cr.totals.oneTime || cr.totals.monthly)) {
+      html += `<div class="rp-total"><strong>Total investment:</strong> ${fmtMoney(cr.totals.oneTime)} one-time${cr.totals.monthly ? ` + ${fmtMoney(cr.totals.monthly)}/month` : ''}</div>`;
+    }
+    html += `</div>`;
+  }
+  if ((cr.nextSteps || []).length) html += `<div class="rp-box"><div class="rp-sec-title">Next Steps</div>${listHtml(cr.nextSteps, 'fa-arrow-right', 'var(--green)')}</div>`;
+
+  document.getElementById('rpBody').innerHTML = html;
+  document.getElementById('rpFootRight').textContent = 'We look forward to building this with you';
+  document.getElementById('printBtn').style.display = 'flex';
+  show('pageScreen');
+  maybePrint();
+}
+
+/* ════════ ADMIN POP-OUT (?rid=&view=) ════════
+   Requires the same browser session to be signed in as an admin —
+   Firestore rules deny qnReports reads to anyone else. */
+firebase.auth().onAuthStateChanged(() => {
+  db.collection('qnReports').doc(rid).get().then(doc => {
+    if (!doc.exists) { fail(); return; }
+    const r = doc.data();
+    if (view === 'client') renderAdminClient(r);
+    else renderAdminInternal(r);
+  }).catch(err => {
+    console.error(err);
+    fail('Admin Access Required', 'This report is internal. Sign in to the admin dashboard in this browser first, then reopen this link.');
+  });
+});
+
+function svcRow(s, detail) {
+  const priceBits = [];
+  if (detail) {
+    priceBits.push(`<span style="font-size:12px;color:var(--text-muted)">Catalog ${fmtMoney(s.catalogPrice)}${s.type === 'monthly' ? '/mo' : ''}</span>`);
+    if (s.vendorCost != null) priceBits.push(`<span style="font-size:12px;color:#c0392b;font-weight:700">Vendor ${fmtMoney(s.vendorCost)}</span>`);
+    if (s.clientPrice != null) priceBits.push(`<span class="rp-svc-price">Client ${fmtMoney(s.clientPrice)}${s.type === 'monthly' ? '/mo' : ''}</span>`);
+  } else if (s.clientPrice != null) {
+    priceBits.push(`<span class="rp-svc-price">${fmtMoney(s.clientPrice)}${s.type === 'monthly' ? '/mo' : ''}</span>`);
+  }
+  return `<div class="rp-svc">
+    <div class="rp-svc-head">
+      <span class="rp-svc-phase">P${escHtml(String(s.phase))}</span>
+      <span class="rp-svc-name">${escHtml(s.name)}</span>
+      ${priceBits.join(' ')}
+    </div>
+    ${s.desc ? `<div class="rp-svc-desc">${escHtml(s.desc)}</div>` : ''}
+    ${detail && (s.evidence || []).length ? `<div class="rp-svc-ev">${s.evidence.map(ev => `<div><i class="fa-solid fa-quote-left" style="font-size:9px;margin-right:5px"></i>${escHtml(ev)}</div>`).join('')}</div>` : ''}
+  </div>`;
+}
+
+function tierLabel(t) {
+  return t === 'priority' ? 'Priority — pitch these' : t === 'recommended' ? 'Recommended — strong fit' : 'Consider later — phase 2 of the relationship';
+}
+
+function renderAdminInternal(r) {
+  setHeader(
+    'Analysis — ' + (r.business || ''),
+    (r.qnTitle || 'Questionnaire') + (r.answered != null ? ` · ${r.answered}/${r.total} answered (${r.pct}%)` : ''),
+    r.updatedAt ? 'Last updated ' + fmtDate(r.updatedAt) : '',
+    '<span class="rp-tag internal">Internal — not for distribution</span>'
+  );
+  let html = '';
+  if ((r.facts || []).length) {
+    html += `<div class="rp-box"><div class="rp-sec-title">Key Facts</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 14px">${r.facts.map(f =>
+        `<div style="font-size:12.5px"><span style="font-weight:700;color:var(--text-dim)">${escHtml(f.key)}:</span> ${escHtml(f.text)}</div>`).join('')}</div></div>`;
+  }
+  const lists = [
+    ['Strengths — What They Already Have', r.strengths, 'fa-circle-check', 'var(--green)'],
+    ['Gaps — What\'s Missing', (r.gaps || []).map(g => g.text), 'fa-circle-xmark', '#c0392b'],
+    ['Opportunities', r.opps, 'fa-lightbulb', 'var(--orange)'],
+    ['Risks / Watch-outs', r.risks, 'fa-triangle-exclamation', '#c0392b'],
+  ];
+  lists.forEach(([title, items, icon, color]) => {
+    if ((items || []).length) html += `<div class="rp-box"><div class="rp-sec-title">${title}</div>${listHtml(items, icon, color)}</div>`;
+  });
+
+  const svcs = (r.services || []);
+  if (svcs.length) {
+    html += `<div class="rp-box"><div class="rp-sec-title">Recommended Services</div>`;
+    ['priority', 'recommended', 'later'].forEach(tier => {
+      const rows = svcs.filter(s => s.tier === tier);
+      if (!rows.length) return;
+      html += `<div style="font-size:11px;font-weight:800;color:${tier === 'priority' ? 'var(--green)' : tier === 'recommended' ? 'var(--orange)' : 'var(--text-dim)'};text-transform:uppercase;letter-spacing:.06em;margin:12px 0 6px">${tierLabel(tier)}</div>`;
+      rows.forEach(s => { html += svcRow(s, true); });
+    });
+    const inPlan = svcs.filter(s => s.inPlan !== false && (s.tier === 'priority' || s.tier === 'recommended'));
+    let oneTime = 0, monthly = 0, cost = 0;
+    inPlan.forEach(s => {
+      const p = s.clientPrice != null ? s.clientPrice : s.catalogPrice;
+      if (s.type === 'monthly') monthly += p || 0; else oneTime += p || 0;
+      if (s.vendorCost != null) cost += s.vendorCost;
+    });
+    html += `<div class="rp-total"><strong>Investment estimate</strong> (priority + recommended): ${fmtMoney(oneTime)} one-time${monthly ? ` + ${fmtMoney(monthly)}/month` : ''}${cost ? ` · <span style="color:#c0392b">vendor cost basis ${fmtMoney(cost)}</span>` : ''}</div>`;
+    html += `</div>`;
+  }
+  if ((r.vendorNote || '').trim()) html += `<div class="rp-box"><div class="rp-sec-title">Vendor Note${r.vendorName ? ' — ' + escHtml(r.vendorName) : ''}</div><div style="font-size:13px;white-space:pre-wrap">${escHtml(r.vendorNote)}</div></div>`;
+  if ((r.talking || []).length) html += `<div class="rp-box"><div class="rp-sec-title">Talking Points for the Call</div>${listHtml(r.talking, 'fa-comment-dots', 'var(--text-muted)')}</div>`;
+
+  document.getElementById('rpBody').innerHTML = html;
+  document.getElementById('rpFootRight').textContent = 'Confidential sales document';
+  document.getElementById('printBtn').style.display = 'flex';
+  show('pageScreen');
+  maybePrint();
+}
+
+function renderAdminClient(r) {
+  // Same price logic as admin.html's publish: client price, else catalog price.
+  const eff = s => s.clientPrice != null ? s.clientPrice : (s.catalogPrice || 0);
+  const svcs = (r.services || []).filter(s => s.inPlan !== false && (s.tier === 'priority' || s.tier === 'recommended'));
+  const phases = [];
+  [1, 2, 3].forEach(ph => {
+    const items = svcs.filter(s => s.phase === ph).map(s => ({ name: s.name, desc: s.desc, price: eff(s), type: s.type }));
+    if (items.length) phases.push({ phase: ph, label: (svcs.find(s => s.phase === ph) || {}).phaseLabel || '', items });
+  });
+  let oneTime = 0, monthly = 0;
+  svcs.forEach(s => {
+    if (s.type === 'monthly') monthly += eff(s); else oneTime += eff(s);
+  });
+  renderClientRoadmap({
+    title: 'Engagement Roadmap',
+    business: r.business,
+    intro: r.clientIntro,
+    strengths: r.clientStrengths,
+    needs: r.clientNeeds,
+    phases,
+    nextSteps: r.clientNextSteps,
+    showPrices: true,
+    totals: { oneTime, monthly },
+    publishedAt: r.updatedAt
+  });
+}
+
+})();
+</script>
+</body>
+</html>

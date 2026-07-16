@@ -155,6 +155,39 @@ service cloud.firestore {
                  .hasOnly(['answers', 'status', 'completedAt', 'respondentName', 'respondentEmail']));
     }
 
+    // ── Saved questionnaire analysis reports (admin.html Analyze) ──
+    // Master editable report (internal + client-facing content, vendor
+    // costs, markup). Strictly admin-only — never exposed via a link.
+    match /qnReports/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    // ── Vendor cost quotes (report.html?vq=...) ──
+    // A stripped-down service list (no customer identity, no internal
+    // analysis, no our prices) the admin sends to a 3rd-party vendor with a
+    // passcode. Anyone holding the link may fetch it by id (not list) and
+    // submit costs exactly once; after that the doc is locked.
+    match /vendorQuotes/{id} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin()
+        || (resource.data.status != 'submitted'
+            && request.resource.data.status == 'submitted'
+            && request.resource.data.costs is map
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['costs', 'vendorName', 'vendorNote', 'status', 'submittedAt']));
+    }
+
+    // ── Published client-facing roadmaps (report.html?cr=...) ──
+    // Read-only snapshot of the polished engagement roadmap the admin
+    // publishes and sends to the customer. Public get by direct id only.
+    match /clientReports/{id} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+
     // ── Audit logs (append-only) ──
     match /auditLogs/{id} {
       allow read: if isAdmin() || isOwner(resource.data.userId);
