@@ -19,6 +19,7 @@ B2B digital solutions website for **15fifteen15 / Fifteen**. One partner per ind
 | `portal.html` | Customer partner portal — Firebase Auth protected, linked from sidebar |
 | `shop.html` | Interactive service configurator / quote builder |
 | `questionnaire.html` | Public, no-login discovery questionnaire form — opened via a unique `?id=` link admin.html generates per customer (admin.html Questionnaires tab) |
+| `report.html` | Public report pages for saved questionnaire reports: `?vq=` passcode-protected 3rd-party vendor cost sheet, `?cr=` published client engagement roadmap, `?rid=&view=internal\|client` admin-only pop-out (requires admin sign-in in the same browser); `&print=1` auto-opens the print dialog (used by admin.html's Export PDF) |
 | `firebase-config.js` | Firebase project credentials (project: `fifteen-pro`) |
 | `app.js` | Shared admin.html utilities (`AppUtils`: HTML escaping, audit logging, confirm-modal helper) |
 | `prices.json` | Service catalog fallback (loaded if Firestore unavailable) |
@@ -155,6 +156,35 @@ questionnaires/{id}     — discovery questionnaires (admin.html Questionnaires 
   — The link (questionnaire.html?id=...) requires no customer login: firestore.rules allows a public
     `get` by direct doc id (not `list`) and a one-time `update` restricted to the answers/status/
     completedAt fields, blocked once status is already 'completed'.
+
+qnReports/{id}          — saved, editable analysis reports (admin-only; seeded by admin.html Analyze)
+  questionnaireId, business, qnTitle, answered, total, pct
+  facts, strengths, gaps, opps, risks, talking   — internal report content, all editable/deletable
+  services: [{ key, id, name, phase, phaseLabel, desc, type, tier, score, evidence,
+               catalogPrice, vendorCost, clientPrice, inPlan }]
+    vendorCost  — 3rd-party cost (typed by admin or pulled from the linked vendorQuotes doc)
+    clientPrice — marked-up price the customer sees (manual, or via the "Apply Markup %" helper)
+    inPlan      — false = removed from the client-facing roadmap (still visible internally)
+  clientIntro, clientStrengths, clientNeeds, clientNextSteps — client-facing content, independent copies
+  vendorQuoteId, vendorPasscode, vendorStatus, vendorName, vendorNote, vendorSubmittedAt
+  clientReportId, createdAt, updatedAt
+
+vendorQuotes/{id}       — 3rd-party cost sheet behind report.html?vq=... (one per report)
+  reportId, services: [{ key, name, phase, scope }]   — service list only: no customer identity,
+                                                        no internal analysis, no our prices
+  passHash                — SHA-256 of the passcode (UI gate on report.html; same link-trust model
+                            as questionnaires — treat the link itself as the secret)
+  costs: { key: number }, vendorName, vendorNote      — filled in by the vendor
+  status: 'pending' | 'submitted', createdAt, submittedAt
+  — firestore.rules: public `get` by direct id, one-time public `update` restricted to
+    costs/vendorName/vendorNote/status/submittedAt, blocked once status is 'submitted'.
+
+clientReports/{id}      — published engagement roadmap behind report.html?cr=... (one per report)
+  reportId, title, business, intro, strengths, needs, nextSteps
+  phases: [{ phase, label, items: [{ name, desc, price, type }] }]   — price = marked-up clientPrice
+  showPrices, totals: { oneTime, monthly }, publishedAt
+  — read-only snapshot: public `get` by direct id, admin-only writes; re-publishing overwrites the
+    same doc so the customer's link always shows the latest published version.
 ```
 
 ## Auth
@@ -220,7 +250,16 @@ questionnaires/{id}     — discovery questionnaires (admin.html Questionnaires 
 4. Admin → **Copy Link** (or **View → Send via WhatsApp**) → generates `questionnaire.html?id=...` and flips status to `sent`; the customer opens it with no login required
 5. Customer fills it in (autosaved to their browser's localStorage as they go, in case they close the tab) and submits → `status: 'completed'`, answers saved back to the same doc — the link is then locked and can't be resubmitted
 6. Admin → Questionnaires → **View** shows every answered question grouped by section; **Send via WhatsApp** on a completed questionnaire sends the full Q&A report instead of just the link
-7. Admin → Questionnaires → **Analyze** (shown for any questionnaire with answers) runs a rule-based sales/service-fit analyzer over the responses — no backend/AI, keyword rules matched on question wording + answer text so it works on template AND custom questionnaires. It produces an **Internal Report** (key facts, strengths/gaps/opportunities/risks, the 15 services scored into Priority/Recommended/Consider-later tiers with per-answer evidence, an investment estimate from the live catalog prices, and talking points for the sales call) and a **Client-Facing** view (polished growth plan by phase, no scores/prices/evidence). Both are exportable via Copy Markdown / Download .md, plus a compact WhatsApp summary (internal digest) sent via wa.me
+7. Admin → Questionnaires → **Analyze** (shown for any questionnaire with answers) runs a rule-based sales/service-fit analyzer over the responses — no backend/AI, keyword rules matched on question wording + answer text so it works on template AND custom questionnaires. It produces an **Internal Report** (key facts, strengths/gaps/opportunities/risks, the 15 services scored into Priority/Recommended/Consider-later tiers with per-answer evidence, an investment estimate from the live catalog prices, and talking points for the sales call) and a **Client-Facing** view (polished growth plan by phase, no scores/internal evidence). Both are exportable via Copy Markdown / Download .md, plus a compact WhatsApp summary (internal digest) sent via wa.me. The analysis seeds a saved, fully editable report (`qnReports`) — see the next flow.
+
+**Admin prices a report via a 3rd-party vendor and sends the roadmap:**
+1. Admin → Questionnaires → **Analyze** — first open seeds an editable report from the analyzer; every later open loads the saved `qnReports` doc instead (Reset rebuilds from the answers, keeping vendor costs/prices/links). Every line (facts, strengths, gaps, opportunities, risks, talking points) can be edited inline, added, or deleted; every service row can be deleted and has editable **3rd-party $** and **Client $** price fields next to the catalog price
+2. **Save Report** persists edits; **Open in New Tab** pops the current view (Internal or Client-Facing) full-screen via `report.html?rid=...`; **Export PDF** opens the same page with the print dialog
+3. Internal tab → **Create Vendor Link** builds a passcode-protected cost sheet (`vendorQuotes` + `report.html?vq=...`) listing only service names/scopes — Copy Link + Passcode or Send to Vendor via WhatsApp
+4. The 3rd party opens the link, enters the passcode, fills in their cost per service and submits (one-time; the sheet locks). **Refresh Costs** (also run automatically when the report opens) pulls the submitted numbers into the 3rd-party column
+5. Admin marks up: type each Client $ by hand or use **Apply Markup %** (fills client price = vendor cost + markup), then fine-tunes
+6. Client-Facing tab → edit the intro/strengths/needs/next-steps, remove (and restore) services from the plan — prices shown are the marked-up client prices (catalog price when unset)
+7. **Publish & Copy Link** snapshots the roadmap to `clientReports` + `report.html?cr=...` (re-publish updates the same link), or **Send Roadmap to Customer** publishes and opens WhatsApp with the link — this is the engagement roadmap the customer receives
 
 **Admin manages content:**
 - Sidebar → Admin → `admin.html` → signs in (email/password) → tabs: Applications / Orders / Tickets / Access / Service Mgmt / Tasks / Invoices / Questionnaires / Company / Pricing / Services / Expertise / Audit / Notifications

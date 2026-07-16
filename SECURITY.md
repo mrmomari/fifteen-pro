@@ -87,6 +87,9 @@ It is no longer read by anything — delete that field:
 | `tickets/{id}/replies` | — | read own thread, post as `customer` on own thread | read/post as `admin` on any thread |
 | `invoices` | — | read own | read/write |
 | `questionnaires` | get by direct link only (not listable); one-time update to `answers`/`status`/`completedAt` | — | full |
+| `qnReports` | — | — | full |
+| `vendorQuotes` | get by direct link only (not listable); one-time update to `costs`/`vendorName`/`vendorNote`/`status`/`submittedAt` | — | full |
+| `clientReports` | get by direct link only (not listable) | — | full |
 | `auditLogs` | — | read/create own | read/create (no edit/delete) |
 | `admins/{uid}` | — | read own entry | read own entry (writes via console only) |
 

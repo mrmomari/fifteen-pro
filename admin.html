@@ -1488,17 +1488,21 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
   </div>
 </div>
 
-<!-- ══ Questionnaire Analysis Modal ══ -->
+<!-- ══ Questionnaire Analysis / Report Modal ══ -->
 <div class="modal-overlay" id="qnAnalysisModal">
-  <div class="modal-box" style="width:780px;max-width:94vw;max-height:90vh;overflow-y:auto;text-align:left">
+  <div class="modal-box" style="width:880px;max-width:96vw;max-height:92vh;overflow-y:auto;text-align:left">
     <h3 id="qna-title">Questionnaire Analysis</h3>
     <div id="qna-meta" style="font-size:12px;color:var(--text-muted);margin:8px 0 12px;line-height:1.8"></div>
-    <div style="display:flex;gap:8px;margin-bottom:14px">
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
       <button type="button" id="qna-tab-internal" class="modal-confirm" style="flex:0 0 auto" onclick="setQnAnalysisMode('internal')"><i class="fa-solid fa-user-shield"></i> Internal Report</button>
       <button type="button" id="qna-tab-client" class="modal-cancel" style="flex:0 0 auto" onclick="setQnAnalysisMode('client')"><i class="fa-regular fa-handshake"></i> Client-Facing</button>
+      <span style="flex:1 1 auto"></span>
+      <button type="button" class="btn-reject" onclick="resetQnReportFromAnswers()" title="Rebuild the report from the questionnaire answers — keeps vendor costs, client prices and links"><i class="fa-solid fa-rotate-left"></i> Reset</button>
+      <button type="button" class="btn-reject" onclick="openQnReportTab()"><i class="fa-solid fa-up-right-from-square"></i> Open in New Tab</button>
+      <button type="button" class="modal-confirm" onclick="saveQnReport()"><i class="fa-regular fa-floppy-disk"></i> Save Report</button>
     </div>
     <div id="qna-body"></div>
-    <div class="f-field" style="margin-top:14px"><label>Send Summary to WhatsApp Number</label>
+    <div class="f-field" style="margin-top:14px"><label>Send to WhatsApp Number</label>
       <input id="qna-phone" type="tel" placeholder="+1 555 123 4567">
     </div>
     <div class="modal-actions" style="margin-top:14px;flex-wrap:wrap">
@@ -1506,7 +1510,7 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
       <button class="btn-reject" onclick="copyQnAnalysisMarkdown()"><i class="fa-regular fa-copy"></i> Copy Markdown</button>
       <button class="btn-reject" onclick="downloadQnAnalysisMarkdown()"><i class="fa-solid fa-download"></i> Download .md</button>
       <button class="btn-reject" onclick="exportQnAnalysisPdf()"><i class="fa-regular fa-file-pdf"></i> Export PDF</button>
-      <button class="btn-whatsapp" style="width:auto" onclick="sendQnAnalysisWhatsApp()"><i class="fa-brands fa-whatsapp"></i> Send Summary</button>
+      <button class="btn-whatsapp" style="width:auto" id="qna-wa-btn" onclick="sendQnAnalysisWhatsApp()"><i class="fa-brands fa-whatsapp"></i> Send Summary</button>
     </div>
   </div>
 </div>
@@ -4169,7 +4173,7 @@ function deleteQuestionnaire(docId) {
    (template or custom) — rules match on question wording + answer text,
    never on hard-coded question ids.
 ══════════════════════════════════════════════ */
-let qnAnalysis = null;          // last computed analysis
+let qnReport = null;             // editable report object, persisted to qnReports/{id}
 let qnAnalysisMode = 'internal'; // 'internal' | 'client'
 
 function qnHasAnswers(qn) {
@@ -4353,90 +4357,336 @@ function computeQnAnalysis(qn) {
   };
 }
 
-/* ── Rendering ── */
-function qnaSectionTitle(txt) {
-  return `<div style="font-size:12px;font-weight:800;color:var(--green);text-transform:uppercase;letter-spacing:.05em;margin:16px 0 6px">${txt}</div>`;
+/* ══════════════════════════════════════════════
+   SAVED REPORTS (qnReports)
+   The one-shot analysis above seeds an editable report object that is
+   persisted to qnReports/{id}. From it the admin manages:
+   — a passcode-protected 3rd-party cost sheet (vendorQuotes/{id} +
+     report.html?vq=...) where a vendor submits their cost per service;
+   — the published client-facing engagement roadmap (clientReports/{id} +
+     report.html?cr=...) sent to the customer with marked-up prices.
+══════════════════════════════════════════════ */
+function effClientPrice(s) {
+  return s.clientPrice != null ? s.clientPrice : (s.catalogPrice || 0);
 }
 
-function qnaList(items, icon, color) {
-  return `<ul style="margin:0;padding-left:2px;list-style:none">${items.map(t =>
-    `<li style="font-size:13px;padding:4px 0;display:flex;gap:8px"><i class="fa-solid ${icon}" style="color:${color};margin-top:3px;flex-shrink:0"></i><span>${escHtml(t)}</span></li>`).join('')}</ul>`;
-}
-
-function qnaTierBlock(label, rows, color, showDetail) {
-  if (!rows.length) return '';
-  const max = Math.max(...rows.map(r => r.score), 5);
-  return `<div style="margin-bottom:12px">
-    <div style="font-size:11px;font-weight:800;color:${color};text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">${label}</div>
-    ${rows.map(r => `
-      <div style="background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:8px;padding:10px 12px;margin-bottom:6px">
-        <div style="display:flex;gap:10px;align-items:center">
-          <span style="font-size:10px;font-weight:800;color:var(--text-dim);flex-shrink:0">P${r.svc.phase}</span>
-          <strong style="font-size:13px;flex:1">${escHtml(r.svc.name)}</strong>
-          ${showDetail ? `<span style="font-size:12px;color:var(--text-muted);flex-shrink:0">$${(r.svc.price || 0).toLocaleString()}${r.svc.type === 'monthly' ? '/mo' : ''}</span>
-          <span style="width:70px;height:6px;background:rgba(0,0,0,.08);border-radius:3px;flex-shrink:0;overflow:hidden"><span style="display:block;height:100%;width:${Math.min(100, Math.round(r.score / max * 100))}%;background:${color};border-radius:3px"></span></span>` : ''}
-        </div>
-        <div style="font-size:12px;color:var(--text-muted);margin-top:3px">${escHtml(r.svc.description || '')}</div>
-        ${showDetail && r.evidence.length ? `<div style="margin-top:6px;border-top:1px dashed rgba(0,0,0,.1);padding-top:6px">${r.evidence.map(ev =>
-          `<div style="font-size:11px;color:var(--text-dim);padding:2px 0"><i class="fa-solid fa-quote-left" style="font-size:9px;margin-right:5px"></i>${escHtml(ev)}</div>`).join('')}</div>` : ''}
-      </div>`).join('')}
-  </div>`;
-}
-
-function renderQnAnalysis() {
-  const a = qnAnalysis;
-  if (!a) return;
-  const internal = qnAnalysisMode === 'internal';
-  document.getElementById('qna-tab-internal').className = internal ? 'modal-confirm' : 'modal-cancel';
-  document.getElementById('qna-tab-client').className = internal ? 'modal-cancel' : 'modal-confirm';
-  document.getElementById('qna-title').textContent = internal ? `Analysis — ${a.business}` : `Growth Plan — ${a.business}`;
-  document.getElementById('qna-meta').innerHTML = `
-    <div><strong>Questionnaire:</strong> ${escHtml(a.qn.title || 'Untitled')} · <span class="status-badge ${a.qn.status === 'completed' ? 'status-approved' : 'status-pending'}">${escHtml(a.qn.status || 'draft')}</span></div>
-    <div><strong>Answered:</strong> ${a.answered}/${a.total} questions (${a.pct}%)${a.qn.completedAt ? ' · <strong>Completed:</strong> ' + fmtDate(a.qn.completedAt) : ''}</div>`;
-
-  let html = '';
-  if (internal) {
-    if (a.facts.length) {
-      html += qnaSectionTitle('Key Facts');
-      html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 14px">${a.facts.map(f =>
-        `<div style="font-size:12px"><span style="font-weight:700;color:var(--text-dim)">${escHtml(f.key)}:</span> ${escHtml(f.text)}</div>`).join('')}</div>`;
-    }
-    if (a.strengths.length) { html += qnaSectionTitle('Strengths — What They Already Have'); html += qnaList(a.strengths, 'fa-circle-check', 'var(--green)'); }
-    if (a.gaps.length) { html += qnaSectionTitle('Gaps — What\'s Missing'); html += qnaList(a.gaps.map(g => g.text), 'fa-circle-xmark', '#c0392b'); }
-    if (a.opps.length) { html += qnaSectionTitle('Opportunities'); html += qnaList(a.opps, 'fa-lightbulb', 'var(--orange)'); }
-    if (a.risks.length) { html += qnaSectionTitle('Risks / Watch-outs'); html += qnaList(a.risks, 'fa-triangle-exclamation', '#c0392b'); }
-
-    html += qnaSectionTitle('Recommended Services');
-    if (!a.ranked.length) {
-      html += `<div class="empty-state" style="padding:16px"><i class="fa-solid fa-wand-magic-sparkles"></i>Not enough signal in the answers to score services — review the responses manually.</div>`;
-    } else {
-      html += qnaTierBlock('Priority — pitch these', a.tiers.priority, 'var(--green)', true);
-      html += qnaTierBlock('Recommended — strong fit', a.tiers.recommended, 'var(--orange)', true);
-      html += qnaTierBlock('Consider later — phase 2 of the relationship', a.tiers.later, 'var(--text-dim)', true);
-      html += `<div style="background:var(--cream-alt);border-radius:8px;padding:10px 14px;font-size:13px;margin-top:4px">
-        <strong>Investment estimate</strong> (priority + recommended): $${a.oneTime.toLocaleString()} one-time${a.monthly ? ` + $${a.monthly.toLocaleString()}/month` : ''}</div>`;
-    }
-    if (a.talking.length) { html += qnaSectionTitle('Talking Points for the Call'); html += qnaList(a.talking, 'fa-comment-dots', 'var(--text-muted)'); }
-  } else {
-    // Client-facing: polished, no scores, no prices, no internal evidence
-    const needs = a.gaps.filter(g => g.need).map(g => g.need);
-    html += `<div style="font-size:13px;line-height:1.7;color:var(--text)">Thank you for taking the time to complete our discovery questionnaire. Based on your answers, here is how we see your business — and the plan we believe will grow it.</div>`;
-    if (a.strengths.length) { html += qnaSectionTitle('What You\'re Doing Right'); html += qnaList(a.strengths, 'fa-circle-check', 'var(--green)'); }
-    if (needs.length) { html += qnaSectionTitle('Where We Can Help'); html += qnaList(needs, 'fa-arrow-trend-up', 'var(--orange)'); }
-    const plan = [...a.tiers.priority, ...a.tiers.recommended].sort((x, y) => x.svc.phase - y.svc.phase || y.score - x.score);
-    if (plan.length) {
-      html += qnaSectionTitle('Your Recommended Plan');
-      [1, 2, 3].forEach(ph => {
-        const rows = plan.filter(r => r.svc.phase === ph);
-        if (rows.length) html += qnaTierBlock(`Phase ${ph} — ${rows[0].svc.phaseLabel || ''}`, rows, 'var(--green)', false);
-      });
-    }
-    html += qnaSectionTitle('Next Steps');
-    html += qnaList([
+function reportFromAnalysis(a) {
+  const svcs = [];
+  [['priority', a.tiers.priority], ['recommended', a.tiers.recommended], ['later', a.tiers.later]].forEach(([tier, rows]) => {
+    rows.forEach(r => svcs.push({
+      key: String(r.id), id: r.id, name: r.svc.name, phase: r.svc.phase,
+      phaseLabel: r.svc.phaseLabel || '', desc: r.svc.description || '',
+      type: r.svc.type || 'one-time', tier, score: r.score,
+      evidence: r.evidence || [], catalogPrice: r.svc.price || 0,
+      vendorCost: null, clientPrice: null, inPlan: tier !== 'later'
+    }));
+  });
+  return {
+    docId: null,
+    questionnaireId: a.docId,
+    business: a.business,
+    qnTitle: a.qn.title || 'Questionnaire',
+    answered: a.answered, total: a.total, pct: a.pct,
+    facts: a.facts.map(f => ({ key: f.key, text: f.text })),
+    strengths: [...a.strengths],
+    gaps: a.gaps.map(g => ({ text: g.text, need: g.need || null })),
+    opps: [...a.opps],
+    risks: [...a.risks],
+    talking: [...a.talking],
+    services: svcs,
+    clientIntro: 'Thank you for taking the time to complete our discovery questionnaire. Based on your answers, here is how we see your business — and the plan we believe will grow it.',
+    clientStrengths: [...a.strengths],
+    clientNeeds: a.gaps.filter(g => g.need).map(g => g.need),
+    clientNextSteps: [
       'We walk through this plan together on a short strategy call',
       'You receive a detailed proposal with timeline and investment',
       'We start with the foundations and build up in phases — you see progress in your partner portal at every step'
-    ], 'fa-arrow-right', 'var(--green)');
+    ],
+    vendorQuoteId: null, vendorPasscode: null, vendorStatus: null,
+    vendorName: '', vendorNote: '', vendorSubmittedAt: null,
+    clientReportId: null
+  };
+}
+
+function getQnVendorLink(id) {
+  return new URL('report.html?vq=' + encodeURIComponent(id), location.href).href;
+}
+function getQnClientReportLink(id) {
+  return new URL('report.html?cr=' + encodeURIComponent(id), location.href).href;
+}
+
+async function qnrSha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function genVendorPasscode() {
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // no lookalike chars
+  const rnd = new Uint32Array(6);
+  crypto.getRandomValues(rnd);
+  return Array.from(rnd, n => chars[n % chars.length]).join('');
+}
+
+function qnrPlanServices() {
+  return (qnReport.services || []).filter(s => s.inPlan !== false && (s.tier === 'priority' || s.tier === 'recommended'));
+}
+
+function qnrTotals() {
+  let oneTime = 0, monthly = 0, vendor = 0;
+  qnrPlanServices().forEach(s => {
+    const p = effClientPrice(s) || 0;
+    if (s.type === 'monthly') monthly += p; else oneTime += p;
+    if (s.vendorCost != null) vendor += s.vendorCost;
+  });
+  return { oneTime, monthly, vendor };
+}
+
+/* ── In-place edit handlers (model updates; Save Report persists) ── */
+function qnrEditItem(field, idx, value) {
+  const arr = qnReport && qnReport[field];
+  if (!arr || arr[idx] === undefined) return;
+  if (field === 'gaps') arr[idx].text = value;
+  else arr[idx] = value;
+}
+
+function qnrEditFact(idx, part, value) {
+  const f = qnReport && qnReport.facts && qnReport.facts[idx];
+  if (f) f[part] = value;
+}
+
+function qnrDelItem(field, idx) {
+  if (!qnReport || !Array.isArray(qnReport[field])) return;
+  qnReport[field].splice(idx, 1);
+  renderQnAnalysis();
+}
+
+function qnrAddItem(field) {
+  if (!qnReport) return;
+  if (!Array.isArray(qnReport[field])) qnReport[field] = [];
+  if (field === 'facts') qnReport.facts.push({ key: 'Note', text: '' });
+  else if (field === 'gaps') qnReport.gaps.push({ text: '', need: null });
+  else qnReport[field].push('');
+  renderQnAnalysis();
+}
+
+function qnrSetSvc(idx, field, value) {
+  const s = qnReport && qnReport.services && qnReport.services[idx];
+  if (!s) return;
+  const v = value === '' ? null : parseFloat(value);
+  s[field] = (v == null || isNaN(v) || v < 0) ? null : v;
+  renderQnAnalysis();
+}
+
+function qnrDelSvc(idx) {
+  if (!qnReport || !qnReport.services[idx]) return;
+  const name = qnReport.services[idx].name;
+  qnReport.services.splice(idx, 1);
+  renderQnAnalysis();
+  toast(`"${name}" removed — Save Report to persist`, 'success');
+}
+
+function qnrSetInPlan(idx, on) {
+  const s = qnReport && qnReport.services && qnReport.services[idx];
+  if (!s) return;
+  s.inPlan = !!on;
+  renderQnAnalysis();
+}
+
+/* ── Rendering (editable report) ── */
+function qnaSectionTitle(txt, addField) {
+  return `<div style="display:flex;align-items:center;gap:8px;margin:16px 0 6px">
+    <span style="font-size:12px;font-weight:800;color:var(--green);text-transform:uppercase;letter-spacing:.05em">${txt}</span>
+    ${addField ? `<button type="button" class="btn-reject" style="padding:2px 8px;font-size:11px" onclick="qnrAddItem('${addField}')" title="Add a line">+ Add</button>` : ''}
+  </div>`;
+}
+
+function qnaEditList(field, icon, color) {
+  const arr = qnReport[field] || [];
+  if (!arr.length) return '<div style="font-size:12px;color:var(--text-dim);font-style:italic;padding:2px 0">Nothing here — use + Add.</div>';
+  return arr.map((v, i) => `<div style="display:flex;gap:8px;align-items:center;padding:2px 0">
+    <i class="fa-solid ${icon}" style="color:${color};flex-shrink:0;font-size:12px;width:14px"></i>
+    <input value="${escHtml(field === 'gaps' ? v.text : v)}" style="flex:1;font-size:13px;padding:6px 8px" oninput="qnrEditItem('${field}',${i},this.value)">
+    <button type="button" class="btn-reject" style="padding:4px 8px" onclick="qnrDelItem('${field}',${i})" title="Remove line"><i class="fa-solid fa-xmark"></i></button>
+  </div>`).join('');
+}
+
+function qnaFactsEdit() {
+  const arr = qnReport.facts || [];
+  if (!arr.length) return '<div style="font-size:12px;color:var(--text-dim);font-style:italic;padding:2px 0">No key facts — use + Add.</div>';
+  return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 14px">${arr.map((f, i) => `
+    <div style="display:flex;gap:6px;align-items:center">
+      <input value="${escHtml(f.key)}" style="width:118px;font-size:11.5px;font-weight:700;padding:5px 7px" oninput="qnrEditFact(${i},'key',this.value)">
+      <input value="${escHtml(f.text)}" style="flex:1;font-size:12px;padding:5px 7px" oninput="qnrEditFact(${i},'text',this.value)">
+      <button type="button" class="btn-reject" style="padding:3px 7px" onclick="qnrDelItem('facts',${i})" title="Remove"><i class="fa-solid fa-xmark"></i></button>
+    </div>`).join('')}</div>`;
+}
+
+function qnaSvcEditRow(s, i) {
+  let margin = '';
+  if (s.vendorCost != null && s.clientPrice != null) {
+    const diff = s.clientPrice - s.vendorCost;
+    const pct = s.vendorCost ? ` (${Math.round(diff / s.vendorCost * 100)}%)` : '';
+    margin = `<span style="font-size:11px;font-weight:700;white-space:nowrap;color:${diff >= 0 ? 'var(--green)' : '#c0392b'}">${diff >= 0 ? '+' : '−'}$${Math.abs(diff).toLocaleString()}${pct}</span>`;
+  }
+  return `<div style="background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:8px;padding:10px 12px;margin-bottom:6px">
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <span style="font-size:10px;font-weight:800;color:var(--text-dim);flex-shrink:0">P${s.phase}</span>
+      <strong style="font-size:13px;flex:1;min-width:120px">${escHtml(s.name)}</strong>
+      <span style="font-size:11.5px;color:var(--text-muted);white-space:nowrap">Catalog $${(s.catalogPrice || 0).toLocaleString()}${s.type === 'monthly' ? '/mo' : ''}</span>
+      <label style="font-size:11px;color:#c0392b;font-weight:700;display:flex;align-items:center;gap:4px;white-space:nowrap">3rd-party $
+        <input type="number" min="0" step="10" value="${s.vendorCost != null ? s.vendorCost : ''}" placeholder="—" style="width:84px;padding:5px 7px;font-size:12px" onchange="qnrSetSvc(${i},'vendorCost',this.value)">
+      </label>
+      <label style="font-size:11px;color:var(--green);font-weight:700;display:flex;align-items:center;gap:4px;white-space:nowrap">Client $
+        <input type="number" min="0" step="10" value="${s.clientPrice != null ? s.clientPrice : ''}" placeholder="${s.catalogPrice || 0}" style="width:84px;padding:5px 7px;font-size:12px" onchange="qnrSetSvc(${i},'clientPrice',this.value)">
+      </label>
+      ${margin}
+      <button type="button" class="btn-reject" style="padding:4px 8px" onclick="qnrDelSvc(${i})" title="Delete service from this report"><i class="fa-solid fa-trash"></i></button>
+    </div>
+    <div style="font-size:12px;color:var(--text-muted);margin-top:3px">${escHtml(s.desc || '')}</div>
+    ${(s.evidence || []).length ? `<div style="margin-top:6px;border-top:1px dashed rgba(0,0,0,.1);padding-top:6px">${s.evidence.map(ev =>
+      `<div style="font-size:11px;color:var(--text-dim);padding:2px 0"><i class="fa-solid fa-quote-left" style="font-size:9px;margin-right:5px"></i>${escHtml(ev)}</div>`).join('')}</div>` : ''}
+  </div>`;
+}
+
+function qnaSvcTier(tier, label, color) {
+  const rows = qnReport.services.map((s, i) => ({ s, i })).filter(x => x.s.tier === tier);
+  if (!rows.length) return '';
+  return `<div style="margin-bottom:12px">
+    <div style="font-size:11px;font-weight:800;color:${color};text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">${label}</div>
+    ${rows.map(x => qnaSvcEditRow(x.s, x.i)).join('')}
+  </div>`;
+}
+
+function qnaVendorCard() {
+  const r = qnReport;
+  const link = r.vendorQuoteId ? getQnVendorLink(r.vendorQuoteId) : '';
+  const badge = r.vendorStatus === 'submitted'
+    ? `<span class="status-badge status-approved">costs received${r.vendorName ? ' — ' + escHtml(r.vendorName) : ''}</span>`
+    : (r.vendorStatus === 'pending' ? '<span class="status-badge status-pending">awaiting vendor</span>' : '');
+  return `<div style="background:var(--cream-alt);border-radius:10px;padding:12px 14px;margin-bottom:14px">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <span style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em"><i class="fa-solid fa-truck-field"></i> 3rd-Party Cost Sheet</span>
+      ${badge}
+      <span style="flex:1 1 auto"></span>
+      ${r.vendorQuoteId ? `
+        <button type="button" class="btn-reject" onclick="copyQnVendorLink()"><i class="fa-solid fa-link"></i> Copy Link + Passcode</button>
+        <button type="button" class="btn-whatsapp" style="width:auto" onclick="sendQnVendorWhatsApp()"><i class="fa-brands fa-whatsapp"></i> Send to Vendor</button>
+        <button type="button" class="btn-approve" onclick="refreshVendorCosts()"><i class="fa-solid fa-rotate"></i> Refresh Costs</button>
+        <button type="button" class="btn-reject" onclick="createQnVendorLink()" title="Reset the sheet with the current services so the vendor can quote again"><i class="fa-solid fa-plus"></i> New Sheet</button>
+      ` : `
+        <button type="button" class="modal-confirm" onclick="createQnVendorLink()"><i class="fa-solid fa-link"></i> Create Vendor Link</button>
+      `}
+    </div>
+    ${r.vendorQuoteId ? `
+      <div style="font-size:11.5px;color:var(--text-muted);word-break:break-all;margin-top:8px">${escHtml(link)}</div>
+      <div style="font-size:12px;margin-top:4px"><strong>Passcode:</strong> <span style="font-weight:800;letter-spacing:.12em">${escHtml(r.vendorPasscode || '—')}</span>${r.vendorSubmittedAt ? ' · <strong>Submitted:</strong> ' + fmtDate(r.vendorSubmittedAt) : ''}</div>
+      ${(r.vendorNote || '').trim() ? `<div style="font-size:12px;margin-top:6px;background:#fff;border-radius:7px;padding:8px 10px"><strong>Vendor note:</strong> ${escHtml(r.vendorNote)}</div>` : ''}
+      <div style="display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap">
+        <span style="font-size:12px;font-weight:700">Markup vendor costs:</span>
+        <input id="qnr-markup" type="number" step="1" placeholder="30" style="width:70px;padding:5px 7px;font-size:12px"> <span style="font-size:12px">%</span>
+        <button type="button" class="btn-approve" onclick="applyQnrMarkup()">Apply to Client Prices</button>
+        <span style="font-size:11px;color:var(--text-dim)">Fills each client price with vendor cost + markup — adjust individual prices after.</span>
+      </div>
+    ` : `<div style="font-size:12px;color:var(--text-muted);margin-top:6px">Create a passcode-protected page listing the services below — no customer name, no analysis, no your prices — and send it to your 3rd-party vendor. Their submitted costs load back into the 3rd-party column here so you can mark them up.</div>`}
+  </div>`;
+}
+
+function qnaClientCard() {
+  const r = qnReport;
+  return `<div style="background:var(--cream-alt);border-radius:10px;padding:12px 14px;margin-bottom:14px">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <span style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em"><i class="fa-solid fa-map"></i> Engagement Roadmap</span>
+      ${r.clientReportId ? '<span class="status-badge status-approved">published</span>' : '<span class="status-badge status-rejected">not published</span>'}
+      <span style="flex:1 1 auto"></span>
+      <button type="button" class="modal-confirm" onclick="publishAndCopyQnClientLink()"><i class="fa-solid fa-share-nodes"></i> ${r.clientReportId ? 'Re-publish & Copy Link' : 'Publish & Copy Link'}</button>
+    </div>
+    ${r.clientReportId ? `<div style="font-size:11.5px;color:var(--text-muted);word-break:break-all;margin-top:6px">${escHtml(getQnClientReportLink(r.clientReportId))}</div>` : ''}
+    <div style="font-size:12px;color:var(--text-muted);margin-top:6px">The customer sees the snapshot taken when you publish — after editing below, publish again to update the same link. Prices are your client prices from the Internal tab (catalog price when unset).</div>
+  </div>`;
+}
+
+function qnaClientPlan() {
+  const idxSvcs = qnReport.services.map((s, i) => ({ s, i }));
+  const inPlan = idxSvcs.filter(x => x.s.inPlan !== false && (x.s.tier === 'priority' || x.s.tier === 'recommended'));
+  const removed = idxSvcs.filter(x => x.s.inPlan === false && (x.s.tier === 'priority' || x.s.tier === 'recommended'));
+  let html = '';
+  [1, 2, 3].forEach(ph => {
+    const rows = inPlan.filter(x => x.s.phase === ph);
+    if (!rows.length) return;
+    html += `<div style="font-size:11px;font-weight:800;color:var(--green);text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px">Phase ${ph}${rows[0].s.phaseLabel ? ' — ' + escHtml(rows[0].s.phaseLabel) : ''}</div>`;
+    rows.forEach(({ s, i }) => {
+      html += `<div style="background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:8px;padding:10px 12px;margin-bottom:6px">
+        <div style="display:flex;gap:10px;align-items:center">
+          <strong style="font-size:13px;flex:1">${escHtml(s.name)}</strong>
+          <span style="font-size:13px;font-weight:800;color:var(--green);white-space:nowrap">$${(effClientPrice(s) || 0).toLocaleString()}${s.type === 'monthly' ? '/mo' : ''}</span>
+          <button type="button" class="btn-reject" style="padding:4px 8px" onclick="qnrSetInPlan(${i},false)" title="Remove from the roadmap"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:3px">${escHtml(s.desc || '')}</div>
+      </div>`;
+    });
+  });
+  if (!html) html = '<div class="empty-state" style="padding:16px"><i class="fa-solid fa-map"></i>No services on the roadmap — restore removed ones below, or adjust the report in the Internal tab.</div>';
+  if (removed.length) {
+    html += `<div style="font-size:11px;color:var(--text-dim);margin-top:8px">Removed from roadmap — click to restore: ${removed.map(({ s, i }) =>
+      `<button type="button" class="btn-reject" style="padding:2px 8px;font-size:11px;margin:2px" onclick="qnrSetInPlan(${i},true)">+ ${escHtml(s.name)}</button>`).join('')}</div>`;
+  }
+  return html;
+}
+
+function renderQnAnalysis() {
+  const r = qnReport;
+  if (!r) return;
+  const internal = qnAnalysisMode === 'internal';
+  document.getElementById('qna-tab-internal').className = internal ? 'modal-confirm' : 'modal-cancel';
+  document.getElementById('qna-tab-client').className = internal ? 'modal-cancel' : 'modal-confirm';
+  document.getElementById('qna-title').textContent = internal ? `Analysis — ${r.business}` : `Engagement Roadmap — ${r.business}`;
+  document.getElementById('qna-wa-btn').innerHTML = internal
+    ? '<i class="fa-brands fa-whatsapp"></i> Send Summary'
+    : '<i class="fa-brands fa-whatsapp"></i> Send Roadmap to Customer';
+  document.getElementById('qna-meta').innerHTML = `
+    <div><strong>Questionnaire:</strong> ${escHtml(r.qnTitle || 'Untitled')} · <strong>Answered:</strong> ${r.answered}/${r.total} (${r.pct}%)</div>
+    <div><strong>Report:</strong> ${r.docId ? 'saved — everything below is editable, Save Report persists your changes' : '<span style="color:#c0392b;font-weight:700">not saved yet</span> — click Save Report to keep edits and enable links'}</div>`;
+
+  let html = '';
+  if (internal) {
+    html += qnaVendorCard();
+    html += qnaSectionTitle('Key Facts', 'facts');
+    html += qnaFactsEdit();
+    html += qnaSectionTitle('Strengths — What They Already Have', 'strengths');
+    html += qnaEditList('strengths', 'fa-circle-check', 'var(--green)');
+    html += qnaSectionTitle('Gaps — What\'s Missing', 'gaps');
+    html += qnaEditList('gaps', 'fa-circle-xmark', '#c0392b');
+    html += qnaSectionTitle('Opportunities', 'opps');
+    html += qnaEditList('opps', 'fa-lightbulb', 'var(--orange)');
+    html += qnaSectionTitle('Risks / Watch-outs', 'risks');
+    html += qnaEditList('risks', 'fa-triangle-exclamation', '#c0392b');
+    html += qnaSectionTitle('Recommended Services');
+    if (!r.services.length) {
+      html += '<div class="empty-state" style="padding:16px"><i class="fa-solid fa-wand-magic-sparkles"></i>No services on this report — use Reset to rebuild from the answers.</div>';
+    } else {
+      html += qnaSvcTier('priority', 'Priority — pitch these', 'var(--green)');
+      html += qnaSvcTier('recommended', 'Recommended — strong fit', 'var(--orange)');
+      html += qnaSvcTier('later', 'Consider later — phase 2 of the relationship', 'var(--text-dim)');
+      const t = qnrTotals();
+      html += `<div style="background:var(--cream-alt);border-radius:8px;padding:10px 14px;font-size:13px;margin-top:4px">
+        <strong>Investment estimate</strong> (priority + recommended, client prices): $${t.oneTime.toLocaleString()} one-time${t.monthly ? ` + $${t.monthly.toLocaleString()}/month` : ''}${t.vendor ? ` · <span style="color:#c0392b">3rd-party cost basis: $${t.vendor.toLocaleString()}</span>` : ''}</div>`;
+    }
+    html += qnaSectionTitle('Talking Points for the Call', 'talking');
+    html += qnaEditList('talking', 'fa-comment-dots', 'var(--text-muted)');
+  } else {
+    html += qnaClientCard();
+    html += qnaSectionTitle('Intro Message');
+    html += `<textarea rows="3" style="width:100%;font-size:13px;font-family:inherit" oninput="qnReport.clientIntro=this.value">${escHtml(r.clientIntro || '')}</textarea>`;
+    html += qnaSectionTitle('What You\'re Doing Right', 'clientStrengths');
+    html += qnaEditList('clientStrengths', 'fa-circle-check', 'var(--green)');
+    html += qnaSectionTitle('Where We Can Help', 'clientNeeds');
+    html += qnaEditList('clientNeeds', 'fa-arrow-trend-up', 'var(--orange)');
+    html += qnaSectionTitle('Your Recommended Plan');
+    html += qnaClientPlan();
+    const t = qnrTotals();
+    html += `<div style="background:var(--cream-alt);border-radius:8px;padding:10px 14px;font-size:13px;margin-top:8px"><strong>Total investment:</strong> $${t.oneTime.toLocaleString()} one-time${t.monthly ? ` + $${t.monthly.toLocaleString()}/month` : ''}</div>`;
+    html += qnaSectionTitle('Next Steps', 'clientNextSteps');
+    html += qnaEditList('clientNextSteps', 'fa-arrow-right', 'var(--green)');
   }
   document.getElementById('qna-body').innerHTML = html;
 }
@@ -4451,68 +4701,284 @@ async function analyzeQuestionnaire(docId) {
   if (!qn) { toast('Questionnaire not found', 'error'); return; }
   if (!qnHasAnswers(qn)) { toast('No responses yet — nothing to analyze', 'error'); return; }
   if (!services.length) await loadServices();
-  qnAnalysis = computeQnAnalysis(qn);
+
+  let saved = null;
+  if (db) {
+    try {
+      const snap = await db.collection('qnReports').where('questionnaireId', '==', docId).limit(1).get();
+      if (!snap.empty) saved = { docId: snap.docs[0].id, ...snap.docs[0].data() };
+    } catch(e) { console.error(e); }
+  }
+  qnReport = saved || reportFromAnalysis(computeQnAnalysis(qn));
   qnAnalysisMode = 'internal';
   document.getElementById('qna-phone').value = '';
   renderQnAnalysis();
   document.getElementById('qnAnalysisModal').classList.add('open');
+  // Vendor may have submitted since the report was last saved — pull silently.
+  if (saved && saved.vendorQuoteId && saved.vendorStatus !== 'submitted') refreshVendorCosts(true);
 }
 
 function closeQnAnalysisModal() {
   document.getElementById('qnAnalysisModal').classList.remove('open');
 }
 
+function resetQnReportFromAnswers() {
+  if (!qnReport) return;
+  const qn = questionnaires.find(q => q.docId === qnReport.questionnaireId);
+  if (!qn) { toast('Questionnaire not found', 'error'); return; }
+  AppUtils.showConfirm('Reset Report', 'Rebuild this report from the questionnaire answers? Text edits and removed items are reset — vendor costs, client prices and links are kept.', () => {
+    const old = qnReport;
+    const fresh = reportFromAnalysis(computeQnAnalysis(qn));
+    ['docId', 'createdAt', 'vendorQuoteId', 'vendorPasscode', 'vendorStatus', 'vendorName', 'vendorNote', 'vendorSubmittedAt', 'clientReportId'].forEach(k => {
+      if (old[k] !== undefined) fresh[k] = old[k];
+    });
+    fresh.services.forEach(s => {
+      const prev = (old.services || []).find(p => p.key === s.key);
+      if (prev) { s.vendorCost = prev.vendorCost != null ? prev.vendorCost : null; s.clientPrice = prev.clientPrice != null ? prev.clientPrice : null; }
+    });
+    qnReport = fresh;
+    renderQnAnalysis();
+    toast('✓ Report rebuilt from answers — Save Report to persist', 'success');
+  });
+}
+
+async function saveQnReport(silent) {
+  if (!qnReport) return false;
+  if (!db) { toast('Firebase not connected', 'error'); return false; }
+  const data = { ...qnReport };
+  delete data.docId;
+  data.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+  try {
+    if (qnReport.docId) {
+      await db.collection('qnReports').doc(qnReport.docId).set(data);
+    } else {
+      data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+      const ref = await db.collection('qnReports').add(data);
+      qnReport.docId = ref.id;
+    }
+    await AppUtils.logAudit(currentAdminIdentity(), 'save', qnReport.docId, 'qnReport', { business: qnReport.business || '' });
+    if (!silent) { toast('✓ Report saved', 'success'); renderQnAnalysis(); }
+    return true;
+  } catch(e) { toast('Save failed: ' + e.message, 'error'); return false; }
+}
+
+async function openQnReportTab() {
+  if (!qnReport) return;
+  if (!(await saveQnReport(true))) return;
+  window.open(`report.html?rid=${encodeURIComponent(qnReport.docId)}&view=${qnAnalysisMode}`, '_blank', 'noopener');
+}
+
+/* ── 3rd-party vendor cost sheet ── */
+function createQnVendorLink() {
+  if (!qnReport) return;
+  if (qnReport.vendorStatus === 'submitted') {
+    AppUtils.showConfirm('New Cost Sheet', 'The vendor already submitted costs on the current sheet. Creating a new sheet resets it (their previous numbers stay in the 3rd-party column here). Continue?', doCreateQnVendorLink);
+  } else if (qnReport.vendorQuoteId) {
+    AppUtils.showConfirm('Reset Cost Sheet', 'Re-create the cost sheet with the current service list? The link and passcode stay the same.', doCreateQnVendorLink);
+  } else {
+    doCreateQnVendorLink();
+  }
+}
+
+async function doCreateQnVendorLink() {
+  if (!(await saveQnReport(true))) return;
+  try {
+    const passcode = qnReport.vendorPasscode || genVendorPasscode();
+    const passHash = await qnrSha256(passcode);
+    const ref = qnReport.vendorQuoteId
+      ? db.collection('vendorQuotes').doc(qnReport.vendorQuoteId)
+      : db.collection('vendorQuotes').doc();
+    await ref.set({
+      reportId: qnReport.docId,
+      services: qnReport.services.map(s => ({ key: s.key, name: s.name, phase: s.phase, scope: s.desc || '' })),
+      costs: {},
+      passHash,
+      status: 'pending',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    qnReport.vendorQuoteId = ref.id;
+    qnReport.vendorPasscode = passcode;
+    qnReport.vendorStatus = 'pending';
+    qnReport.vendorName = '';
+    qnReport.vendorNote = '';
+    qnReport.vendorSubmittedAt = null;
+    await saveQnReport(true);
+    renderQnAnalysis();
+    await copyQnVendorLink();
+  } catch(e) { toast('Vendor link failed: ' + e.message, 'error'); }
+}
+
+async function copyQnVendorLink() {
+  if (!qnReport || !qnReport.vendorQuoteId) return;
+  const text = getQnVendorLink(qnReport.vendorQuoteId) + '\nPasscode: ' + (qnReport.vendorPasscode || '');
+  try {
+    await navigator.clipboard.writeText(text);
+    toast('✓ Vendor link + passcode copied', 'success');
+  } catch(e) {
+    window.prompt('Copy the vendor link and passcode:', text);
+  }
+}
+
+function sendQnVendorWhatsApp() {
+  if (!qnReport || !qnReport.vendorQuoteId) return;
+  const digits = document.getElementById('qna-phone').value.trim().replace(/[^\d]/g, '');
+  if (!digits) { toast('Enter the vendor\'s WhatsApp number first', 'error'); return; }
+  const text = `Hi! Please fill in your cost for each service on this sheet:\n${getQnVendorLink(qnReport.vendorQuoteId)}\nPasscode: *${qnReport.vendorPasscode || ''}*\n\nThe sheet locks once submitted — double-check your numbers first. Thank you!\n— Fifteen`;
+  window.open(`https://wa.me/${digits}?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
+}
+
+async function refreshVendorCosts(silent) {
+  if (!qnReport || !qnReport.vendorQuoteId || !db) return;
+  try {
+    const doc = await db.collection('vendorQuotes').doc(qnReport.vendorQuoteId).get();
+    if (!doc.exists) { if (!silent) toast('Cost sheet not found — it may have been deleted', 'error'); return; }
+    const vq = doc.data();
+    qnReport.vendorStatus = vq.status || 'pending';
+    qnReport.vendorName = vq.vendorName || '';
+    qnReport.vendorNote = vq.vendorNote || '';
+    qnReport.vendorSubmittedAt = vq.submittedAt || null;
+    const costs = vq.costs || {};
+    let n = 0;
+    qnReport.services.forEach(s => {
+      if (costs[s.key] != null) { s.vendorCost = costs[s.key]; n++; }
+    });
+    renderQnAnalysis();
+    if (n) await saveQnReport(true);
+    if (!silent) toast(n ? `✓ Pulled ${n} vendor cost${n > 1 ? 's' : ''}` : 'No vendor costs submitted yet', n ? 'success' : 'error');
+  } catch(e) { if (!silent) toast('Refresh failed: ' + e.message, 'error'); }
+}
+
+function applyQnrMarkup() {
+  if (!qnReport) return;
+  const el = document.getElementById('qnr-markup');
+  const pct = el ? parseFloat(el.value) : NaN;
+  if (isNaN(pct)) { toast('Enter a markup % first', 'error'); return; }
+  let n = 0;
+  qnReport.services.forEach(s => {
+    if (s.vendorCost != null) { s.clientPrice = Math.round(s.vendorCost * (1 + pct / 100)); n++; }
+  });
+  renderQnAnalysis();
+  if (n) {
+    const el2 = document.getElementById('qnr-markup');
+    if (el2) el2.value = pct;
+  }
+  toast(n ? `✓ ${pct}% markup applied to ${n} service${n > 1 ? 's' : ''} — Save Report to persist` : 'No 3rd-party costs to mark up yet', n ? 'success' : 'error');
+}
+
+/* ── Published client-facing roadmap ── */
+function buildQnClientSnapshot() {
+  const svcs = qnrPlanServices();
+  const phases = [];
+  [1, 2, 3].forEach(ph => {
+    const rows = svcs.filter(s => s.phase === ph);
+    if (rows.length) phases.push({
+      phase: ph,
+      label: rows[0].phaseLabel || '',
+      items: rows.map(s => ({ name: s.name, desc: s.desc || '', price: effClientPrice(s) || 0, type: s.type || 'one-time' }))
+    });
+  });
+  const t = qnrTotals();
+  return {
+    reportId: qnReport.docId,
+    title: 'Engagement Roadmap',
+    business: qnReport.business || '',
+    intro: qnReport.clientIntro || '',
+    strengths: qnReport.clientStrengths || [],
+    needs: qnReport.clientNeeds || [],
+    phases,
+    nextSteps: qnReport.clientNextSteps || [],
+    showPrices: true,
+    totals: { oneTime: t.oneTime, monthly: t.monthly },
+    publishedAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+}
+
+async function publishQnClientReport(silent) {
+  if (!qnReport) return null;
+  if (!(await saveQnReport(true))) return null;
+  try {
+    const ref = qnReport.clientReportId
+      ? db.collection('clientReports').doc(qnReport.clientReportId)
+      : db.collection('clientReports').doc();
+    await ref.set(buildQnClientSnapshot());
+    qnReport.clientReportId = ref.id;
+    await saveQnReport(true);
+    renderQnAnalysis();
+    if (!silent) toast('✓ Roadmap published — the customer link is live', 'success');
+    return getQnClientReportLink(ref.id);
+  } catch(e) { toast('Publish failed: ' + e.message, 'error'); return null; }
+}
+
+async function publishAndCopyQnClientLink() {
+  const link = await publishQnClientReport(true);
+  if (!link) return;
+  try {
+    await navigator.clipboard.writeText(link);
+    toast('✓ Roadmap published — customer link copied', 'success');
+  } catch(e) {
+    window.prompt('Copy the roadmap link:', link);
+  }
+}
+
 /* ── Markdown export ── */
 function buildQnAnalysisMarkdown() {
-  const a = qnAnalysis;
+  const r = qnReport;
   const internal = qnAnalysisMode === 'internal';
   const lines = [];
-  const tierMd = (label, rows, detail) => {
-    if (!rows.length) return;
-    lines.push(`### ${label}`, '');
-    rows.forEach(r => {
-      lines.push(`- **${r.svc.name}** (Phase ${r.svc.phase}${detail ? ` · $${(r.svc.price || 0).toLocaleString()}${r.svc.type === 'monthly' ? '/mo' : ''} · score ${r.score.toFixed(1)}` : ''}) — ${r.svc.description || ''}`);
-      if (detail) r.evidence.forEach(ev => lines.push(`  - _${ev}_`));
-    });
-    lines.push('');
-  };
+  const money = n => '$' + Number(n || 0).toLocaleString();
 
   if (internal) {
-    lines.push(`# Analysis — ${a.business}`, '');
-    lines.push(`**Questionnaire:** ${a.qn.title || 'Untitled'} · **Answered:** ${a.answered}/${a.total} (${a.pct}%)`, '');
-    if (a.facts.length) { lines.push('## Key Facts', ''); a.facts.forEach(f => lines.push(`- **${f.key}:** ${f.text}`)); lines.push(''); }
-    if (a.strengths.length) { lines.push('## Strengths', ''); a.strengths.forEach(s => lines.push(`- ${s}`)); lines.push(''); }
-    if (a.gaps.length) { lines.push('## Gaps', ''); a.gaps.forEach(g => lines.push(`- ${g.text}`)); lines.push(''); }
-    if (a.opps.length) { lines.push('## Opportunities', ''); a.opps.forEach(o => lines.push(`- ${o}`)); lines.push(''); }
-    if (a.risks.length) { lines.push('## Risks', ''); a.risks.forEach(r => lines.push(`- ${r}`)); lines.push(''); }
+    lines.push(`# Analysis — ${r.business}`, '');
+    lines.push(`**Questionnaire:** ${r.qnTitle || 'Untitled'} · **Answered:** ${r.answered}/${r.total} (${r.pct}%)`, '');
+    if ((r.facts || []).length) { lines.push('## Key Facts', ''); r.facts.forEach(f => lines.push(`- **${f.key}:** ${f.text}`)); lines.push(''); }
+    if ((r.strengths || []).length) { lines.push('## Strengths', ''); r.strengths.forEach(s => lines.push(`- ${s}`)); lines.push(''); }
+    if ((r.gaps || []).length) { lines.push('## Gaps', ''); r.gaps.forEach(g => lines.push(`- ${g.text}`)); lines.push(''); }
+    if ((r.opps || []).length) { lines.push('## Opportunities', ''); r.opps.forEach(o => lines.push(`- ${o}`)); lines.push(''); }
+    if ((r.risks || []).length) { lines.push('## Risks', ''); r.risks.forEach(x => lines.push(`- ${x}`)); lines.push(''); }
     lines.push('## Recommended Services', '');
-    tierMd('Priority', a.tiers.priority, true);
-    tierMd('Recommended', a.tiers.recommended, true);
-    tierMd('Consider later', a.tiers.later, true);
-    if (a.ranked.length) lines.push(`**Investment estimate** (priority + recommended): $${a.oneTime.toLocaleString()} one-time${a.monthly ? ` + $${a.monthly.toLocaleString()}/month` : ''}`, '');
-    if (a.talking.length) { lines.push('## Talking Points', ''); a.talking.forEach(t => lines.push(`- ${t}`)); lines.push(''); }
+    [['priority', 'Priority'], ['recommended', 'Recommended'], ['later', 'Consider later']].forEach(([tier, label]) => {
+      const rows = (r.services || []).filter(s => s.tier === tier);
+      if (!rows.length) return;
+      lines.push(`### ${label}`, '');
+      rows.forEach(s => {
+        const bits = [`catalog ${money(s.catalogPrice)}${s.type === 'monthly' ? '/mo' : ''}`];
+        if (s.vendorCost != null) bits.push(`3rd-party ${money(s.vendorCost)}`);
+        if (s.clientPrice != null) bits.push(`client ${money(s.clientPrice)}${s.type === 'monthly' ? '/mo' : ''}`);
+        lines.push(`- **${s.name}** (Phase ${s.phase} · ${bits.join(' · ')}) — ${s.desc || ''}`);
+        (s.evidence || []).forEach(ev => lines.push(`  - _${ev}_`));
+      });
+      lines.push('');
+    });
+    const t = qnrTotals();
+    if ((r.services || []).length) lines.push(`**Investment estimate** (priority + recommended, client prices): ${money(t.oneTime)} one-time${t.monthly ? ` + ${money(t.monthly)}/month` : ''}${t.vendor ? ` · 3rd-party cost basis ${money(t.vendor)}` : ''}`, '');
+    if ((r.vendorNote || '').trim()) { lines.push(`## Vendor Note${r.vendorName ? ' — ' + r.vendorName : ''}`, '', r.vendorNote, ''); }
+    if ((r.talking || []).length) { lines.push('## Talking Points', ''); r.talking.forEach(x => lines.push(`- ${x}`)); lines.push(''); }
   } else {
-    lines.push(`# Growth Plan — ${a.business}`, '');
-    lines.push('Thank you for completing our discovery questionnaire. Based on your answers, here is how we see your business — and the plan we believe will grow it.', '');
-    if (a.strengths.length) { lines.push('## What You\'re Doing Right', ''); a.strengths.forEach(s => lines.push(`- ${s}`)); lines.push(''); }
-    const needs = a.gaps.filter(g => g.need).map(g => g.need);
-    if (needs.length) { lines.push('## Where We Can Help', ''); needs.forEach(n => lines.push(`- ${n}`)); lines.push(''); }
-    const plan = [...a.tiers.priority, ...a.tiers.recommended].sort((x, y) => x.svc.phase - y.svc.phase || y.score - x.score);
-    if (plan.length) {
+    lines.push(`# Engagement Roadmap — ${r.business}`, '');
+    if (r.clientIntro) lines.push(r.clientIntro, '');
+    if ((r.clientStrengths || []).length) { lines.push('## What You\'re Doing Right', ''); r.clientStrengths.forEach(s => lines.push(`- ${s}`)); lines.push(''); }
+    if ((r.clientNeeds || []).length) { lines.push('## Where We Can Help', ''); r.clientNeeds.forEach(n => lines.push(`- ${n}`)); lines.push(''); }
+    const svcs = qnrPlanServices();
+    if (svcs.length) {
       lines.push('## Your Recommended Plan', '');
       [1, 2, 3].forEach(ph => {
-        const rows = plan.filter(r => r.svc.phase === ph);
-        if (rows.length) tierMd(`Phase ${ph} — ${rows[0].svc.phaseLabel || ''}`, rows, false);
+        const rows = svcs.filter(s => s.phase === ph);
+        if (!rows.length) return;
+        lines.push(`### Phase ${ph}${rows[0].phaseLabel ? ' — ' + rows[0].phaseLabel : ''}`, '');
+        rows.forEach(s => lines.push(`- **${s.name}** — ${money(effClientPrice(s))}${s.type === 'monthly' ? '/mo' : ''}${s.desc ? ` — ${s.desc}` : ''}`));
+        lines.push('');
       });
+      const t = qnrTotals();
+      lines.push(`**Total investment:** ${money(t.oneTime)} one-time${t.monthly ? ` + ${money(t.monthly)}/month` : ''}`, '');
     }
-    lines.push('## Next Steps', '', '1. A short strategy call to walk through this plan together', '2. A detailed proposal with timeline and investment', '3. Phased rollout — you follow progress in your partner portal', '');
+    if ((r.clientNextSteps || []).length) { lines.push('## Next Steps', ''); r.clientNextSteps.forEach((s, i) => lines.push(`${i + 1}. ${s}`)); lines.push(''); }
     lines.push('— Fifteen');
   }
   return lines.join('\n');
 }
 
 async function copyQnAnalysisMarkdown() {
-  if (!qnAnalysis) return;
+  if (!qnReport) return;
   const md = buildQnAnalysisMarkdown();
   try {
     await navigator.clipboard.writeText(md);
@@ -4523,9 +4989,9 @@ async function copyQnAnalysisMarkdown() {
 }
 
 function downloadQnAnalysisMarkdown() {
-  if (!qnAnalysis) return;
+  if (!qnReport) return;
   const md = buildQnAnalysisMarkdown();
-  const slug = qnAnalysis.business.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'questionnaire';
+  const slug = (qnReport.business || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'questionnaire';
   const blob = new Blob([md], { type: 'text/markdown' });
   const aEl = document.createElement('a');
   aEl.href = URL.createObjectURL(blob);
@@ -4537,70 +5003,33 @@ function downloadQnAnalysisMarkdown() {
 }
 
 /* ── PDF export ──
-   Opens a print-styled, branded report window and triggers the browser's
-   print dialog — "Save as PDF" there produces the file. No libraries needed. */
-function exportQnAnalysisPdf() {
-  if (!qnAnalysis) return;
-  const a = qnAnalysis;
-  const internal = qnAnalysisMode === 'internal';
-  const title = internal ? `Analysis — ${a.business}` : `Growth Plan — ${a.business}`;
-  const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-  const w = window.open('', '_blank');
-  if (!w) { toast('Popup blocked — allow popups for this site to export PDF', 'error'); return; }
-
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
-<title>${escHtml(title)}</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap">
-<style>
-  :root{--green:#26915E;--green-dim:#1d7a4c;--orange:#E36C44;--cream:#E0E8CF;--cream-alt:#D5DFBE;--text:#1C2416;--text-muted:#5A6B4E;--text-dim:#7A8B6A}
-  *{box-sizing:border-box;margin:0;padding:0}
-  html,body{background:#fff}
-  body{font-family:'Inter',system-ui,sans-serif;color:var(--text);max-width:780px;margin:0 auto;padding:36px 40px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .pdf-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;border-bottom:3px solid var(--green);padding-bottom:16px;margin-bottom:6px}
-  .pdf-brand{font-size:22px;font-weight:900;letter-spacing:-.02em;color:var(--green)}
-  .pdf-brand span{color:var(--orange)}
-  .pdf-title{font-size:19px;font-weight:800;margin-top:6px}
-  .pdf-sub{font-size:12px;color:var(--text-muted);margin-top:4px;line-height:1.7}
-  .pdf-tag{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#fff;background:${internal ? '#c0392b' : 'var(--green)'};border-radius:6px;padding:5px 10px;white-space:nowrap}
-  .pdf-foot{border-top:1.5px solid rgba(0,0,0,.1);margin-top:26px;padding-top:12px;font-size:11px;color:var(--text-dim);display:flex;justify-content:space-between}
-  #report div[style*="border-radius:8px"]{break-inside:avoid}
-  li{break-inside:avoid}
-  @page{size:A4;margin:14mm 12mm}
-  @media print{body{padding:0;max-width:none}}
-</style></head><body>
-  <div class="pdf-head">
-    <div>
-      <div class="pdf-brand">Fifteen<span>.</span></div>
-      <div class="pdf-title">${escHtml(title)}</div>
-      <div class="pdf-sub">${escHtml(a.qn.title || 'Questionnaire')} · ${a.answered}/${a.total} questions answered (${a.pct}%) · ${escHtml(today)}</div>
-    </div>
-    <div class="pdf-tag">${internal ? 'Internal — not for distribution' : 'Prepared for ' + escHtml(a.business)}</div>
-  </div>
-  <div id="report">${document.getElementById('qna-body').innerHTML}</div>
-  <div class="pdf-foot"><span>© 2026 Fifteen · 15fifteen15.com</span><span>${internal ? 'Confidential sales document' : 'We look forward to building this with you'}</span></div>
-  <scr` + `ipt>window.onload=function(){setTimeout(function(){window.print()},500)}</scr` + `ipt>
-</body></html>`);
-  w.document.close();
+   Saves the report, then opens the branded report.html pop-out with
+   ?print=1 so the browser's print dialog (Save as PDF) fires on load. */
+async function exportQnAnalysisPdf() {
+  if (!qnReport) return;
+  if (!(await saveQnReport(true))) return;
+  const w = window.open(`report.html?rid=${encodeURIComponent(qnReport.docId)}&view=${qnAnalysisMode}&print=1`, '_blank');
+  if (!w) toast('Popup blocked — allow popups for this site to export PDF', 'error');
 }
 
-/* ── WhatsApp summary (compact internal digest) ── */
+/* ── WhatsApp (internal digest / customer roadmap link) ── */
 function buildQnAnalysisWhatsApp() {
-  const a = qnAnalysis;
-  const lines = [`*Questionnaire Analysis — ${a.business}*`];
-  lines.push(`${a.qn.title || 'Questionnaire'} · ${a.answered}/${a.total} answered (${a.pct}%)`, '');
-  const top = [...a.tiers.priority, ...a.tiers.recommended].slice(0, 6);
+  const r = qnReport;
+  const lines = [`*Questionnaire Analysis — ${r.business}*`];
+  lines.push(`${r.qnTitle || 'Questionnaire'} · ${r.answered}/${r.total} answered (${r.pct}%)`, '');
+  const top = qnrPlanServices().slice(0, 6);
   if (top.length) {
     lines.push('*Pitch these:*');
-    top.forEach(r => lines.push(`• ${r.svc.name} — $${(r.svc.price || 0).toLocaleString()}${r.svc.type === 'monthly' ? '/mo' : ''}`));
-    lines.push(`Est: $${a.oneTime.toLocaleString()} one-time${a.monthly ? ` + $${a.monthly.toLocaleString()}/mo` : ''}`, '');
+    top.forEach(s => lines.push(`• ${s.name} — $${(effClientPrice(s) || 0).toLocaleString()}${s.type === 'monthly' ? '/mo' : ''}${s.vendorCost != null ? ` (3rd-party $${s.vendorCost.toLocaleString()})` : ''}`));
+    const t = qnrTotals();
+    lines.push(`Est: $${t.oneTime.toLocaleString()} one-time${t.monthly ? ` + $${t.monthly.toLocaleString()}/mo` : ''}`, '');
   }
-  if (a.gaps.length) {
+  if ((r.gaps || []).length) {
     lines.push('*Key gaps:*');
-    a.gaps.slice(0, 4).forEach(g => lines.push(`• ${g.text}`));
+    r.gaps.slice(0, 4).forEach(g => lines.push(`• ${g.text}`));
     lines.push('');
   }
-  const factOf = k => (a.facts.find(f => f.key === k) || {}).text;
+  const factOf = k => (((r.facts || []).find(f => f.key === k)) || {}).text;
   if (factOf('Marketing budget')) lines.push(`Budget: ${factOf('Marketing budget')}`);
   if (factOf('Target launch')) lines.push(`Launch: ${factOf('Target launch')}`);
   if (factOf('Biggest concern')) lines.push(`Concern: ${factOf('Biggest concern')}`);
@@ -4608,13 +5037,19 @@ function buildQnAnalysisWhatsApp() {
   return lines.join('\n');
 }
 
-function sendQnAnalysisWhatsApp() {
-  if (!qnAnalysis) return;
-  const phoneRaw = document.getElementById('qna-phone').value.trim();
-  const digits = phoneRaw.replace(/[^\d]/g, '');
+async function sendQnAnalysisWhatsApp() {
+  if (!qnReport) return;
+  const digits = document.getElementById('qna-phone').value.trim().replace(/[^\d]/g, '');
   if (!digits) { toast('Enter a WhatsApp number first', 'error'); return; }
-  const text = encodeURIComponent(buildQnAnalysisWhatsApp());
-  window.open(`https://wa.me/${digits}?text=${text}`, '_blank', 'noopener');
+  let text;
+  if (qnAnalysisMode === 'client') {
+    const link = await publishQnClientReport(true);
+    if (!link) return;
+    text = `Hi${qnReport.business ? ' ' + qnReport.business : ''}! Your personalized engagement roadmap from Fifteen is ready:\n${link}\n\nWe look forward to building this with you.\n— Fifteen`;
+  } else {
+    text = buildQnAnalysisWhatsApp();
+  }
+  window.open(`https://wa.me/${digits}?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
 }
 
 /* ══════════════════════════════════════════════
