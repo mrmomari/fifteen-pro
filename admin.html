@@ -104,6 +104,12 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
   margin-left:auto;background:var(--orange);color:#fff;font-size:9px;font-weight:800;
   padding:2px 6px;border-radius:10px;line-height:1.3;
 }
+.sb-link{
+  display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:8px;
+  text-decoration:none;font-size:13px;font-weight:600;color:var(--text-muted);transition:all .15s;
+}
+.sb-link:hover{background:rgba(0,0,0,.07);color:var(--text)}
+.sb-link i{width:16px;text-align:center;font-size:12px;opacity:.75}
 
 /* Ticket thread */
 .tk-msg{max-width:85%;padding:10px 14px;border-radius:10px;font-size:13px;line-height:1.6;white-space:pre-wrap}
@@ -143,8 +149,31 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
 .panel-heading{font-size:18px;font-weight:800;color:var(--text);margin-bottom:20px;letter-spacing:-.02em}
 .panel-sub{font-size:13px;color:var(--text-muted);margin-bottom:20px;margin-top:-12px}
 
+/* ── Sub-navigation pills (grouped settings panels) ── */
+.subnav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}
+.subnav-pill{
+  padding:7px 16px;border-radius:20px;border:1px solid rgba(0,0,0,.12);background:#fff;
+  font-size:12px;font-weight:700;color:var(--text-muted);cursor:pointer;font-family:inherit;transition:all .15s;
+}
+.subnav-pill:hover{border-color:var(--green);color:var(--green)}
+.subnav-pill.active{background:var(--green);border-color:var(--green);color:#fff}
+
 /* ── Cards / tiles ── */
 .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px}
+.stats-row.six{grid-template-columns:repeat(6,1fr)}
+@media(max-width:1200px){.stats-row.six{grid-template-columns:repeat(3,1fr)}}
+.stat-tile.clickable{cursor:pointer;transition:all .15s}
+.stat-tile.clickable:hover{border-color:var(--green);transform:translateY(-1px)}
+
+/* ── Overview activity feed ── */
+.ov-feed-item{
+  display:flex;align-items:baseline;gap:12px;padding:10px 0;
+  border-bottom:1px solid rgba(0,0,0,.06);font-size:13px;
+}
+.ov-feed-item:last-child{border-bottom:none}
+.ov-feed-time{flex-shrink:0;font-size:11px;color:var(--text-dim);width:120px}
+.ov-feed-action{font-weight:700;color:var(--green)}
+.ov-feed-res{color:var(--text-muted)}
 .stat-tile{
   background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:var(--radius);
   padding:20px 18px;
@@ -363,7 +392,7 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
   .mob-bar{display:flex}
   .dash-header{display:none}
   .dash-body{padding:20px 16px}
-  .stats-row{grid-template-columns:1fr 1fr}
+  .stats-row,.stats-row.six{grid-template-columns:1fr 1fr}
   .form-grid{grid-template-columns:1fr}
   .data-table th:nth-child(3),.data-table td:nth-child(3),
   .data-table th:nth-child(5),.data-table td:nth-child(5){display:none}
@@ -430,75 +459,65 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
         </a>
         <div class="sb-badge">Admin</div>
 
-        <div class="sb-label">Inbound</div>
         <nav class="sb-nav">
-          <button class="sb-tab active" onclick="switchTab('applications')">
-            <i class="fa-regular fa-clipboard"></i> Applications
-          </button>
-          <button class="sb-tab" onclick="switchTab('orders')">
-            <i class="fa-solid fa-file-invoice-dollar"></i> Orders
-          </button>
-          <button class="sb-tab" onclick="switchTab('tickets')">
-            <i class="fa-solid fa-headset"></i> Tickets <span class="sb-count" id="tkBadge" style="display:none"></span>
+          <button class="sb-tab active" data-tab="overview" onclick="switchTab('overview')">
+            <i class="fa-solid fa-gauge-high"></i> Overview
           </button>
         </nav>
 
         <div class="sb-divider"></div>
-        <div class="sb-label">Customers</div>
+        <div class="sb-label">Sales</div>
         <nav class="sb-nav">
-          <button class="sb-tab" onclick="switchTab('access')">
-            <i class="fa-solid fa-lock"></i> Access
+          <button class="sb-tab" data-tab="applications" onclick="switchTab('applications')">
+            <i class="fa-regular fa-clipboard"></i> Applications <span class="sb-count" id="appBadge" style="display:none"></span>
           </button>
-          <button class="sb-tab" onclick="switchTab('services-mgmt')">
-            <i class="fa-solid fa-briefcase"></i> Service Mgmt
+          <button class="sb-tab" data-tab="orders" onclick="switchTab('orders')">
+            <i class="fa-solid fa-file-invoice-dollar"></i> Orders <span class="sb-count" id="ordBadge" style="display:none"></span>
           </button>
-          <button class="sb-tab" onclick="switchTab('tasks')">
-            <i class="fa-solid fa-list-check"></i> Tasks <span class="sb-count" id="taskBadge" style="display:none"></span>
-          </button>
-          <button class="sb-tab" onclick="switchTab('invoices')">
-            <i class="fa-solid fa-receipt"></i> Invoices
-          </button>
-          <button class="sb-tab" onclick="switchTab('questionnaires')">
+          <button class="sb-tab" data-tab="questionnaires" onclick="switchTab('questionnaires')">
             <i class="fa-solid fa-list-ol"></i> Questionnaires
           </button>
         </nav>
 
         <div class="sb-divider"></div>
-        <div class="sb-label">Site Content</div>
+        <div class="sb-label">Delivery</div>
         <nav class="sb-nav">
-          <button class="sb-tab" onclick="switchTab('company')">
-            <i class="fa-regular fa-building"></i> Company
+          <button class="sb-tab" data-tab="services-mgmt" onclick="switchTab('services-mgmt')">
+            <i class="fa-solid fa-briefcase"></i> Service Mgmt
           </button>
-          <button class="sb-tab" onclick="switchTab('pricing')">
-            <i class="fa-solid fa-dollar-sign"></i> Pricing
+          <button class="sb-tab" data-tab="tasks" onclick="switchTab('tasks')">
+            <i class="fa-solid fa-list-check"></i> Tasks <span class="sb-count" id="taskBadge" style="display:none"></span>
           </button>
-          <button class="sb-tab" onclick="switchTab('services')">
-            <i class="fa-solid fa-gear"></i> Catalog
+          <button class="sb-tab" data-tab="tickets" onclick="switchTab('tickets')">
+            <i class="fa-solid fa-headset"></i> Tickets <span class="sb-count" id="tkBadge" style="display:none"></span>
           </button>
-          <button class="sb-tab" onclick="switchTab('expertise')">
-            <i class="fa-solid fa-users"></i> Expertise
+          <button class="sb-tab" data-tab="invoices" onclick="switchTab('invoices')">
+            <i class="fa-solid fa-receipt"></i> Invoices
           </button>
         </nav>
 
         <div class="sb-divider"></div>
-        <div class="sb-label">System</div>
+        <div class="sb-label">Settings</div>
         <nav class="sb-nav">
-          <button class="sb-tab" onclick="switchTab('audit')">
-            <i class="fa-solid fa-clock-rotate-left"></i> Audit Logs
+          <button class="sb-tab" data-tab="company" data-group="company,pricing,services,expertise" onclick="switchTab('company')">
+            <i class="fa-regular fa-building"></i> Site Content
           </button>
-          <button class="sb-tab" onclick="switchTab('notifications')">
-            <i class="fa-solid fa-bell"></i> Notifications
+          <button class="sb-tab" data-tab="access" onclick="switchTab('access')">
+            <i class="fa-solid fa-lock"></i> Access
+          </button>
+          <button class="sb-tab" data-tab="audit" data-group="audit,notifications" onclick="switchTab('audit')">
+            <i class="fa-solid fa-clock-rotate-left"></i> System
           </button>
         </nav>
 
         <div class="sb-divider"></div>
         <div class="sb-label">Site</div>
         <nav class="sb-nav">
-          <a href="index.html" style="display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;color:var(--text-muted);transition:all .15s" onmouseover="this.style.background='rgba(0,0,0,.07)'" onmouseout="this.style.background=''">
-            <i class="fa-solid fa-house" style="width:16px;text-align:center;font-size:12px;opacity:.75"></i> Main Site
+          <a href="index.html" class="sb-link">
+            <i class="fa-solid fa-house"></i> Main Site
           </a>
-          <a href="shop.html" style="display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;color:var(--text-muted);transition:all .15s" onmouseover="this.style.background='rgba(0,0,0,.07)'" onmouseout="this.style.background=''">
-            <i class="fa-solid fa-cart-shopping" style="width:16px;text-align:center;font-size:12px;opacity:.75"></i> Shop
+          <a href="shop.html" class="sb-link">
+            <i class="fa-solid fa-cart-shopping"></i> Shop
           </a>
         </nav>
       </div>
@@ -520,7 +539,48 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
       <div class="dash-body">
 
         <!-- ═══ APPLICATIONS PANEL ═══ -->
-        <div class="dash-panel active" id="panel-applications">
+        <!-- ═══ OVERVIEW PANEL ═══ -->
+        <div class="dash-panel active" id="panel-overview">
+          <div class="panel-heading">Overview</div>
+          <div class="panel-sub">Everything that needs your attention, at a glance. Click a tile to jump to it.</div>
+
+          <div class="stats-row six">
+            <div class="stat-tile clickable" onclick="switchTab('applications')">
+              <div class="stat-tile-num orange" id="ovApps">—</div>
+              <div class="stat-tile-label">Pending Applications</div>
+            </div>
+            <div class="stat-tile clickable" onclick="switchTab('orders')">
+              <div class="stat-tile-num orange" id="ovOrders">—</div>
+              <div class="stat-tile-label">New Orders</div>
+            </div>
+            <div class="stat-tile clickable" onclick="switchTab('tickets')">
+              <div class="stat-tile-num red" id="ovTickets">—</div>
+              <div class="stat-tile-label">Open Tickets</div>
+            </div>
+            <div class="stat-tile clickable" onclick="switchTab('tasks')">
+              <div class="stat-tile-num" id="ovTasks">—</div>
+              <div class="stat-tile-label">Pending Tasks</div>
+            </div>
+            <div class="stat-tile clickable" onclick="switchTab('invoices')">
+              <div class="stat-tile-num red" id="ovInvoices">—</div>
+              <div class="stat-tile-label">Unpaid Invoices</div>
+            </div>
+            <div class="stat-tile clickable" onclick="switchTab('services-mgmt')">
+              <div class="stat-tile-num green" id="ovServices">—</div>
+              <div class="stat-tile-label">Active Services</div>
+            </div>
+          </div>
+
+          <div class="form-card">
+            <div class="form-card-title">Recent Activity</div>
+            <div id="ovActivity">
+              <div class="empty-state"><i class="fa-regular fa-clock"></i>Loading activity…</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ APPLICATIONS PANEL ═══ -->
+        <div class="dash-panel" id="panel-applications">
           <div class="panel-heading">Applications</div>
           <div class="panel-sub">Review and manage incoming business applications.</div>
 
@@ -541,13 +601,6 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
               <div class="stat-tile-num red" id="statRejected">—</div>
               <div class="stat-tile-label">Rejected</div>
             </div>
-          </div>
-
-          <div class="form-card" style="max-width:680px">
-            <div class="form-card-title">Industry WhatsApp Routing</div>
-            <p style="font-size:12px;color:var(--text-dim);margin:-6px 0 14px">Each application's quiz report is sent via WhatsApp to the number responsible for that industry — e.g. the team member or group handling that sector. Leave a field blank to skip routing for that industry.</p>
-            <div id="industryRoutingList"></div>
-            <button class="form-save" onclick="saveIndustryRouting()">Save Routing</button>
           </div>
 
           <div class="data-table-wrap">
@@ -679,7 +732,13 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
 
         <!-- ═══ COMPANY PANEL ═══ -->
         <div class="dash-panel" id="panel-company">
-          <div class="panel-heading">Company Info</div>
+          <div class="panel-heading">Site Content</div>
+          <div class="subnav">
+            <button class="subnav-pill active" onclick="switchTab('company')">Company</button>
+            <button class="subnav-pill" onclick="switchTab('pricing')">Pricing</button>
+            <button class="subnav-pill" onclick="switchTab('services')">Catalog</button>
+            <button class="subnav-pill" onclick="switchTab('expertise')">Expertise</button>
+          </div>
 
           <div class="form-card">
             <div class="form-card-title">Basic Details</div>
@@ -714,11 +773,24 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
           </div>
 
           <button class="form-save" onclick="saveCompanyInfo()">Save Company Info</button>
+
+          <div class="form-card" style="max-width:680px;margin-top:22px">
+            <div class="form-card-title">Industry WhatsApp Routing</div>
+            <p style="font-size:12px;color:var(--text-dim);margin:-6px 0 14px">Each application's quiz report is sent via WhatsApp to the number responsible for that industry — e.g. the team member or group handling that sector. Leave a field blank to skip routing for that industry.</p>
+            <div id="industryRoutingList"></div>
+            <button class="form-save" onclick="saveIndustryRouting()">Save Routing</button>
+          </div>
         </div>
 
         <!-- ═══ PRICING PANEL ═══ -->
         <div class="dash-panel" id="panel-pricing">
-          <div class="panel-heading">Pricing Settings</div>
+          <div class="panel-heading">Site Content</div>
+          <div class="subnav">
+            <button class="subnav-pill" onclick="switchTab('company')">Company</button>
+            <button class="subnav-pill active" onclick="switchTab('pricing')">Pricing</button>
+            <button class="subnav-pill" onclick="switchTab('services')">Catalog</button>
+            <button class="subnav-pill" onclick="switchTab('expertise')">Expertise</button>
+          </div>
 
           <div class="form-card">
             <div class="form-card-title">Global Pricing</div>
@@ -741,7 +813,13 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
 
         <!-- ═══ SERVICES PANEL ═══ -->
         <div class="dash-panel" id="panel-services">
-          <div class="panel-heading">Services Catalog</div>
+          <div class="panel-heading">Site Content</div>
+          <div class="subnav">
+            <button class="subnav-pill" onclick="switchTab('company')">Company</button>
+            <button class="subnav-pill" onclick="switchTab('pricing')">Pricing</button>
+            <button class="subnav-pill active" onclick="switchTab('services')">Catalog</button>
+            <button class="subnav-pill" onclick="switchTab('expertise')">Expertise</button>
+          </div>
 
           <div class="form-card" style="max-width:820px">
             <div class="form-card-title">All Services</div>
@@ -811,7 +889,13 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
 
         <!-- ═══ EXPERTISE PANEL ═══ -->
         <div class="dash-panel" id="panel-expertise">
-          <div class="panel-heading">Our Expertise</div>
+          <div class="panel-heading">Site Content</div>
+          <div class="subnav">
+            <button class="subnav-pill" onclick="switchTab('company')">Company</button>
+            <button class="subnav-pill" onclick="switchTab('pricing')">Pricing</button>
+            <button class="subnav-pill" onclick="switchTab('services')">Catalog</button>
+            <button class="subnav-pill active" onclick="switchTab('expertise')">Expertise</button>
+          </div>
           <div class="panel-sub">Manage the three team member profiles shown on the main site.</div>
 
           <!-- Team Member 1 -->
@@ -1081,7 +1165,11 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
 
         <!-- ═══ AUDIT LOGS PANEL ═══ -->
         <div class="dash-panel" id="panel-audit">
-          <div class="panel-heading">Audit Logs</div>
+          <div class="panel-heading">System</div>
+          <div class="subnav">
+            <button class="subnav-pill active" onclick="switchTab('audit')">Audit Logs</button>
+            <button class="subnav-pill" onclick="switchTab('notifications')">Notifications</button>
+          </div>
           <div class="panel-sub">View activity history and changes across the system.</div>
 
           <div class="form-card">
@@ -1133,7 +1221,11 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
 
         <!-- ═══ NOTIFICATIONS PANEL ═══ -->
         <div class="dash-panel" id="panel-notifications">
-          <div class="panel-heading">Notifications</div>
+          <div class="panel-heading">System</div>
+          <div class="subnav">
+            <button class="subnav-pill" onclick="switchTab('audit')">Audit Logs</button>
+            <button class="subnav-pill active" onclick="switchTab('notifications')">Notifications</button>
+          </div>
           <div class="panel-sub">Configure email and SMS notification preferences.</div>
 
           <div class="form-card">
@@ -1586,26 +1678,57 @@ async function showDashboard() {
   await loadOrders();
   await loadTickets();
   await loadCustomers();
-  await loadServiceMgmt();
+  await loadTasks();          // also runs loadServiceMgmt for the linked-service picker
   await loadInvoices();
   await loadAuditLogs();
   await loadNotifications();
+  renderOverview();
+}
+
+/* ══════════════════════════════════════════════
+   OVERVIEW
+══════════════════════════════════════════════ */
+function renderOverview() {
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set('ovApps',     applications.filter(a => a.status === 'pending' || !a.status).length);
+  set('ovOrders',   orders.filter(o => o.status === 'new' || !o.status).length);
+  set('ovTickets',  tickets.filter(t => t.status === 'open').length);
+  set('ovTasks',    allTasks.filter(t => (t.status || 'pending') !== 'completed').length);
+  set('ovInvoices', invoices.filter(i => i.status === 'pending' || i.status === 'overdue').length);
+  set('ovServices', Object.values(custServicesCache).filter(s => s.status === 'active').length);
+
+  const wrap = document.getElementById('ovActivity');
+  if (!wrap) return;
+  if (!auditCache.length) {
+    wrap.innerHTML = '<div class="empty-state"><i class="fa-regular fa-history"></i>No recent activity</div>';
+    return;
+  }
+  wrap.innerHTML = auditCache.slice(0, 8).map(d => {
+    const ts = d.timestamp instanceof Date ? d.timestamp : new Date(d.timestamp?.seconds * 1000 || 0);
+    return `<div class="ov-feed-item">
+      <span class="ov-feed-time">${formatDate(ts)}</span>
+      <span class="ov-feed-action">${escHtml(d.action || '—')}</span>
+      <span class="ov-feed-res">${escHtml(d.resourceType || '—')}${d.resourceName ? ' — ' + escHtml(d.resourceName) : ''}</span>
+    </div>`;
+  }).join('');
 }
 
 /* ══════════════════════════════════════════════
    SIDEBAR TABS
 ══════════════════════════════════════════════ */
-const TABS = ['applications','orders','tickets','access','services-mgmt','tasks','invoices','questionnaires','company','pricing','services','expertise','audit','notifications'];
+const TABS = ['overview','applications','orders','tickets','access','services-mgmt','tasks','invoices','questionnaires','company','pricing','services','expertise','audit','notifications'];
 
 function switchTab(name) {
   TABS.forEach(t => {
     const pnl = document.getElementById('panel-' + t);
     if (pnl) pnl.classList.toggle('active', t === name);
   });
-  document.querySelectorAll('.sb-tab').forEach((btn, i) => {
-    btn.classList.toggle('active', TABS[i] === name);
+  document.querySelectorAll('.sb-tab').forEach(btn => {
+    const group = (btn.dataset.group || btn.dataset.tab || '').split(',');
+    btn.classList.toggle('active', group.includes(name));
   });
   closeSidebar();
+  if (name === 'overview') renderOverview();
   if (name === 'services') renderSvcTable();
   if (name === 'access')  { loadCustomers(); }
   if (name === 'applications') loadApplications();
@@ -1670,6 +1793,12 @@ function renderApplications() {
   document.getElementById('statPending').textContent  = pending;
   document.getElementById('statApproved').textContent = approved;
   document.getElementById('statRejected').textContent = rejected;
+
+  const appBadge = document.getElementById('appBadge');
+  if (appBadge) {
+    if (pending) { appBadge.textContent = pending; appBadge.style.display = 'inline-block'; }
+    else appBadge.style.display = 'none';
+  }
 
   if (!total) {
     document.getElementById('appTableBody').innerHTML = `<tr><td colspan="6"><div class="empty-state"><i class="fa-regular fa-folder-open"></i>No applications yet.</div></td></tr>`;
@@ -2112,9 +2241,16 @@ function orderTotalStr(o) {
 
 function renderOrders() {
   document.getElementById('ordTotal').textContent     = orders.length;
-  document.getElementById('ordNew').textContent       = orders.filter(o => o.status === 'new' || !o.status).length;
+  const newOrders = orders.filter(o => o.status === 'new' || !o.status).length;
+  document.getElementById('ordNew').textContent       = newOrders;
   document.getElementById('ordContacted').textContent = orders.filter(o => o.status === 'contacted').length;
   document.getElementById('ordClosed').textContent    = orders.filter(o => o.status === 'closed').length;
+
+  const ordBadge = document.getElementById('ordBadge');
+  if (ordBadge) {
+    if (newOrders) { ordBadge.textContent = newOrders; ordBadge.style.display = 'inline-block'; }
+    else ordBadge.style.display = 'none';
+  }
 
   const tbody = document.getElementById('orderTableBody');
   if (!orders.length) {
@@ -3169,6 +3305,12 @@ function updateTaskStats() {
   document.getElementById('taskStatOverdue').textContent = overdue.length;
   document.getElementById('taskStatUnassigned').textContent = unassigned.length;
   document.getElementById('taskStatCompleted').textContent = completed.length;
+
+  const taskBadge = document.getElementById('taskBadge');
+  if (taskBadge) {
+    if (pending.length) { taskBadge.textContent = pending.length; taskBadge.style.display = 'inline-block'; }
+    else taskBadge.style.display = 'none';
+  }
 }
 
 function onTaskCustomerChange() {
@@ -3550,10 +3692,12 @@ function deleteInvoice(docId) {
 /* ══════════════════════════════════════════════
    AUDIT LOGS
 ══════════════════════════════════════════════ */
+let auditCache = [];
 async function loadAuditLogs() {
   if (!db) return;
   try {
     const logs = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
+    auditCache = logs.docs.map(doc => doc.data());
     const tbody = document.getElementById('auditTableBody');
     tbody.innerHTML = '';
     if (logs.empty) {
