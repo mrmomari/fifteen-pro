@@ -13,6 +13,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="firebase-config.js"></script>
+<script src="backend-config.js"></script>
 <script src="app.js"></script>
 <style>
 /* ── Reset & Root ── */
@@ -2261,7 +2262,37 @@ function genSecurePassword() {
   return 'Temp_' + Array.from(rnd, n => chars[n % chars.length]).join('');
 }
 
+// Uses the backend service's atomic /api/approve-application when
+// configured (backend-config.js), which avoids the secondary-Firebase-app
+// workaround entirely and can't leave an orphaned Auth account even if
+// this browser tab closes mid-request. Falls back to the client-side flow
+// below — unchanged in behavior — if no backend is configured or it's
+// unreachable, so approving an application always works either way.
 async function approveApplication(docId, name, email, industry) {
+  if (typeof BACKEND_CONFIG !== 'undefined' && BACKEND_CONFIG.apiUrl) {
+    try {
+      const idToken = await auth.currentUser.getIdToken();
+      const resp = await fetch(BACKEND_CONFIG.apiUrl + '/api/approve-application', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken },
+        body: JSON.stringify({ docId, name, email, industry })
+      });
+      const result = await resp.json();
+      if (!resp.ok) throw new Error(result.error || 'Approval failed');
+      invalidateCustomersCache();
+      const app = applications.find(a => a.docId === docId);
+      if (app) { app.status = 'approved'; app.userId = result.uid; }
+      renderApplications();
+      toast('✓ Approved — invite email sent to ' + email, 'success');
+      return;
+    } catch (e) {
+      console.warn('Backend approval failed, falling back to client-side flow:', e.message);
+    }
+  }
+  return approveApplicationClientFallback(docId, name, email, industry);
+}
+
+async function approveApplicationClientFallback(docId, name, email, industry) {
   if (!auth || !db) throw new Error('Firebase not connected');
 
   const tempPw = genSecurePassword();
