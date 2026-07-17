@@ -1,4 +1,6 @@
-const admin = require('firebase-admin');
+const { initializeApp, cert, getApps } = require('firebase-admin/app');
+const { getFirestore } = require('firebase-admin/firestore');
+const { getAuth } = require('firebase-admin/auth');
 
 function loadServiceAccount() {
   if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
@@ -14,14 +16,14 @@ function loadServiceAccount() {
   );
 }
 
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(loadServiceAccount()),
+if (!getApps().length) {
+  initializeApp({
+    credential: cert(loadServiceAccount()),
     projectId: process.env.FIREBASE_PROJECT_ID || undefined
   });
 }
 
-const db = admin.firestore();
-const auth = admin.auth();
+const db = getFirestore();
+const auth = getAuth();
 
-module.exports = { admin, db, auth };
+module.exports = { db, auth };
