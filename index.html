@@ -1459,25 +1459,38 @@ let _db = null;
       alert('Please fill in your name, email, and industry sector to continue.');
       return false;
     }
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+      alert('Please enter a valid email address.');
+      return false;
+    }
+    if(phone && !/^[+\d][\d\s().-]{6,}$/.test(phone)){
+      alert('Please enter a valid phone number, or leave it blank.');
+      return false;
+    }
     const btn = document.getElementById('qNext');
     btn.textContent = 'Submitting...';
     btn.style.opacity = '.7';
     btn.disabled = true;
     try {
-      if(typeof _db !== 'undefined' && _db){
-        await _db.collection('applications').add({
-          name, email, phone, website, industry,
-          status: 'pending',
-          quizAnswers: answers,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
+      if(!(typeof _db !== 'undefined' && _db)){
+        // Firebase never initialized (bad config, blocked CDN, offline) —
+        // this must be treated as a real failure, not a silent success, so
+        // the user never sees "Application submitted" for data that was
+        // never actually saved anywhere.
+        throw new Error('Connection unavailable');
       }
+      await _db.collection('applications').add({
+        name, email, phone, website, industry,
+        status: 'pending',
+        quizAnswers: answers,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
       return true;
     } catch(e){
       btn.textContent = 'Submit My Application →';
       btn.style.opacity = '1';
       btn.disabled = false;
-      alert('Submission failed — please try again.');
+      alert('Submission failed — please check your connection and try again.');
       return false;
     }
   }
@@ -1485,8 +1498,13 @@ let _db = null;
   document.getElementById('qNext').addEventListener('click', async function(){
     if(busy) return;
     if(step < TOTAL_Q){
-      const isRadio = document.getElementById('qo' + step)?.dataset.type === 'radio';
-      if(isRadio && !readStep(step)){
+      const grpType = document.getElementById('qo' + step)?.dataset.type;
+      const val = readStep(step);
+      // Radio questions require a selection; checkbox questions require at
+      // least one box checked (an explicit "None of the above" option counts
+      // as a selection, so this never blocks a genuinely optional answer).
+      const unanswered = grpType === 'radio' ? !val : (Array.isArray(val) && val.length === 0);
+      if(unanswered){
         const grp = document.getElementById('qo' + step);
         grp.style.outline = '2px solid rgba(227,108,68,.5)';
         grp.style.borderRadius = '10px';
@@ -1526,7 +1544,7 @@ document.querySelectorAll('a[href^="#"]').forEach(a=>{
 <script>
 (function(){
   try {
-    if(typeof FIREBASE_CONFIG === 'undefined' || !FIREBASE_CONFIG.apiKey) return;
+    if(typeof FIREBASE_CONFIG === 'undefined' || !FIREBASE_CONFIG.apiKey || FIREBASE_CONFIG.apiKey === 'YOUR_API_KEY') return;
     firebase.initializeApp(FIREBASE_CONFIG);
     const db = firebase.firestore();
     _db = db;

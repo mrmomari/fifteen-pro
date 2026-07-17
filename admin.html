@@ -2170,11 +2170,17 @@ async function modalConfirmAction() {
   }
 }
 
+function genSecurePassword() {
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';
+  const rnd = new Uint32Array(20);
+  crypto.getRandomValues(rnd);
+  return 'Temp_' + Array.from(rnd, n => chars[n % chars.length]).join('');
+}
+
 async function approveApplication(docId, name, email, industry) {
   if (!auth || !db) throw new Error('Firebase not connected');
 
-  // Generate random temp password
-  const tempPw = 'Temp_' + Math.random().toString(36).slice(2, 10) + '_!';
+  const tempPw = genSecurePassword();
 
   // Create the customer's Firebase Auth user on a secondary app
   // instance so the admin's own auth session stays signed in.
@@ -2184,26 +2190,36 @@ async function approveApplication(docId, name, email, industry) {
   const cred = await secondaryAuth.createUserWithEmailAndPassword(email, tempPw);
   const uid = cred.user.uid;
 
-  // Send password reset email so user sets their own password
+  // Do the Firestore writes *before* anything irreversible (the reset
+  // email) or anything that signs us out of the still-deletable account.
+  // If either write throws, the just-created Auth user is rolled back
+  // below so a failed approval never leaves an orphaned login with no
+  // matching customer record.
+  try {
+    await db.collection('customers').doc(uid).set({
+      name,
+      email,
+      industry,
+      applicationId: docId,
+      status: 'active',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    await db.collection('applications').doc(docId).update({
+      status: 'approved',
+      userId: uid,
+      approvedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  } catch (writeErr) {
+    try { await cred.user.delete(); } catch (cleanupErr) { /* best-effort rollback */ }
+    await secondaryAuth.signOut();
+    throw writeErr;
+  }
+
+  // Only once the customer record is confirmed to exist do we send the
+  // password-setup invite and sign out of the secondary app.
   await secondaryAuth.sendPasswordResetEmail(email);
   await secondaryAuth.signOut();
-
-  // Create customer Firestore document
-  await db.collection('customers').doc(uid).set({
-    name,
-    email,
-    industry,
-    applicationId: docId,
-    status: 'active',
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
-
-  // Update application document
-  await db.collection('applications').doc(docId).update({
-    status: 'approved',
-    userId: uid,
-    approvedAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
 
   // Refresh local state
   const app = applications.find(a => a.docId === docId);
@@ -3099,8 +3115,10 @@ async function onSmCustomerChange() {
   } catch(e) { /* purely informational — fail silent */ }
 }
 
+let _assigningService = false;
 async function assignService() {
   if (!db) { toast('Firebase not connected', 'error'); return; }
+  if (_assigningService) return;
   const custId = document.getElementById('sm-customer').value;
   const svcIds = Array.from(document.querySelectorAll('#sm-services .sm-svc-chk:checked')).map(cb => parseInt(cb.value));
   const status = document.getElementById('sm-status').value || 'active';
@@ -3108,6 +3126,7 @@ async function assignService() {
   const completion = document.getElementById('sm-completion').value;
   const notes = document.getElementById('sm-notes').value.trim();
   if (!custId || !svcIds.length || !start) { toast('Pick a customer, at least one service, and a start date', 'error'); return; }
+  _assigningService = true;
 
   try {
     const [custDoc, svcDoc] = await Promise.all([
@@ -3118,7 +3137,7 @@ async function assignService() {
     if (!custDoc.exists) { toast('Customer not found', 'error'); return; }
     const catalog = svcDoc.data()?.items || [];
 
-    await Promise.all(svcIds.map(svcId => {
+    const refs = await Promise.all(svcIds.map(svcId => {
       const svc = catalog.find(s => String(s.id) === String(svcId)) || { name: 'Unknown', phase: 1 };
       return db.collection('customerServices').add({
         userId: custId,
@@ -3135,6 +3154,7 @@ async function assignService() {
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
     }));
+    await AppUtils.logAudit(currentAdminIdentity(), 'create', refs.map(r => r.id).join(','), 'customerService', { customerId: custId, serviceIds: svcIds });
 
     toast(`✓ ${svcIds.length} service${svcIds.length > 1 ? 's' : ''} assigned`, 'success');
     document.getElementById('sm-customer').value = '';
@@ -3146,6 +3166,7 @@ async function assignService() {
     document.getElementById('sm-suggested').innerHTML = '';
     await loadServiceMgmt();
   } catch(e) { toast('Assignment failed: ' + e.message, 'error'); }
+  finally { _assigningService = false; }
 }
 
 async function setServiceStatus(docId, status) {
@@ -3267,23 +3288,45 @@ async function saveSvcEdit() {
     const completion = document.getElementById('se-completion').value;
     const phone = document.getElementById('se-phone').value.trim();
     const d = custServicesCache[editingSvcId] || {};
-    await db.collection('customerServices').doc(editingSvcId).update({
-      status: document.getElementById('se-status').value,
-      startDate: start ? new Date(start) : null,
-      completionDate: completion ? new Date(completion) : null,
-      notes: document.getElementById('se-notes').value.trim(),
-      customerPhone: phone,
-      milestones: editingMilestones
-        .filter(hasMilestoneContent)
-        .map(m => ({
-          taskId: m.taskId || null,
-          title: m.title.trim() || 'Milestone',
-          date: m.date ? new Date(m.date) : null,
-          completed: !!m.completed,
-          assignedTo: (m.assignedTo || '').trim(),
-          note: (m.note || '').trim()
-        })),
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    const docRef = db.collection('customerServices').doc(editingSvcId);
+
+    const editedMilestones = editingMilestones
+      .filter(hasMilestoneContent)
+      .map(m => ({
+        taskId: m.taskId || null,
+        title: m.title.trim() || 'Milestone',
+        date: m.date ? new Date(m.date) : null,
+        completed: !!m.completed,
+        assignedTo: (m.assignedTo || '').trim(),
+        note: (m.note || '').trim()
+      }));
+
+    // Reconcile against whatever is live in Firestore right now, inside a
+    // transaction. If a task tied to one of these milestones was completed
+    // elsewhere while this modal was open, this modal's stale snapshot would
+    // otherwise silently revert that completion when saved — so for any
+    // task-linked milestone, a live "completed" always wins over a stale
+    // "not completed".
+    await db.runTransaction(async tx => {
+      const liveDoc = await tx.get(docRef);
+      const liveMilestones = liveDoc.exists && Array.isArray(liveDoc.data().milestones) ? liveDoc.data().milestones : [];
+      const reconciled = editedMilestones.map(m => {
+        if (!m.taskId) return m;
+        const live = liveMilestones.find(lm => lm.taskId === m.taskId);
+        if (live && live.completed && !m.completed) {
+          return { ...m, completed: true, note: live.note || m.note, date: live.date || m.date };
+        }
+        return m;
+      });
+      tx.update(docRef, {
+        status: document.getElementById('se-status').value,
+        startDate: start ? new Date(start) : null,
+        completionDate: completion ? new Date(completion) : null,
+        notes: document.getElementById('se-notes').value.trim(),
+        customerPhone: phone,
+        milestones: reconciled,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
     });
     const custId = d.customerId || d.userId;
     if (phone && custId) {
@@ -3338,7 +3381,19 @@ async function deleteSvcEdit() {
   const d = custServicesCache[docId] || {};
   AppUtils.showConfirm('Remove Service', `Remove "${d.serviceName || 'this service'}" from ${d.customerName || 'this customer'}? This cannot be undone.`, async () => {
     try {
-      await db.collection('customerServices').doc(docId).delete();
+      const batch = db.batch();
+      batch.delete(db.collection('customerServices').doc(docId));
+
+      // Unlink (don't delete) any task pointing at this service, so a removed
+      // service never leaves a task silently referencing a doc that no longer
+      // exists — the task and its history stay intact, just no longer linked.
+      // (tasks.serviceId stores the customerServices *document id*, not the
+      // catalog service number — see onTaskCustomerChange()/confirmCompleteTask().)
+      const linkedTasks = await db.collection('tasks').where('serviceId', '==', docId).get();
+      linkedTasks.forEach(t => batch.update(t.ref, { serviceId: null }));
+
+      await batch.commit();
+      await AppUtils.logAudit(currentAdminIdentity(), 'delete', docId, 'customerService', { serviceName: d.serviceName || '', customerName: d.customerName || '' });
       toast('✓ Service removed', 'success');
       closeSvcEditModal();
       await loadServiceMgmt();
@@ -3526,10 +3581,13 @@ function closeNewTaskModal() {
   document.getElementById('newTaskModal').classList.remove('open');
 }
 
+let _creatingTask = false;
 async function createTask() {
   if (!db) { toast('Firebase not connected', 'error'); return; }
+  if (_creatingTask) return;
   const title = document.getElementById('task-title').value.trim();
   if (!title) { toast('Enter a task title', 'error'); return; }
+  _creatingTask = true;
 
   const svcId = document.getElementById('task-service').value;
   const svc = svcId ? custServicesCache[svcId] : null;
@@ -3582,6 +3640,7 @@ async function createTask() {
     closeNewTaskModal();
     await loadTasks();
   } catch(e) { toast('Failed to create task: ' + e.message, 'error'); }
+  finally { _creatingTask = false; }
 }
 
 function renderTasksTable() {
@@ -3720,7 +3779,24 @@ function deleteTask(docId) {
   const t = allTasks.find(x => x.docId === docId);
   AppUtils.showConfirm('Delete Task', `Delete "${(t && t.title) || 'this task'}"? This cannot be undone.`, async () => {
     try {
-      await db.collection('tasks').doc(docId).delete();
+      const batch = db.batch();
+      batch.delete(db.collection('tasks').doc(docId));
+
+      // Clear dangling back-references so a deleted task never leaves an
+      // invoice or a service milestone pointing at a doc that no longer exists.
+      if (t && t.invoiceId) {
+        batch.update(db.collection('invoices').doc(t.invoiceId), { taskId: null });
+      }
+      if (t && t.serviceId) {
+        const svcDoc = await db.collection('customerServices').doc(t.serviceId).get();
+        if (svcDoc.exists) {
+          const milestones = (Array.isArray(svcDoc.data().milestones) ? svcDoc.data().milestones : [])
+            .map(m => m.taskId === docId ? { ...m, taskId: null } : m);
+          batch.update(db.collection('customerServices').doc(t.serviceId), { milestones });
+        }
+      }
+
+      await batch.commit();
       await AppUtils.logAudit(currentAdminIdentity(), 'delete', docId, 'task', {});
       toast('✓ Task deleted', 'success');
       await loadTasks();
@@ -3814,18 +3890,21 @@ function renderInvoices() {
   }).join('');
 }
 
+let _creatingInvoice = false;
 async function createInvoice() {
   if (!db) { toast('Firebase not connected', 'error'); return; }
+  if (_creatingInvoice) return;
   const custId   = document.getElementById('inv-customer').value;
   const desc     = document.getElementById('inv-desc').value.trim();
   const amount   = parseFloat(document.getElementById('inv-amount').value);
   const currency = document.getElementById('inv-currency').value.trim() || '$';
   const due      = document.getElementById('inv-due').value;
   if (!custId || !desc || !(amount > 0) || !due) { toast('Fill in customer, description, amount and due date', 'error'); return; }
+  _creatingInvoice = true;
 
   try {
     const cust = invoiceCustomers[custId] || {};
-    await db.collection('invoices').add({
+    const ref = await db.collection('invoices').add({
       userId: custId,
       customerName: cust.name || '',
       description: desc,
@@ -3836,6 +3915,7 @@ async function createInvoice() {
       paidDate: null,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
+    await AppUtils.logAudit(currentAdminIdentity(), 'create', ref.id, 'invoice', { customerId: custId, amount, currency });
     toast('✓ Invoice created', 'success');
     document.getElementById('inv-customer').value = '';
     document.getElementById('inv-desc').value = '';
@@ -3844,6 +3924,7 @@ async function createInvoice() {
     document.getElementById('inv-due').value = '';
     await loadInvoices();
   } catch(e) { toast('Failed to create invoice: ' + e.message, 'error'); }
+  finally { _creatingInvoice = false; }
 }
 
 async function setInvoiceStatus(docId, status) {
@@ -3854,6 +3935,7 @@ async function setInvoiceStatus(docId, status) {
     await db.collection('invoices').doc(docId).update(update);
     const inv = invoices.find(x => x.docId === docId);
     if (inv) { inv.status = status; inv.paidDate = update.paidDate; }
+    await AppUtils.logAudit(currentAdminIdentity(), 'update', docId, 'invoice', { status });
     renderInvoices();
     toast(`✓ Invoice marked ${status}`, 'success');
   } catch(e) { toast('Update failed: ' + e.message, 'error'); }
@@ -3863,7 +3945,15 @@ function deleteInvoice(docId) {
   const inv = invoices.find(x => x.docId === docId);
   AppUtils.showConfirm('Delete Invoice', `Delete the "${(inv && inv.description) || 'this'}" invoice? This cannot be undone.`, async () => {
     try {
-      await db.collection('invoices').doc(docId).delete();
+      const batch = db.batch();
+      batch.delete(db.collection('invoices').doc(docId));
+      // Unlink the originating task (if this invoice was auto-created by
+      // completing one) so it stops pointing at a deleted invoice.
+      if (inv && inv.taskId) {
+        batch.update(db.collection('tasks').doc(inv.taskId), { invoiceId: null });
+      }
+      await batch.commit();
+      await AppUtils.logAudit(currentAdminIdentity(), 'delete', docId, 'invoice', { description: (inv && inv.description) || '' });
       toast('✓ Invoice deleted', 'success');
       await loadInvoices();
     } catch(e) { toast('Delete failed: ' + e.message, 'error'); }
@@ -4346,16 +4436,33 @@ async function sendQuestionnaireWhatsApp() {
         sentAt: firebase.firestore.FieldValue.serverTimestamp()
       });
       await loadQuestionnaires();
-    } catch(e) {}
+    } catch(e) {
+      toast('Sent via WhatsApp, but failed to update status: ' + e.message, 'error');
+    }
   }
 }
 
 function deleteQuestionnaire(docId) {
   const qn = questionnaires.find(q => q.docId === docId);
-  AppUtils.showConfirm('Delete Questionnaire', `Delete "${(qn && qn.title) || 'this questionnaire'}"? This cannot be undone.`, async () => {
+  AppUtils.showConfirm('Delete Questionnaire', `Delete "${(qn && qn.title) || 'this questionnaire'}"? This also deletes any saved analysis report, vendor cost sheet, and published roadmap linked to it. This cannot be undone.`, async () => {
     try {
-      await db.collection('questionnaires').doc(docId).delete();
-      await AppUtils.logAudit(currentAdminIdentity(), 'delete', docId, 'questionnaire', {});
+      const batch = db.batch();
+      batch.delete(db.collection('questionnaires').doc(docId));
+
+      // A questionnaire can have a saved qnReport, which in turn can have a
+      // vendorQuotes and/or clientReports doc — clean up the whole chain so
+      // deleting a questionnaire never leaves those permanently orphaned
+      // (previously only reachable/cleanable via the Firebase console).
+      const repSnap = await db.collection('qnReports').where('questionnaireId', '==', docId).get();
+      repSnap.forEach(repDoc => {
+        const rep = repDoc.data();
+        batch.delete(repDoc.ref);
+        if (rep.vendorQuoteId) batch.delete(db.collection('vendorQuotes').doc(rep.vendorQuoteId));
+        if (rep.clientReportId) batch.delete(db.collection('clientReports').doc(rep.clientReportId));
+      });
+
+      await batch.commit();
+      await AppUtils.logAudit(currentAdminIdentity(), 'delete', docId, 'questionnaire', { cascadedReports: repSnap.size });
       toast('✓ Questionnaire deleted', 'success');
       await loadQuestionnaires();
     } catch(e) { toast('Delete failed: ' + e.message, 'error'); }
@@ -4937,9 +5044,12 @@ function resetQnReportFromAnswers() {
   });
 }
 
+let _savingQnReport = false;
 async function saveQnReport(silent) {
   if (!qnReport) return false;
   if (!db) { toast('Firebase not connected', 'error'); return false; }
+  if (_savingQnReport) return false;
+  _savingQnReport = true;
   const data = { ...qnReport };
   delete data.docId;
   data.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
@@ -4955,6 +5065,7 @@ async function saveQnReport(silent) {
     if (!silent) { toast('✓ Report saved', 'success'); renderQnAnalysis(); }
     return true;
   } catch(e) { toast('Save failed: ' + e.message, 'error'); return false; }
+  finally { _savingQnReport = false; }
 }
 
 async function openQnReportTab() {
