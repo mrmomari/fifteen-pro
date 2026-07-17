@@ -21,11 +21,14 @@ B2B digital solutions website for **15fifteen15 / Fifteen**. One partner per ind
 | `questionnaire.html` | Public, no-login discovery questionnaire form — opened via a unique `?id=` link admin.html generates per customer (admin.html Questionnaires tab) |
 | `report.html` | Public report pages for saved questionnaire reports: `?vq=` passcode-protected 3rd-party vendor cost sheet, `?cr=` published client engagement roadmap, `?rid=&view=internal\|client` admin-only pop-out (requires admin sign-in in the same browser); `&print=1` auto-opens the print dialog (used by admin.html's Export PDF) |
 | `firebase-config.js` | Firebase project credentials (project: `fifteen-pro`) |
+| `backend-config.js` | Optional backend service URL (`apiUrl`, empty = disabled) — see `server/README.md`. Contains no secrets, safe to commit like `firebase-config.js` |
 | `app.js` | Shared admin.html utilities (`AppUtils`: HTML escaping, audit logging, confirm-modal helper) |
 | `prices.json` | Service catalog fallback (loaded if Firestore unavailable) |
 | `firestore.rules` | Firestore security rules (paste into Firebase console) |
+| `firestore.indexes.json` | Composite indexes (deployed by CI alongside rules — see `.github/workflows/firebase-rules-deploy.yml`) |
 | `storage.rules` | Firebase Storage security rules (paste into Firebase console) |
 | `SECURITY.md` | Step-by-step guide for enabling the security rules |
+| `server/` | Optional Node/Express backend (automated follow-ups, atomic application approval, server-verified vendor passcode) — see `server/README.md`. The site works fully without it |
 | `MD/` | Source markdown for PDF guides (Products Guide, Ultimate Guide, Bundle Flyer) |
 
 ## Design System
@@ -60,7 +63,7 @@ Layout: fixed left sidebar (268px on main site, 240px admin, 260px portal) + scr
 ## Quiz Flow (`#apply`)
 
 18 slides total (0-indexed), driven by `quiz-engine` IIFE in `index.html`:
-- Slides 0–14: 15 questions (radio = must select to advance; checkbox = optional, "None" deselects others)
+- Slides 0–14: 15 questions (radio = must select to advance; checkbox = at least one box required to advance, including the explicit "None" option, which deselects any other checked box)
 - Slide 15: Personalized recommendation generated from answers
 - Slide 16: Contact info (name, email, phone, website, industry) — saves to Firestore on submit
 - Slide 17: Success + "Book Your Strategy Call" CTA (`id="qBookBtn"` href — update to your Calendly URL)
@@ -72,12 +75,30 @@ All answers + contact saved to `applications/{id}` with `quizAnswers` object and
 ```
 settings/company        — company info, logo URL, social links
 settings/pricing        — currency, tax, bundle discount, promo codes
-settings/access         — partner logins
 settings/team           — { members: [name, ...] } — internal team roster for milestone "Assigned To"; no login, admin-managed (admin.html Tasks tab)
 settings/industryContacts — { mapping: { industryName: phoneNumber, ... } } — per-industry WhatsApp routing for application quiz reports (admin.html Applications tab)
+settings/notifications  — { emailApplications, emailServices, emailTickets, emailInvoices, emailRecipients, smsEnabled } — read by the optional
+                           backend service's daily digest/overdue-invoice job (server/); inert if that service isn't deployed
+settings/markupRules    — { defaultPct, byPhase: { 1, 2, 3 }, byService: { serviceId: pct } } — configurable markup used by
+                           "Apply Rule-Based Markup" in a questionnaire report (admin.html Vendors tab); precedence is
+                           service override → phase override → default
 catalog/services        — 15 services with pricing (falls back to prices.json)
 content/team            — 3 team member profiles + photos
 admins/{uid}            — admin registry (doc id = Firebase Auth UID); managed via Firebase console
+
+vendors/{id}            — persistent vendor directory (admin.html Vendors tab), independent of any one report
+  name, email, phone, phases: [1,2,3], notes, active
+  createdAt, updatedAt
+  — distinct from vendorQuotes below: this is a reusable contact record; vendorQuotes is the disposable
+    per-engagement passcode-protected cost sheet. vendorQuotes.vendorId can optionally link back here.
+
+customerTimeline/{customerId}/events/{id} — per-customer activity feed, maintained by the optional backend
+                           service (server/) via onSnapshot listeners on tickets/invoices/tasks/
+                           customerServices/questionnaires. Admin-read-only; no client (including admin.html)
+                           ever writes it directly. admin.html's Customer 360 view (Access tab → click a
+                           customer) builds an equivalent feed client-side from data it already has loaded,
+                           so this collection isn't required for that feature — it exists for a persisted
+                           history independent of the dashboard being open
 
 applications/{id}       — partner applications from quiz
   name, email, phone, website, industry
@@ -163,7 +184,8 @@ qnReports/{id}          — saved, editable analysis reports (admin-only; seeded
   services: [{ key, id, name, phase, phaseLabel, desc, type, tier, score, evidence,
                catalogPrice, vendorCost, clientPrice, inPlan }]
     vendorCost  — 3rd-party cost (typed by admin or pulled from the linked vendorQuotes doc)
-    clientPrice — marked-up price the customer sees (manual, or via the "Apply Markup %" helper)
+    clientPrice — marked-up price the customer sees (manual, via a flat "Apply Markup %", or via
+                  "Apply Rule-Based Markup" using settings/markupRules)
     inPlan      — false = removed from the client-facing roadmap (still visible internally)
   clientIntro, clientStrengths, clientNeeds, clientNextSteps — client-facing content, independent copies
   vendorQuoteId, vendorPasscode, vendorStatus, vendorName, vendorNote, vendorSubmittedAt
@@ -172,13 +194,20 @@ qnReports/{id}          — saved, editable analysis reports (admin-only; seeded
 vendorQuotes/{id}       — 3rd-party cost sheet behind report.html?vq=... (one per report)
   reportId, business, qnTitle                         — business name + questionnaire title, shown in
                                                         the sheet header so the vendor knows the client
+  vendorId                — optional link to a vendors/{id} directory record (Create Vendor Link can
+                            pick an existing vendor, or leave this unset for a one-off vendor)
   services: [{ key, name, phase, scope }]             — no internal analysis, no our prices
-  passHash                — SHA-256 of the passcode (UI gate on report.html; same link-trust model
-                            as questionnaires — treat the link itself as the secret)
+  passHash                — SHA-256 of the passcode. Without the optional backend service (server/)
+                            deployed, this is a client-side-only gate — same link-trust model as
+                            questionnaires, treat the link itself as the secret. With the backend
+                            deployed (backend-config.js), the passcode is verified server-side instead:
+                            the service list/scope is never sent to the browser until it matches, and
+                            the cost-submission write is actually gated by it too.
   costs: { key: number }, vendorName, vendorNote      — filled in by the vendor
   status: 'pending' | 'submitted', createdAt, submittedAt
   — firestore.rules: public `get` by direct id, one-time public `update` restricted to
-    costs/vendorName/vendorNote/status/submittedAt, blocked once status is 'submitted'.
+    costs/vendorName/vendorNote/status/submittedAt, blocked once status is 'submitted'. (When the
+    backend is deployed, report.html calls it instead of writing Firestore directly for this flow.)
 
 clientReports/{id}      — published engagement roadmap behind report.html?cr=... (one per report)
   reportId, title, business, intro, strengths, needs, nextSteps
@@ -186,20 +215,27 @@ clientReports/{id}      — published engagement roadmap behind report.html?cr=.
   showPrices, totals: { oneTime, monthly }, publishedAt
   — read-only snapshot: public `get` by direct id, admin-only writes; re-publishing overwrites the
     same doc so the customer's link always shows the latest published version.
+
+auditLogs/{id}          — append-only action trail (admin.html Audit tab)
+  userId, action, resourceId, resourceType, changes, timestamp, userAgent
+  — Written by `AppUtils.logAudit()` (app.js) from every sensitive admin write: application approve/
+    reject, order status changes, ticket replies/status, invoice/task/customerService/vendor CRUD, and
+    Company/Pricing/Services/Expertise/Team/Industry Routing/Markup Rules settings saves. Customers can
+    only create one specific self-service shape (portal.html requesting a service) — firestore.rules
+    enforces the exact field set, so a customer can't post arbitrary audit entries.
 ```
 
 ## Auth
 
 ### Admin (`admin.html`)
-- Firebase Auth (email/password) + must have an `admins/{uid}` doc in Firestore (see `SECURITY.md`)
-- Legacy fallback: if Firebase is unavailable (local dev), password-only login with the hardcoded default
-- Session: Firebase Auth persistence (+ `localStorage['fifteen_admin_sess']`, 8-hour expiry)
-- Brute-force: 5 attempts → 15-min lockout (`localStorage['fifteen_admin_att']`)
+- Firebase Auth (email/password) + must have an `admins/{uid}` doc in Firestore (see `SECURITY.md`) — no password-only fallback of any kind; without Firebase there's no data to show anyway
+- Session: Firebase Auth persistence (+ `localStorage['fifteen_admin_sess']`, 8-hour expiry — a UI-visibility gate only; real access control is Firebase Auth + firestore.rules on every read/write, not this token)
+- Brute-force: 5 attempts → 15-min lockout (`localStorage['fifteen_admin_att']`) — a client-side UI throttle; the real backstop against credential stuffing is Firebase Auth's own server-side rate limiting
 
 ### Customers (`portal.html`)
 - Firebase Auth — Email/Password + Google OAuth
-- On sign-in, checks `customers/{uid}` exists; signs out if not found
-- When admin approves application: customer account is created on a secondary Firebase app instance (`createUserWithEmailAndPassword` → `sendPasswordResetEmail` → sign out secondary) so the admin stays signed in
+- On sign-in, checks `customers/{uid}` exists (with one automatic retry on a transient read failure before signing out); signs out if not found
+- When admin approves an application: if the optional backend service (`server/`) is deployed and configured (`backend-config.js`), `admin.html` calls `POST /api/approve-application`, which creates the Auth account, `customers/{uid}` doc, and application update as one atomic server-side operation (rolling back the Auth account if any step fails). Otherwise it falls back to the client-side flow: a secondary Firebase app instance (`createUserWithEmailAndPassword` → write `customers/{uid}` → update `applications/{id}` → `sendPasswordResetEmail` → sign out secondary), with the same account-rollback-on-failure guarantee
 - Customer sets their own password via the Firebase reset email link
 
 ### Security rules
@@ -237,7 +273,7 @@ clientReports/{id}      — published engagement roadmap behind report.html?cr=.
 1. Admin → Invoices → Create Invoice → pick customer, description, amount, currency, due date → saved to `invoices` collection (status `pending`)
    — or automatically, by completing a priced task in the Tasks tab (see below)
 2. Customer sees it immediately in `portal.html` → Billing tab (amount, due date, status) and in the dashboard's Outstanding Invoices KPI
-3. Admin marks it `paid` / `overdue` / back to `pending` from the Invoices tab as money comes in or a due date passes (no automatic overdue detection — no backend/Cloud Functions in this stack)
+3. Admin marks it `paid` / `overdue` / back to `pending` from the Invoices tab as money comes in or a due date passes. If the optional backend service (`server/`) is deployed, a daily job also does this automatically — invoices past their due date flip to `overdue` on their own, and (if enabled in Notifications) an email digest goes out. Without that service deployed, this stays fully manual, same as before
 
 **Admin completes a task and bills the customer:**
 1. Admin → Tasks → New Task → title, optional customer + linked service, due date, assignee, and an optional invoice amount → saved to `tasks` collection (status `pending`); if a service is linked, a matching entry is also pushed into that service's `milestones[]` so the portal progress bar reflects it
@@ -256,17 +292,21 @@ clientReports/{id}      — published engagement roadmap behind report.html?cr=.
 **Admin prices a report via a 3rd-party vendor and sends the roadmap:**
 1. Admin → Questionnaires → **Analyze** — first open seeds an editable report from the analyzer; every later open loads the saved `qnReports` doc instead (Reset rebuilds from the answers, keeping vendor costs/prices/links). Every line (facts, strengths, gaps, opportunities, risks, talking points) can be edited inline, added, or deleted; every service row can be deleted and has editable **3rd-party $** and **Client $** price fields next to the catalog price
 2. **Save Report** persists edits; **Open in New Tab** pops the current view (Internal or Client-Facing) full-screen via `report.html?rid=...`; **Export PDF** opens the same page with the print dialog
-3. Internal tab → **Create Vendor Link** builds a passcode-protected cost sheet (`vendorQuotes` + `report.html?vq=...`) showing the business name, questionnaire title, and service names/scopes (no analysis, no our prices) — Copy Link + Passcode or Send to Vendor via WhatsApp
+3. Internal tab → **Create Vendor Link** builds a passcode-protected cost sheet (`vendorQuotes` + `report.html?vq=...`) showing the business name, questionnaire title, and service names/scopes (no analysis, no our prices) — Copy Link + Passcode or Send to Vendor via WhatsApp. Optionally link it to a saved `vendors/{id}` directory record (admin.html Vendors tab) instead of a one-off contact, so the vendor's info and engagement history persist across reports
 4. The 3rd party opens the link, enters the passcode, fills in their cost per service and submits (one-time; the sheet locks). **Refresh Costs** (also run automatically when the report opens) pulls the submitted numbers into the 3rd-party column
-5. Admin marks up: type each Client $ by hand or use **Apply Markup %** (fills client price = vendor cost + markup), then fine-tunes
+5. Admin marks up: **Apply Rule-Based Markup** fills client price from vendor cost using the configured `settings/markupRules` (service override → phase override → default, edited in the Vendors tab), or type each Client $ by hand, or use the flat **Apply Markup %** — then fine-tune individual rows
 6. Client-Facing tab → edit the intro/strengths/needs/next-steps, remove (and restore) services from the plan — prices shown are the marked-up client prices (catalog price when unset)
 7. **Publish & Copy Link** snapshots the roadmap to `clientReports` + `report.html?cr=...` (re-publish updates the same link), or **Send Roadmap to Customer** publishes and opens WhatsApp with the link — this is the engagement roadmap the customer receives
+8. Admin.html → Vendors tab → **Portfolio Margin** rolls up vendor cost vs. client price across every saved report, by vendor and by phase — a portfolio-wide view instead of only ever seeing margin one report at a time
 
 **Admin manages content:**
-- Sidebar → Admin → `admin.html` → signs in (email/password) → tabs: Applications / Orders / Tickets / Access / Service Mgmt / Tasks / Invoices / Questionnaires / Company / Pricing / Services / Expertise / Audit / Notifications
+- Sidebar → Admin → `admin.html` → signs in (email/password) → tabs: Applications / Orders / Tickets / Access / Service Mgmt / Tasks / Invoices / Questionnaires / Company / Pricing / Services / Expertise / Vendors / Audit / Notifications
+- Access: click any customer row to open **Customer 360** — one view aggregating their application, services + milestone progress, tickets, invoices, tasks, questionnaires, and a merged chronological activity feed, instead of checking each tab separately
 - Service Mgmt: assign services to customers, edit status/notes, and manage the milestone checklist per service (progress bar + `x/y complete` shown both in the Active Services table and the edit modal) — this is what the customer sees in their portal. Each milestone can be assigned to a team member and, once checked complete, given a free-text "what was achieved" note — both are editable from the same edit modal, which also has a "Send Progress Update via WhatsApp" button. Milestones can still be added here directly (without a task), for backwards-compatible fine-grained editing.
 - Tasks: the backbone for all internal work — independent of any customer/service. A "Team Members" roster (`settings/team`, name-only, no login) feeds the "Assigned To" dropdown. Admin creates tasks directly (with an optional linked customer + service, due date, assignee, and invoice amount), completes them inline with a "what was achieved" note, and every priced task auto-invoices the linked customer on completion — no more jumping to Service Mgmt just to check something off. Filterable by assignee and status (pending/completed/all).
 - Invoices: bill a customer for completed/in-progress work (manually, or automatically from a completed task); customer sees it in their portal Billing tab in real time
+- Tickets: replies are live — a reply sent from either admin.html or portal.html while the other side has that ticket's thread open appears immediately (`onSnapshot`), no refresh needed
+- Vendors: persistent vendor directory (contact info, phase specialties, notes) + configurable markup rules (used by a questionnaire report's "Apply Rule-Based Markup") + the portfolio-wide margin report — see the vendor/markup flow above
 
 ## Firebase Console Requirements
 - **Authentication → Email/Password** → Enable
@@ -274,6 +314,68 @@ clientReports/{id}      — published engagement roadmap behind report.html?cr=.
 - **Firestore** → already active
 - **Storage** → already active
 - **Hosting** → configured for 15fifteen15.com
+
+## Optional Backend Automation Service (`server/`)
+
+A small Node/Express service — see `server/README.md` for full setup and
+Hostinger deployment instructions. **The site works completely without
+it**; nothing about `index.html`/`admin.html`/`portal.html`/`shop.html`/
+`questionnaire.html`/`report.html`'s availability depends on this being
+deployed, and every flow it touches has an already-hardened client-side
+fallback that's used automatically whenever `backend-config.js`'s
+`apiUrl` is empty or unreachable.
+
+What it adds once deployed:
+- A daily job that auto-flags overdue invoices and emails a digest of
+  tasks-due-soon / stale-open-tickets to `settings/notifications`'
+  configured recipients — this is what finally makes those (previously
+  inert) Notifications toggles do something.
+- `customerTimeline` sync (background Firestore listeners → a per-customer
+  event history collection).
+- `POST /api/approve-application` — atomic application approval (Auth
+  account + `customers/{uid}` + application update, with rollback on
+  failure), replacing the client-only secondary-Firebase-app workaround.
+- The real, server-verified version of the `report.html?vq=...` vendor
+  passcode gate, closing the gap where the client-side-only version
+  downloads the full document before checking the passcode and doesn't
+  gate the cost-submission write by it at all.
+
+## Migration Notes (from the pre-restructure build)
+
+- **Breaking change — Partner Logins removed.** The Access tab's
+  "Partner Logins" card (plaintext `email`/`password` pairs stored in
+  `settings/access.partnerLogins`) has been removed. It was confirmed
+  unused by any authentication path anywhere in the app (customers
+  authenticate via real Firebase Auth, not this) — it was dead code that
+  nonetheless stored live plaintext credentials. If you had entries there,
+  they're preserved in Firestore (the field is just no longer read or
+  editable from the UI) — delete `settings/access` manually if you want
+  to clear it out, or leave it, it's inert either way.
+- **Breaking change — no more legacy admin password fallback.**
+  `admin.html`'s hardcoded `'fifteen2025'` password-only login path
+  (used only when Firebase failed to initialize) has been removed. Admin
+  login is Firebase Auth only now, matching how the rest of the app's
+  security already worked in practice.
+- **Additive — new collections**: `vendors`, `customerTimeline` (backend-
+  only), `settings/markupRules`. None of these existed before; nothing
+  reads or depends on them until you use the corresponding new UI (Vendors
+  tab) or deploy `server/`.
+- **Additive — `firestore.indexes.json`**: newly deployed alongside
+  `firestore.rules` in CI. Needed for the admin Audit Log's
+  resource/action filters and a couple of `where + orderBy` queries that
+  previously risked a `FAILED_PRECONDITION` error in production with no
+  index pre-provisioned.
+- No existing collection was renamed or restructured — every pre-existing
+  document shape (`applications`, `orders`, `customers`, `customerServices`,
+  `tickets`, `invoices`, `tasks`, `questionnaires`, `qnReports`,
+  `vendorQuotes`, `clientReports`) is unchanged and fully backward
+  compatible; only a few optional fields were added (`vendorQuotes.vendorId`).
+- **Deployment**: this was developed and reviewed on a feature branch with
+  Firebase Hosting preview-channel deploys per PR (`firebase-hosting-pull-
+  request.yml`); `main` only auto-deploys to the live site on merge
+  (`firebase-hosting-merge.yml`). The optional `server/` service is a
+  separate deploy target (Hostinger) with its own timeline — deploy it
+  whenever convenient, independent of when this merges.
 
 ## Services Catalog
 15 services across 3 phases:
