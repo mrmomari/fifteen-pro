@@ -201,9 +201,10 @@ const params = new URLSearchParams(location.search);
 const vqId = params.get('vq');       // vendor cost sheet
 const crId = params.get('cr');       // published client roadmap
 const rid  = params.get('rid');      // admin pop-out of a saved qnReports doc
+const qid  = params.get('qid');      // completed questionnaire (raw Q&A) PDF export
 const view = params.get('view') === 'client' ? 'client' : 'internal';
 
-if ((!vqId && !crId && !rid) || typeof FIREBASE_CONFIG === 'undefined' || !FIREBASE_CONFIG.apiKey) {
+if ((!vqId && !crId && !rid && !qid) || typeof FIREBASE_CONFIG === 'undefined' || !FIREBASE_CONFIG.apiKey) {
   fail();
   return;
 }
@@ -396,6 +397,61 @@ if (vqId) {
     }
   }
   return;
+}
+
+/* ════════ COMPLETED QUESTIONNAIRE — RAW Q&A (?qid=) ════════
+   Public get-by-id, same link-trust model as the fill-out link itself
+   (questionnaire.html?id=...) — firestore.rules already allows this. */
+if (qid) {
+  db.collection('questionnaires').doc(qid).get().then(doc => {
+    if (!doc.exists) { fail(); return; }
+    renderQuestionnaireDoc(doc.data());
+  }).catch(err => { console.error(err); fail(); });
+  return;
+}
+
+function formatQnAnswer(q, a) {
+  if (q.type === 'table' && Array.isArray(a)) {
+    return a
+      // rows are stored as plain objects ({0: val, 1: val, ...}) since Firestore
+      // rejects arrays-of-arrays; normalize back to arrays for rendering
+      .map(row => Array.isArray(row) ? row : (row && typeof row === 'object' ? Object.values(row) : []))
+      .filter(row => row.some(c => (c || '').trim()))
+      .map(row => row.map((c, i) => c ? `${q.columns[i] || ''}: ${c}` : '').filter(Boolean).join(' · '))
+      .join('\n');
+  }
+  if (Array.isArray(a)) return a.join(', ');
+  return String(a);
+}
+
+function renderQuestionnaireDoc(qn) {
+  const answers = qn.answers || {};
+  const business = qn.businessName || qn.customerName || '';
+  setHeader(
+    qn.title || 'Questionnaire',
+    business ? 'Responses for ' + business : 'Responses',
+    qn.completedAt ? 'Completed ' + fmtDate(qn.completedAt) : (qn.createdAt ? 'Created ' + fmtDate(qn.createdAt) : ''),
+    business ? '<span class="rp-tag">For ' + escHtml(business) + '</span>' : ''
+  );
+  let html = '';
+  (qn.sections || []).forEach((sec, si) => {
+    const rows = (sec.questions || []).map(q => {
+      const a = answers[q.id];
+      if (a === undefined || a === null || a === '' || (Array.isArray(a) && !a.length)) return '';
+      return `<div style="padding:9px 0;border-bottom:1px solid rgba(0,0,0,.06)">
+        <div style="font-size:11px;font-weight:700;color:var(--text-dim);margin-bottom:3px">${escHtml(q.label)}</div>
+        <div style="font-size:13.5px;color:var(--text);white-space:pre-wrap">${escHtml(formatQnAnswer(q, a))}</div>
+      </div>`;
+    }).join('');
+    if (!rows) return;
+    html += `<div class="rp-box"><div class="rp-sec-title">${si + 1}. ${escHtml(sec.title)}</div>${rows}</div>`;
+  });
+  if (!html) html = `<div class="rp-box" style="text-align:center;color:var(--text-muted)">No answered questions yet.</div>`;
+  document.getElementById('rpBody').innerHTML = html;
+  document.getElementById('rpFootRight').textContent = 'Business discovery questionnaire';
+  document.getElementById('printBtn').style.display = 'flex';
+  show('pageScreen');
+  maybePrint();
 }
 
 /* ════════ PUBLISHED CLIENT ROADMAP (?cr=) ════════ */
