@@ -1379,21 +1379,33 @@ auth?.onAuthStateChanged(async (user) => {
 
   currentUser = user;
 
-  // Verify customer exists in Firestore
-  try {
-    const doc = await db.collection('customers').doc(user.uid).get();
-    if (!doc.exists) {
-      showLogin();
-      showLoginError('Your account is not set up yet. Please contact support.');
-      await auth.signOut();
-      return;
+  // Verify customer exists in Firestore. A single automatic retry covers a
+  // transient network blip; if it still fails, sign out so the session
+  // never sits authenticated-but-stuck on the login screen with only a
+  // manual page refresh as the way out.
+  let doc;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      doc = await db.collection('customers').doc(user.uid).get();
+      break;
+    } catch(e) {
+      if (attempt === 1) {
+        showLogin();
+        showLoginError('Error loading your account. Please check your connection and try signing in again.');
+        await auth.signOut();
+        return;
+      }
+      await new Promise(r => setTimeout(r, 800));
     }
-    customerData = doc.data();
-  } catch(e) {
+  }
+
+  if (!doc.exists) {
     showLogin();
-    showLoginError('Error loading your account. Please try again.');
+    showLoginError('Your account is not set up yet. Please contact support.');
+    await auth.signOut();
     return;
   }
+  customerData = doc.data();
 
   showDashboard();
 });
@@ -1501,6 +1513,7 @@ document.getElementById('pwToggle').addEventListener('click', () => {
 ══════════════════════════════════════════════════════════ */
 async function handleLogout() {
   try {
+    detachTicketThreadListeners();
     await auth.signOut();
     showToast('You have been signed out.', 'success');
     setTimeout(() => showLogin(), 500);
@@ -1848,7 +1861,7 @@ function renderServices() {
 ══════════════════════════════════════════════════════════ */
 function renderTickets() {
   const el = document.getElementById('ticketsContent');
-  Object.keys(ticketRepliesLoaded).forEach(k => delete ticketRepliesLoaded[k]);
+  detachTicketThreadListeners();
   if (ticketsData.length === 0) {
     el.innerHTML = `<div class="card"><div class="empty-state">
       <div class="empty-state-icon"><i class="fa-solid fa-comments"></i></div>
@@ -1884,6 +1897,7 @@ function renderTickets() {
 }
 
 const ticketRepliesLoaded = {};
+const ticketRepliesUnsub = {};
 
 async function toggleTicketBody(idx) {
   const body = document.getElementById('ticket-body-' + idx);
@@ -1892,22 +1906,30 @@ async function toggleTicketBody(idx) {
   icon.classList.toggle('open');
   if (body.classList.contains('show') && !ticketRepliesLoaded[idx]) {
     ticketRepliesLoaded[idx] = true;
-    await loadTicketThread(idx);
+    loadTicketThread(idx);
   }
 }
 
-async function loadTicketThread(idx) {
+function loadTicketThread(idx) {
   const t = ticketsData[idx];
   const threadEl = document.getElementById('ticket-thread-' + idx);
   threadEl.innerHTML = '<div style="font-size:12px;color:var(--text-dim)"><i class="fa-solid fa-spinner fa-spin"></i> Loading…</div>';
-  try {
-    const snap = await db.collection('tickets').doc(t.id).collection('replies').orderBy('createdAt').get();
-    const replies = snap.docs.map(d => d.data());
-    const all = [{ from: 'customer', message: t.message, createdAt: t.createdAt, original: true }, ...replies];
-    threadEl.innerHTML = all.map(renderTicketBubble).join('');
-  } catch(e) {
-    threadEl.innerHTML = '<div style="font-size:12px;color:var(--text-dim)">Could not load replies.</div>';
-  }
+  // Live-updating thread: an admin reply sent while this ticket is expanded
+  // appears immediately instead of requiring a page reload to see it.
+  ticketRepliesUnsub[idx] = db.collection('tickets').doc(t.id).collection('replies').orderBy('createdAt')
+    .onSnapshot(snap => {
+      const replies = snap.docs.map(d => d.data());
+      const all = [{ from: 'customer', message: t.message, createdAt: t.createdAt, original: true }, ...replies];
+      threadEl.innerHTML = all.map(renderTicketBubble).join('');
+    }, e => {
+      threadEl.innerHTML = '<div style="font-size:12px;color:var(--text-dim)">Could not load replies.</div>';
+    });
+}
+
+function detachTicketThreadListeners() {
+  Object.values(ticketRepliesUnsub).forEach(unsub => { try { unsub(); } catch(e) {} });
+  Object.keys(ticketRepliesUnsub).forEach(k => delete ticketRepliesUnsub[k]);
+  Object.keys(ticketRepliesLoaded).forEach(k => delete ticketRepliesLoaded[k]);
 }
 
 function renderTicketBubble(r) {
@@ -2198,6 +2220,9 @@ async function loadServicesCatalog() {
     });
   } catch(e) {
     console.error('Error loading services:', e);
+    const select = document.getElementById('serviceSelect');
+    select.innerHTML = '<option value="">Failed to load services — try again</option>';
+    showToast('Could not load the service catalog. Please refresh and try again.', 'error');
   }
 }
 
@@ -2208,7 +2233,7 @@ document.getElementById('serviceSelect')?.addEventListener('change', function() 
     if (selected && selected.dataset.service) {
       const svc = JSON.parse(selected.dataset.service);
       document.getElementById('serviceDescription').innerHTML =
-        `<strong>${svc.name}</strong><br/>${svc.description}`;
+        `<strong>${esc(svc.name)}</strong><br/>${esc(svc.description)}`;
       container.style.display = 'block';
     }
   } else {

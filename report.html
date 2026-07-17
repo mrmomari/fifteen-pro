@@ -161,6 +161,7 @@ body{
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
+<script src="backend-config.js"></script>
 <script>
 (function(){
 
@@ -238,25 +239,46 @@ function maybePrint() {
   if (params.get('print')) setTimeout(() => window.print(), 600);
 }
 
-/* ════════ VENDOR COST SHEET (?vq=) ════════ */
+/* ════════ VENDOR COST SHEET (?vq=) ════════
+   When backend-config.js points at a deployed server/, the passcode is
+   verified server-side and the service list/scope (the actual content the
+   passcode protects) is never sent to the browser until it matches —
+   fixing the gap in the direct-Firestore fallback below, where the whole
+   document (including passHash) is downloaded before the passcode check,
+   and the cost-submission write isn't gated by the passcode at all at the
+   Firestore-rules layer. Without a backend configured, this falls back to
+   that existing behavior unchanged — same "the link is the secret" trust
+   model already used for questionnaire links. */
 if (vqId) {
   let vq = null;
-  db.collection('vendorQuotes').doc(vqId).get().then(doc => {
-    if (!doc.exists) { fail(); return; }
-    vq = doc.data();
-    if (vq.status === 'submitted') {
-      document.getElementById('doneTitle').textContent = 'Already Submitted';
-      document.getElementById('doneMsg').textContent = 'This cost sheet has already been submitted. Thank you — we have everything we need.';
-      show('doneScreen');
-      return;
-    }
-    if (vq.passHash) {
+  let enteredPasscode = '';
+  const useBackend = typeof BACKEND_CONFIG !== 'undefined' && !!BACKEND_CONFIG.apiUrl;
+
+  async function fetchVqViaBackend(passcode) {
+    const url = BACKEND_CONFIG.apiUrl + '/api/vendor-quote/' + encodeURIComponent(vqId) +
+      (passcode ? '?passcode=' + encodeURIComponent(passcode) : '');
+    const resp = await fetch(url);
+    const body = await resp.json();
+    return { ok: resp.ok, body };
+  }
+
+  function showAlreadySubmitted() {
+    document.getElementById('doneTitle').textContent = 'Already Submitted';
+    document.getElementById('doneMsg').textContent = 'This cost sheet has already been submitted. Thank you — we have everything we need.';
+    show('doneScreen');
+  }
+
+  async function initViaBackend() {
+    const { body } = await fetchVqViaBackend();
+    if (body.status === 'submitted') { showAlreadySubmitted(); return; }
+    vq = body;
+    if (body.needsPasscode) {
       show('passScreen');
       const tryPass = async () => {
         const val = document.getElementById('passInput').value.trim();
         if (!val) return;
-        const hash = await sha256hex(val);
-        if (hash === vq.passHash) { renderVendorForm(); }
+        const { ok, body: result } = await fetchVqViaBackend(val);
+        if (ok) { vq = result; enteredPasscode = val; renderVendorForm(); }
         else { document.getElementById('passErr').style.display = 'block'; }
       };
       document.getElementById('passBtn').addEventListener('click', tryPass);
@@ -264,7 +286,35 @@ if (vqId) {
     } else {
       renderVendorForm();
     }
-  }).catch(err => { console.error(err); fail(); });
+  }
+
+  function initViaFirestore() {
+    db.collection('vendorQuotes').doc(vqId).get().then(doc => {
+      if (!doc.exists) { fail(); return; }
+      vq = doc.data();
+      if (vq.status === 'submitted') { showAlreadySubmitted(); return; }
+      if (vq.passHash) {
+        show('passScreen');
+        const tryPass = async () => {
+          const val = document.getElementById('passInput').value.trim();
+          if (!val) return;
+          const hash = await sha256hex(val);
+          if (hash === vq.passHash) { enteredPasscode = val; renderVendorForm(); }
+          else { document.getElementById('passErr').style.display = 'block'; }
+        };
+        document.getElementById('passBtn').addEventListener('click', tryPass);
+        document.getElementById('passInput').addEventListener('keydown', e => { if (e.key === 'Enter') tryPass(); });
+      } else {
+        renderVendorForm();
+      }
+    }).catch(err => { console.error(err); fail(); });
+  }
+
+  if (useBackend) {
+    initViaBackend().catch(err => { console.warn('Backend vendor-quote fetch failed, falling back to Firestore:', err.message); initViaFirestore(); });
+  } else {
+    initViaFirestore();
+  }
 
   function renderVendorForm() {
     const metaBits = [];
@@ -315,14 +365,26 @@ if (vqId) {
     if (!Object.keys(costs).length) { alert('Please enter a cost for at least one service before submitting.'); return; }
     btn.disabled = true;
     btn.textContent = 'Submitting…';
+    const vendorName = document.getElementById('vendorName').value.trim();
+    const vendorNote = document.getElementById('vendorNote').value.trim();
     try {
-      await db.collection('vendorQuotes').doc(vqId).update({
-        costs,
-        vendorName: document.getElementById('vendorName').value.trim(),
-        vendorNote: document.getElementById('vendorNote').value.trim(),
-        status: 'submitted',
-        submittedAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
+      if (useBackend) {
+        const resp = await fetch(BACKEND_CONFIG.apiUrl + '/api/vendor-quote/' + encodeURIComponent(vqId) + '/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ passcode: enteredPasscode, costs, vendorName, vendorNote })
+        });
+        const result = await resp.json();
+        if (!resp.ok) throw new Error(result.error || 'Submission failed');
+      } else {
+        await db.collection('vendorQuotes').doc(vqId).update({
+          costs,
+          vendorName,
+          vendorNote,
+          status: 'submitted',
+          submittedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      }
       document.getElementById('doneTitle').textContent = 'Thank You!';
       document.getElementById('doneMsg').textContent = 'Your costs have been submitted successfully. We\'ll be in touch shortly.';
       show('doneScreen');

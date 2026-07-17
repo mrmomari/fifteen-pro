@@ -96,18 +96,36 @@ service cloud.firestore {
     // ── Services assigned to customers ──
     match /customerServices/{id} {
       allow read: if isAdmin() || isOwner(resource.data.userId);
-      // Customers may request a service for themselves (status pending);
-      // admins may assign anything.
+      // Customers may request a service for themselves (status pending,
+      // no milestones yet — those are admin-set); admins may assign anything.
       allow create: if isAdmin()
         || (isOwner(request.resource.data.userId)
-            && request.resource.data.status == 'pending');
+            && request.resource.data.customerId == request.resource.data.userId
+            && request.resource.data.status == 'pending'
+            && request.resource.data.serviceId is number
+            && request.resource.data.milestones is list
+            && request.resource.data.milestones.size() == 0
+            && request.resource.data.notes is string
+            && request.resource.data.notes.size() <= 2000
+            && request.resource.data.keys().hasOnly(
+                 ['userId','customerId','customerName','serviceId','serviceName','phase','status',
+                  'startDate','completionDate','milestones','notes','configuration','createdAt','requestedAt']));
       allow update, delete: if isAdmin();
     }
 
     // ── Support tickets ──
     match /tickets/{ticketId} {
       allow read: if isAdmin() || isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId)
+        && request.resource.data.status == 'open'
+        && request.resource.data.subject is string
+        && request.resource.data.subject.size() > 0
+        && request.resource.data.subject.size() <= 300
+        && request.resource.data.message is string
+        && request.resource.data.message.size() > 0
+        && request.resource.data.message.size() <= 5000
+        && request.resource.data.keys().hasOnly(
+             ['userId','subject','category','message','status','createdAt','updatedAt']);
       allow update, delete: if isAdmin();
 
       // Reply thread — the ticket owner and admins can read it; the
@@ -179,6 +197,27 @@ service cloud.firestore {
                  .hasOnly(['costs', 'vendorName', 'vendorNote', 'status', 'submittedAt']));
     }
 
+    // ── Customer activity timeline (maintained by server/, the optional
+    // backend service — see server/README.md). No client, admin included,
+    // ever writes this directly; it's synced from other collections by a
+    // trusted server process using the Admin SDK, which bypasses these
+    // rules entirely. Admins may read it once a UI is built to use it.
+    match /customerTimeline/{customerId} {
+      allow read: if isAdmin();
+      allow write: if false;
+      match /events/{eventId} {
+        allow read: if isAdmin();
+        allow write: if false;
+      }
+    }
+
+    // ── Vendor directory (admin.html Vendors tab) ──
+    // Persistent vendor contact/specialty records — never exposed publicly
+    // (distinct from the disposable per-report vendorQuotes cost sheet link).
+    match /vendors/{id} {
+      allow read, write: if isAdmin();
+    }
+
     // ── Published client-facing roadmaps (report.html?cr=...) ──
     // Read-only snapshot of the polished engagement roadmap the admin
     // publishes and sends to the customer. Public get by direct id only.
@@ -189,9 +228,19 @@ service cloud.firestore {
     }
 
     // ── Audit logs (append-only) ──
+    // Non-admins may only create the one legitimate self-service entry
+    // shape (portal.html's "requested a service" log) — arbitrary
+    // action/changes content from a customer is rejected so the audit
+    // trail stays trustworthy.
     match /auditLogs/{id} {
       allow read: if isAdmin() || isOwner(resource.data.userId);
-      allow create: if isAdmin() || isOwner(request.resource.data.userId);
+      allow create: if isAdmin()
+        || (isOwner(request.resource.data.userId)
+            && request.resource.data.action == 'request'
+            && request.resource.data.resourceType == 'service'
+            && request.resource.data.changes is map
+            && request.resource.data.keys().hasOnly(
+                 ['userId','action','resourceType','resourceId','changes','timestamp']));
       allow update, delete: if false;
     }
 

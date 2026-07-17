@@ -495,6 +495,10 @@ body{
 let SERVICES = [];
 let cart = new Set(); // service ids
 
+function escHtml(str) {
+  return String(str == null ? '' : str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
 /* ─── Default prices (fallback if prices.json fails) ─── */
 const DEFAULTS = [
   {id:1,phase:1,phaseLabel:"Brand & Authority",name:"Brand Identity",description:"Logo, colors, typography & complete brand guidelines",price:1500,type:"one-time",active:true},
@@ -586,7 +590,7 @@ function renderShop() {
         <div class="phase-label">
           <svg fill="none" stroke="var(--green)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16" viewBox="0 0 24 24">${phaseIcons[pi]}</svg>
           <span class="phase-num">Phase 0${p}</span>
-          <span class="phase-name">${label}</span>
+          <span class="phase-name">${escHtml(label)}</span>
           <span class="phase-selected" id="phaseCount${p}">0 selected</span>
         </div>
         <div class="service-fan" id="fan${p}">
@@ -605,8 +609,8 @@ function renderCard(s) {
       <div class="card-inner">
         <div class="cart-badge">✓</div>
         <div class="card-num">${String(s.id).padStart(2, '0')}</div>
-        <div class="card-name">${s.name}</div>
-        <div class="card-desc">${s.description}</div>
+        <div class="card-name">${escHtml(s.name)}</div>
+        <div class="card-desc">${escHtml(s.description)}</div>
         <div class="card-price">${fmt(s.price)}<span class="card-price-type">${typeLabel}</span></div>
         <button class="card-add-btn" id="btn${s.id}">+ Add to Plan</button>
       </div>
@@ -661,7 +665,7 @@ function updateCart() {
 
   bar.classList.add('visible');
   countText.textContent = items.length + (items.length===1?' service':' services') + ' selected';
-  chips.innerHTML = items.slice(0,5).map(s=>`<span class="cart-chip">${s.name}</span>`).join('') +
+  chips.innerHTML = items.slice(0,5).map(s=>`<span class="cart-chip">${escHtml(s.name)}</span>`).join('') +
     (items.length > 5 ? `<span class="cart-chip">+${items.length-5} more</span>` : '');
 
   const oneTime = items.filter(s=>s.type==='one-time').reduce((a,s)=>a+s.price,0);
@@ -695,7 +699,7 @@ function openQuote() {
     <div class="quote-service-row">
       <div class="qs-left">
         <span class="qs-num">${String(s.id).padStart(2, '0')}</span>
-        <span class="qs-name">${s.name}<span class="qs-type">${s.type==='monthly'?'· monthly':'· one-time'}</span></span>
+        <span class="qs-name">${escHtml(s.name)}<span class="qs-type">${s.type==='monthly'?'· monthly':'· one-time'}</span></span>
       </div>
       <span class="qs-price">${fmt(s.price)}${s.type==='monthly'?'/mo':''}</span>
     </div>

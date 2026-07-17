@@ -13,6 +13,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="firebase-config.js"></script>
+<script src="backend-config.js"></script>
 <script src="app.js"></script>
 <style>
 /* ── Reset & Root ── */
@@ -499,7 +500,7 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
         <div class="sb-divider"></div>
         <div class="sb-label">Settings</div>
         <nav class="sb-nav">
-          <button class="sb-tab" data-tab="company" data-group="company,pricing,services,expertise" onclick="switchTab('company')">
+          <button class="sb-tab" data-tab="company" data-group="company,pricing,services,expertise,vendors" onclick="switchTab('company')">
             <i class="fa-regular fa-building"></i> Site Content
           </button>
           <button class="sb-tab" data-tab="access" onclick="switchTab('access')">
@@ -738,6 +739,7 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
             <button class="subnav-pill" onclick="switchTab('pricing')">Pricing</button>
             <button class="subnav-pill" onclick="switchTab('services')">Catalog</button>
             <button class="subnav-pill" onclick="switchTab('expertise')">Expertise</button>
+            <button class="subnav-pill" onclick="switchTab('vendors')">Vendors</button>
           </div>
 
           <div class="form-card">
@@ -790,6 +792,7 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
             <button class="subnav-pill active" onclick="switchTab('pricing')">Pricing</button>
             <button class="subnav-pill" onclick="switchTab('services')">Catalog</button>
             <button class="subnav-pill" onclick="switchTab('expertise')">Expertise</button>
+            <button class="subnav-pill" onclick="switchTab('vendors')">Vendors</button>
           </div>
 
           <div class="form-card">
@@ -819,6 +822,7 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
             <button class="subnav-pill" onclick="switchTab('pricing')">Pricing</button>
             <button class="subnav-pill active" onclick="switchTab('services')">Catalog</button>
             <button class="subnav-pill" onclick="switchTab('expertise')">Expertise</button>
+            <button class="subnav-pill" onclick="switchTab('vendors')">Vendors</button>
           </div>
 
           <div class="form-card" style="max-width:820px">
@@ -870,15 +874,6 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
             <button class="form-save" onclick="changePassword()">Update Password</button>
           </div>
 
-          <div class="form-card" style="max-width:680px">
-            <div class="form-card-title">Partner Logins</div>
-            <div id="partnerList"></div>
-            <button class="as-add" onclick="addPartnerRow()"><i class="fa-solid fa-plus"></i> Add Partner</button>
-            <div style="margin-top:14px">
-              <button class="form-save" onclick="saveAccessSettings()">Save Access Settings</button>
-            </div>
-          </div>
-
           <div class="form-card" style="max-width:820px">
             <div class="form-card-title">Customers (Portal Users)</div>
             <div id="customerListWrap">
@@ -895,6 +890,7 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
             <button class="subnav-pill" onclick="switchTab('pricing')">Pricing</button>
             <button class="subnav-pill" onclick="switchTab('services')">Catalog</button>
             <button class="subnav-pill active" onclick="switchTab('expertise')">Expertise</button>
+            <button class="subnav-pill" onclick="switchTab('vendors')">Vendors</button>
           </div>
           <div class="panel-sub">Manage the three team member profiles shown on the main site.</div>
 
@@ -938,6 +934,48 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
           </div>
 
           <button class="form-save" onclick="saveExpertise()">Save Expertise</button>
+        </div>
+
+        <!-- ═══ VENDORS PANEL ═══ -->
+        <div class="dash-panel" id="panel-vendors">
+          <div class="panel-heading">Site Content</div>
+          <div class="subnav">
+            <button class="subnav-pill" onclick="switchTab('company')">Company</button>
+            <button class="subnav-pill" onclick="switchTab('pricing')">Pricing</button>
+            <button class="subnav-pill" onclick="switchTab('services')">Catalog</button>
+            <button class="subnav-pill" onclick="switchTab('expertise')">Expertise</button>
+            <button class="subnav-pill active" onclick="switchTab('vendors')">Vendors</button>
+          </div>
+          <div class="panel-sub">Third-party vendors used to outsource services, and the markup rules applied when pricing their costs for a customer.</div>
+
+          <div class="form-card">
+            <div class="form-card-title">Markup Rules</div>
+            <p style="font-size:12px;color:var(--text-dim);margin:-6px 0 14px">Used by "Apply Rule-Based Markup" in a questionnaire report — service-level override wins over phase-level, which wins over the default.</p>
+            <div class="form-grid">
+              <div class="f-field"><label>Default Markup %</label><input id="mk-default" type="number" min="0" step="1" placeholder="30"></div>
+            </div>
+            <div class="form-grid">
+              <div class="f-field"><label>Phase 1 — Brand &amp; Authority %</label><input id="mk-phase-1" type="number" min="0" step="1" placeholder="Use default"></div>
+              <div class="f-field"><label>Phase 2 — Growth &amp; Traffic %</label><input id="mk-phase-2" type="number" min="0" step="1" placeholder="Use default"></div>
+              <div class="f-field"><label>Phase 3 — Infrastructure &amp; Scale %</label><input id="mk-phase-3" type="number" min="0" step="1" placeholder="Use default"></div>
+            </div>
+            <div class="f-field"><label>Per-Service Overrides</label>
+              <div id="mk-services-list" style="border:1px solid rgba(0,0,0,.12);border-radius:8px;max-height:220px;overflow-y:auto;background:#fff;padding:6px 0"></div>
+            </div>
+            <button class="form-save" onclick="saveMarkupRules()">Save Markup Rules</button>
+          </div>
+
+          <div class="form-card" style="max-width:900px">
+            <div class="form-card-title">Vendor Directory</div>
+            <div id="vendorListWrap"></div>
+            <button class="as-add" onclick="openVendorModal()"><i class="fa-solid fa-plus"></i> Add Vendor</button>
+          </div>
+
+          <div class="form-card" style="max-width:900px">
+            <div class="form-card-title">Portfolio Margin</div>
+            <p style="font-size:12px;color:var(--text-dim);margin:-6px 0 14px">Vendor cost vs. client price across every saved questionnaire report, so margin isn't only visible one report at a time.</p>
+            <div id="marginReportWrap"></div>
+          </div>
         </div>
 
         <!-- ═══ SERVICE MANAGEMENT PANEL ═══ -->
@@ -1538,6 +1576,41 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
   </div>
 </div>
 
+<!-- ══ Vendor (add/edit) ══ -->
+<div class="modal-overlay" id="vendorModal">
+  <div class="modal-box" style="width:460px;max-width:92vw;text-align:left">
+    <h3 id="vendor-modal-title">Add Vendor</h3>
+    <div class="f-field"><label>Name</label><input id="vd-name" placeholder="Studio XYZ"></div>
+    <div class="f-field"><label>Contact Email</label><input id="vd-email" type="email" placeholder="hello@studioxyz.com"></div>
+    <div class="f-field"><label>Contact Phone</label><input id="vd-phone" type="tel" placeholder="+1 555 123 4567"></div>
+    <div class="f-field"><label>Specialties (phases)</label>
+      <div style="display:flex;gap:14px;font-size:13px">
+        <label style="display:flex;align-items:center;gap:5px"><input type="checkbox" id="vd-phase-1"> Phase 1</label>
+        <label style="display:flex;align-items:center;gap:5px"><input type="checkbox" id="vd-phase-2"> Phase 2</label>
+        <label style="display:flex;align-items:center;gap:5px"><input type="checkbox" id="vd-phase-3"> Phase 3</label>
+      </div>
+    </div>
+    <div class="f-field"><label>Notes</label><textarea id="vd-notes" rows="3" placeholder="Strengths, past engagements, reliability…"></textarea></div>
+    <div class="f-field"><label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="vd-active" checked> Active</label></div>
+    <div class="modal-actions" style="margin-top:14px;flex-wrap:wrap">
+      <button class="modal-cancel" onclick="closeVendorModal()">Cancel</button>
+      <button id="vd-delete-btn" class="btn-reject" onclick="deleteVendor()" style="display:none">Delete</button>
+      <button class="modal-confirm" onclick="saveVendor()">Save Vendor</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Customer 360 ══ -->
+<div class="modal-overlay" id="cust360Modal">
+  <div class="modal-box" style="width:820px;max-width:94vw;max-height:90vh;overflow-y:auto;text-align:left">
+    <h3 id="c360-title">Customer</h3>
+    <div id="c360-body" style="margin-top:14px"></div>
+    <div class="modal-actions" style="margin-top:18px">
+      <button class="modal-cancel" onclick="closeCustomer360()">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ Toast ══ -->
 <div class="t-toast" id="toast"></div>
 
@@ -1546,11 +1619,32 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
    STATE
 ══════════════════════════════════════════════ */
 let db = null, storage = null, auth = null;
-const ADMIN_PASSWORD_DEFAULT = 'fifteen2025';
-let ADMIN_PASSWORD = ADMIN_PASSWORD_DEFAULT;
 let services = [];
 let applications = [];
 let pendingApproval = null; // { docId, name, email, industry }
+
+/* ══════════════════════════════════════════════
+   SHARED CUSTOMERS CACHE
+   Every tab (Tickets, Service Mgmt, Team, Invoices, Questionnaires,
+   Access) used to independently fetch the entire customers collection on
+   every dashboard load/refresh. This caches that single fetch for the
+   lifetime of the session (or until invalidateCustomersCache() is called,
+   e.g. right after approving a new application) instead of re-reading it
+   6 separate times.
+══════════════════════════════════════════════ */
+let _customersCache = null;
+let _customersCachePromise = null;
+function invalidateCustomersCache() { _customersCache = null; _customersCachePromise = null; }
+async function getAllCustomers() {
+  if (!db) return [];
+  if (_customersCache) return _customersCache;
+  if (!_customersCachePromise) {
+    _customersCachePromise = db.collection('customers').get()
+      .then(snap => { _customersCache = snap.docs.map(d => ({ docId: d.id, ...d.data() })); return _customersCache; })
+      .finally(() => { _customersCachePromise = null; });
+  }
+  return _customersCachePromise;
+}
 
 /* ══════════════════════════════════════════════
    FIREBASE INIT
@@ -1600,9 +1694,10 @@ function lockMins() { return Math.ceil((getAttempts().lock - Date.now()) / 60000
 /* ══════════════════════════════════════════════
    LOGIN / LOGOUT
    Admins sign in with Firebase Auth (email/password) and must
-   have a matching admins/{uid} doc in Firestore. The old
-   password-only check remains only as a fallback when Firebase
-   isn't configured (local development).
+   have a matching admins/{uid} doc in Firestore. There is no
+   password-only fallback — without Firebase there is no data to
+   show anyway, so a client-side-only login would be security
+   theater rather than a real fallback.
 ══════════════════════════════════════════════ */
 async function isAdminUser(uid) {
   if (!db || !uid) return false;
@@ -1614,36 +1709,24 @@ async function isAdminUser(uid) {
 
 async function doLogin() {
   if (isLocked()) { applyLockUI(); return; }
+  if (!auth) { loginFail('Could not connect to the service. Please try again later.', false); return; }
+
   const pw = document.getElementById('loginPw').value;
-
-  if (auth) {
-    const email = document.getElementById('loginEmail').value.trim();
-    if (!email || !pw) { loginFail('Enter your admin email and password.', false); return; }
-    try {
-      const cred = await auth.signInWithEmailAndPassword(email, pw);
-      if (!(await isAdminUser(cred.user.uid))) {
-        await auth.signOut();
-        loginFail('This account does not have admin access.');
-        return;
-      }
-      clearAttempts();
-      setSession();
-      document.getElementById('loginPw').value = '';
-      showDashboard();
-    } catch(e) {
-      loginFail('Incorrect email or password.');
+  const email = document.getElementById('loginEmail').value.trim();
+  if (!email || !pw) { loginFail('Enter your admin email and password.', false); return; }
+  try {
+    const cred = await auth.signInWithEmailAndPassword(email, pw);
+    if (!(await isAdminUser(cred.user.uid))) {
+      await auth.signOut();
+      loginFail('This account does not have admin access.');
+      return;
     }
-    return;
-  }
-
-  // Legacy fallback (Firebase unavailable)
-  if (pw === ADMIN_PASSWORD) {
     clearAttempts();
     setSession();
     document.getElementById('loginPw').value = '';
     showDashboard();
-  } else {
-    loginFail('Incorrect password.');
+  } catch(e) {
+    loginFail('Incorrect email or password.');
   }
 }
 
@@ -1743,7 +1826,7 @@ function renderOverview() {
 /* ══════════════════════════════════════════════
    SIDEBAR TABS
 ══════════════════════════════════════════════ */
-const TABS = ['overview','applications','orders','tickets','access','services-mgmt','tasks','invoices','questionnaires','company','pricing','services','expertise','audit','notifications'];
+const TABS = ['overview','applications','orders','tickets','access','services-mgmt','tasks','invoices','questionnaires','company','pricing','services','expertise','vendors','audit','notifications'];
 
 function switchTab(name) {
   TABS.forEach(t => {
@@ -1767,6 +1850,7 @@ function switchTab(name) {
   if (name === 'questionnaires') loadQuestionnaires();
   if (name === 'audit') loadAuditLogs();
   if (name === 'notifications') loadNotifications();
+  if (name === 'vendors') { loadVendors(); loadMarkupRules(); renderMarginReport(); }
 }
 
 /* ══════════════════════════════════════════════
@@ -1790,7 +1874,7 @@ async function loadApplications() {
     return;
   }
   try {
-    const snap = await db.collection('applications').orderBy('createdAt', 'desc').get();
+    const snap = await db.collection('applications').orderBy('createdAt', 'desc').limit(500).get();
     applications = snap.docs.map(d => ({ docId: d.id, ...d.data() }));
     renderApplications();
   } catch(e) {
@@ -2096,6 +2180,7 @@ async function saveIndustryRouting() {
     });
     industryContacts = mapping;
     await db.collection('settings').doc('industryContacts').set({ mapping, updatedAt: new Date().toISOString() }, { merge: true });
+    await AppUtils.logAudit(currentAdminIdentity(), 'update', 'industryContacts', 'settings', {});
     toast('✓ Routing saved', 'success');
   } catch(e) { toast('Save failed: ' + e.message, 'error'); }
 }
@@ -2170,11 +2255,47 @@ async function modalConfirmAction() {
   }
 }
 
+function genSecurePassword() {
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';
+  const rnd = new Uint32Array(20);
+  crypto.getRandomValues(rnd);
+  return 'Temp_' + Array.from(rnd, n => chars[n % chars.length]).join('');
+}
+
+// Uses the backend service's atomic /api/approve-application when
+// configured (backend-config.js), which avoids the secondary-Firebase-app
+// workaround entirely and can't leave an orphaned Auth account even if
+// this browser tab closes mid-request. Falls back to the client-side flow
+// below — unchanged in behavior — if no backend is configured or it's
+// unreachable, so approving an application always works either way.
 async function approveApplication(docId, name, email, industry) {
+  if (typeof BACKEND_CONFIG !== 'undefined' && BACKEND_CONFIG.apiUrl) {
+    try {
+      const idToken = await auth.currentUser.getIdToken();
+      const resp = await fetch(BACKEND_CONFIG.apiUrl + '/api/approve-application', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken },
+        body: JSON.stringify({ docId, name, email, industry })
+      });
+      const result = await resp.json();
+      if (!resp.ok) throw new Error(result.error || 'Approval failed');
+      invalidateCustomersCache();
+      const app = applications.find(a => a.docId === docId);
+      if (app) { app.status = 'approved'; app.userId = result.uid; }
+      renderApplications();
+      toast('✓ Approved — invite email sent to ' + email, 'success');
+      return;
+    } catch (e) {
+      console.warn('Backend approval failed, falling back to client-side flow:', e.message);
+    }
+  }
+  return approveApplicationClientFallback(docId, name, email, industry);
+}
+
+async function approveApplicationClientFallback(docId, name, email, industry) {
   if (!auth || !db) throw new Error('Firebase not connected');
 
-  // Generate random temp password
-  const tempPw = 'Temp_' + Math.random().toString(36).slice(2, 10) + '_!';
+  const tempPw = genSecurePassword();
 
   // Create the customer's Firebase Auth user on a secondary app
   // instance so the admin's own auth session stays signed in.
@@ -2184,30 +2305,42 @@ async function approveApplication(docId, name, email, industry) {
   const cred = await secondaryAuth.createUserWithEmailAndPassword(email, tempPw);
   const uid = cred.user.uid;
 
-  // Send password reset email so user sets their own password
+  // Do the Firestore writes *before* anything irreversible (the reset
+  // email) or anything that signs us out of the still-deletable account.
+  // If either write throws, the just-created Auth user is rolled back
+  // below so a failed approval never leaves an orphaned login with no
+  // matching customer record.
+  try {
+    await db.collection('customers').doc(uid).set({
+      name,
+      email,
+      industry,
+      applicationId: docId,
+      status: 'active',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    await db.collection('applications').doc(docId).update({
+      status: 'approved',
+      userId: uid,
+      approvedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  } catch (writeErr) {
+    try { await cred.user.delete(); } catch (cleanupErr) { /* best-effort rollback */ }
+    await secondaryAuth.signOut();
+    throw writeErr;
+  }
+
+  // Only once the customer record is confirmed to exist do we send the
+  // password-setup invite and sign out of the secondary app.
   await secondaryAuth.sendPasswordResetEmail(email);
   await secondaryAuth.signOut();
-
-  // Create customer Firestore document
-  await db.collection('customers').doc(uid).set({
-    name,
-    email,
-    industry,
-    applicationId: docId,
-    status: 'active',
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
-
-  // Update application document
-  await db.collection('applications').doc(docId).update({
-    status: 'approved',
-    userId: uid,
-    approvedAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
+  invalidateCustomersCache();
 
   // Refresh local state
   const app = applications.find(a => a.docId === docId);
   if (app) { app.status = 'approved'; app.userId = uid; }
+  await AppUtils.logAudit(currentAdminIdentity(), 'approve', docId, 'application', { customerUid: uid, email });
   renderApplications();
   toast('✓ Approved — invite email sent to ' + email, 'success');
 }
@@ -2222,6 +2355,7 @@ async function rejectApp(docId) {
     });
     const app = applications.find(a => a.docId === docId);
     if (app) app.status = 'rejected';
+    await AppUtils.logAudit(currentAdminIdentity(), 'update', docId, 'application', { status: 'rejected' });
     renderApplications();
     toast('Application rejected', '');
   } catch(e) { toast('Error: ' + e.message, 'error'); }
@@ -2239,7 +2373,7 @@ async function loadOrders() {
     return;
   }
   try {
-    const snap = await db.collection('orders').orderBy('createdAt', 'desc').get();
+    const snap = await db.collection('orders').orderBy('createdAt', 'desc').limit(500).get();
     orders = snap.docs.map(d => ({ docId: d.id, ...d.data() }));
   } catch(e) {
     try {
@@ -2313,6 +2447,7 @@ async function setOrderStatus(docId, status) {
     });
     const o = orders.find(x => x.docId === docId);
     if (o) o.status = status;
+    await AppUtils.logAudit(currentAdminIdentity(), 'update', docId, 'order', { status });
     renderOrders();
     toast(`✓ Order marked ${status}`, 'success');
   } catch(e) { toast('Update failed: ' + e.message, 'error'); }
@@ -2483,12 +2618,12 @@ async function loadTickets() {
     return;
   }
   try {
-    const [tSnap, cSnap] = await Promise.all([
-      db.collection('tickets').orderBy('createdAt', 'desc').get().catch(() => db.collection('tickets').get()),
-      db.collection('customers').get()
+    const [tSnap, custList] = await Promise.all([
+      db.collection('tickets').orderBy('createdAt', 'desc').limit(500).get().catch(() => db.collection('tickets').limit(500).get()),
+      getAllCustomers()
     ]);
     ticketCustomers = {};
-    cSnap.docs.forEach(d => { ticketCustomers[d.id] = d.data(); });
+    custList.forEach(c => { ticketCustomers[c.docId] = c; });
     tickets = tSnap.docs.map(d => ({ docId: d.id, ...d.data() }));
     tickets.sort((a, b) => {
       const ta = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
@@ -2544,6 +2679,8 @@ function renderTicketBubble(r) {
   </div>`;
 }
 
+let _ticketRepliesUnsub = null;
+
 async function viewTicket(docId) {
   const t = tickets.find(x => x.docId === docId);
   if (!t) return;
@@ -2558,20 +2695,27 @@ async function viewTicket(docId) {
   threadEl.innerHTML = '<div class="empty-state" style="padding:20px"><i class="fa-solid fa-spinner fa-spin"></i></div>';
   document.getElementById('ticketModal').classList.add('open');
 
-  try {
-    const repliesSnap = await db.collection('tickets').doc(docId).collection('replies').orderBy('createdAt').get();
-    const replies = repliesSnap.docs.map(d => d.data());
-    const all = [{ from: 'customer', message: t.message, createdAt: t.createdAt, original: true }, ...replies];
-    threadEl.innerHTML = all.map(renderTicketBubble).join('');
-    threadEl.scrollTop = threadEl.scrollHeight;
-  } catch(e) {
-    threadEl.innerHTML = `<div class="empty-state" style="padding:20px"><i class="fa-solid fa-triangle-exclamation"></i>Error loading replies: ${escHtml(e.message)}</div>`;
-  }
+  // Live-updating thread: a customer reply sent while this modal is open
+  // appears immediately, instead of requiring the admin to close and
+  // reopen the ticket to see it.
+  if (_ticketRepliesUnsub) { _ticketRepliesUnsub(); _ticketRepliesUnsub = null; }
+  _ticketRepliesUnsub = db.collection('tickets').doc(docId).collection('replies').orderBy('createdAt')
+    .onSnapshot(snap => {
+      if (editingTicketId !== docId) return;
+      const replies = snap.docs.map(d => d.data());
+      const all = [{ from: 'customer', message: t.message, createdAt: t.createdAt, original: true }, ...replies];
+      const nearBottom = threadEl.scrollTop + threadEl.clientHeight >= threadEl.scrollHeight - 40;
+      threadEl.innerHTML = all.map(renderTicketBubble).join('');
+      if (nearBottom) threadEl.scrollTop = threadEl.scrollHeight;
+    }, e => {
+      threadEl.innerHTML = `<div class="empty-state" style="padding:20px"><i class="fa-solid fa-triangle-exclamation"></i>Error loading replies: ${escHtml(e.message)}</div>`;
+    });
 }
 
 function closeTicketModal() {
   document.getElementById('ticketModal').classList.remove('open');
   editingTicketId = null;
+  if (_ticketRepliesUnsub) { _ticketRepliesUnsub(); _ticketRepliesUnsub = null; }
 }
 
 async function sendTicketReply() {
@@ -2590,6 +2734,7 @@ async function sendTicketReply() {
     if (t && (t.status === 'open' || !t.status)) updates.status = 'in-progress';
     await db.collection('tickets').doc(editingTicketId).update(updates);
     if (t && updates.status) t.status = updates.status;
+    await AppUtils.logAudit(currentAdminIdentity(), 'reply', editingTicketId, 'ticket', {});
     msgEl.value = '';
     renderTickets();
     await viewTicket(editingTicketId);
@@ -2603,6 +2748,7 @@ async function setTicketStatus(docId, status) {
     await db.collection('tickets').doc(docId).update({ status, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
     const t = tickets.find(x => x.docId === docId);
     if (t) t.status = status;
+    await AppUtils.logAudit(currentAdminIdentity(), 'update', docId, 'ticket', { status });
     renderTickets();
     toast(`✓ Ticket marked ${status}`, 'success');
   } catch(e) { toast('Update failed: ' + e.message, 'error'); }
@@ -2616,14 +2762,17 @@ async function loadCustomers() {
   if (!db) { wrap.innerHTML = '<div class="empty-state" style="padding:24px"><i class="fa-solid fa-database"></i>Firebase not connected.</div>'; return; }
   wrap.innerHTML = '<div class="empty-state" style="padding:24px"><i class="fa-solid fa-spinner fa-spin"></i>Loading…</div>';
   try {
-    const snap = await db.collection('customers').orderBy('createdAt', 'desc').get().catch(async () => db.collection('customers').get());
-    const customers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const customers = (await getAllCustomers()).slice().sort((a, b) => {
+      const ta = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+      const tb = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+      return tb - ta;
+    });
     if (!customers.length) {
       wrap.innerHTML = '<div class="empty-state" style="padding:32px"><i class="fa-solid fa-users"></i>No customers yet — approve applications to create customer accounts.</div>';
       return;
     }
     wrap.innerHTML = `<div>
-      ${customers.map(c => `<div class="customer-row">
+      ${customers.map(c => `<div class="customer-row" style="cursor:pointer" onclick="openCustomer360('${c.docId}')" title="View full customer history">
         <div><div class="customer-name">${escHtml(c.name || '—')}</div><div style="font-size:11px;color:var(--text-dim)">${escHtml(c.industry || '')}</div></div>
         <div class="customer-email">${escHtml(c.email || '—')}</div>
         <span class="customer-status">${c.status || 'active'}</span>
@@ -2635,22 +2784,157 @@ async function loadCustomers() {
 }
 
 /* ══════════════════════════════════════════════
+   CUSTOMER 360
+   A single aggregated view of everything tied to one customer —
+   application, services + milestones, tickets, invoices, tasks,
+   questionnaires, and a merged activity timeline — instead of having to
+   check 6 separate tabs for the same person. Reads from the arrays
+   already loaded by showDashboard(), so opening this costs zero extra
+   Firestore reads.
+══════════════════════════════════════════════ */
+async function openCustomer360(custId) {
+  const all = await getAllCustomers();
+  const cust = all.find(c => c.docId === custId);
+  if (!cust) { toast('Customer not found', 'error'); return; }
+
+  document.getElementById('c360-title').innerHTML =
+    `${escHtml(cust.name || 'Customer')} <span style="font-size:12px;font-weight:600;color:var(--text-dim)">— ${escHtml(cust.email || '')}</span>`;
+  document.getElementById('c360-body').innerHTML = renderCustomer360Body(cust);
+  document.getElementById('cust360Modal').classList.add('open');
+}
+
+function closeCustomer360() {
+  document.getElementById('cust360Modal').classList.remove('open');
+}
+
+function renderCustomer360Body(cust) {
+  const custId = cust.docId;
+  const app = applications.find(a => a.docId === cust.applicationId);
+  const custTickets = tickets.filter(t => t.userId === custId);
+  const custInvoices = invoices.filter(i => i.userId === custId);
+  const custTasks = allTasks.filter(t => t.customerId === custId);
+  const custQuestionnaires = questionnaires.filter(q => q.customerId === custId || (cust.applicationId && q.applicationId === cust.applicationId));
+  const custServiceEntries = Object.entries(custServicesCache).filter(([, d]) => d.customerId === custId || d.userId === custId);
+
+  const kpi = (label, val) => `<div style="flex:1;min-width:90px;text-align:center;padding:10px 6px;background:rgba(255,255,255,.5);border-radius:8px">
+    <div style="font-size:20px;font-weight:800;color:var(--green)">${val}</div>
+    <div style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em">${label}</div>
+  </div>`;
+
+  const activeServices = custServiceEntries.filter(([, d]) => d.status === 'active').length;
+  const openTickets = custTickets.filter(t => t.status === 'open').length;
+  const pendingInvoices = custInvoices.filter(i => (i.status || 'pending') !== 'paid').length;
+  const pendingTasks = custTasks.filter(t => (t.status || 'pending') !== 'completed').length;
+
+  const kpiRow = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+    ${kpi('Active Services', activeServices)}
+    ${kpi('Open Tickets', openTickets)}
+    ${kpi('Unpaid Invoices', pendingInvoices)}
+    ${kpi('Pending Tasks', pendingTasks)}
+  </div>`;
+
+  const profileRow = `<div style="font-size:12px;color:var(--text-muted);line-height:1.8;margin-bottom:16px">
+    <strong>Industry:</strong> ${escHtml(cust.industry || '—')} &nbsp;·&nbsp;
+    <strong>Status:</strong> ${escHtml(cust.status || 'active')} &nbsp;·&nbsp;
+    <strong>Customer since:</strong> ${cust.createdAt ? formatDate(cust.createdAt) : '—'}
+    ${app ? `<br><strong>Originating application:</strong> ${escHtml(app.industry || '')} — <span class="status-badge status-approved">approved</span>` : ''}
+  </div>`;
+
+  const servicesSection = custServiceEntries.length
+    ? custServiceEntries.map(([docId, d]) => {
+        const milestones = Array.isArray(d.milestones) ? d.milestones : [];
+        const msDone = milestones.filter(m => m.completed).length;
+        const msPct = milestones.length ? Math.round((msDone / milestones.length) * 100) : 0;
+        return `<div style="border:1px solid rgba(0,0,0,.08);border-radius:8px;padding:8px 10px;margin-bottom:6px;cursor:pointer" onclick="closeCustomer360();editCustomerService('${docId}')">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <strong style="font-size:13px">${escHtml(d.serviceName || 'Unknown')}</strong>
+            <span class="status-badge ${d.status === 'active' ? 'status-approved' : d.status === 'completed' ? 'status-rejected' : 'status-pending'}">${escHtml(d.status || 'pending')}</span>
+          </div>
+          ${milestones.length ? `<div style="display:flex;align-items:center;gap:6px;margin-top:6px">
+            <div style="flex:1;height:5px;border-radius:99px;background:rgba(0,0,0,.08);overflow:hidden"><div style="height:100%;width:${msPct}%;background:var(--green);border-radius:99px"></div></div>
+            <span style="font-size:10px;color:var(--text-dim)">${msDone}/${milestones.length}</span>
+          </div>` : ''}
+        </div>`;
+      }).join('')
+    : '<div class="empty-state" style="padding:14px"><i class="fa-regular fa-briefcase"></i>No services assigned</div>';
+
+  const ticketsSection = custTickets.length
+    ? custTickets.slice(0, 10).map(t => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.05);font-size:12px;cursor:pointer" onclick="closeCustomer360();viewTicket('${t.docId}')">
+        <span>${escHtml(t.subject || 'Untitled')}</span>
+        <span class="status-badge ${t.status === 'resolved' ? 'status-approved' : t.status === 'in-progress' ? 'status-pending' : 'status-rejected'}">${escHtml(t.status || 'open')}</span>
+      </div>`).join('')
+    : '<div class="empty-state" style="padding:14px"><i class="fa-regular fa-comments"></i>No tickets</div>';
+
+  const invoicesSection = custInvoices.length
+    ? custInvoices.slice(0, 10).map(i => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.05);font-size:12px">
+        <span>${escHtml(i.description || '—')}</span>
+        <span><strong>${escHtml(invoiceAmountStr(i))}</strong> <span class="status-badge ${i.status === 'paid' ? 'status-approved' : i.status === 'overdue' ? 'status-rejected' : 'status-pending'}">${escHtml(i.status || 'pending')}</span></span>
+      </div>`).join('')
+    : '<div class="empty-state" style="padding:14px"><i class="fa-regular fa-file-invoice"></i>No invoices</div>';
+
+  const tasksSection = custTasks.length
+    ? custTasks.slice(0, 10).map(t => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.05);font-size:12px">
+        <span>${escHtml(t.title || 'Untitled')}${t.assignedTo ? ` <span style="color:var(--text-dim)">· ${escHtml(t.assignedTo)}</span>` : ''}</span>
+        <span class="status-badge ${(t.status || 'pending') === 'completed' ? 'status-approved' : 'status-pending'}">${escHtml(t.status || 'pending')}</span>
+      </div>`).join('')
+    : '<div class="empty-state" style="padding:14px"><i class="fa-solid fa-list-check"></i>No tasks</div>';
+
+  const qnSection = custQuestionnaires.length
+    ? custQuestionnaires.map(q => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.05);font-size:12px;cursor:pointer" onclick="closeCustomer360();viewQuestionnaire('${q.docId}')">
+        <span>${escHtml(q.title || 'Untitled')}</span>
+        <span class="status-badge ${q.status === 'completed' ? 'status-approved' : q.status === 'sent' ? 'status-pending' : 'status-rejected'}">${escHtml(q.status || 'draft')}</span>
+      </div>`).join('')
+    : '<div class="empty-state" style="padding:14px"><i class="fa-solid fa-list-ol"></i>No questionnaires</div>';
+
+  // Merged chronological activity feed — a lightweight, zero-extra-reads
+  // stand-in for a dedicated timeline collection.
+  const events = [];
+  custTickets.forEach(t => events.push({ date: t.createdAt, label: `Ticket opened: ${t.subject || 'Untitled'}` }));
+  custInvoices.forEach(i => events.push({ date: i.createdAt, label: `Invoice created: ${i.description || ''} (${invoiceAmountStr(i)})` }));
+  custTasks.forEach(t => events.push({ date: t.completedAt || t.createdAt, label: `${t.status === 'completed' ? 'Task completed' : 'Task created'}: ${t.title || ''}` }));
+  custQuestionnaires.forEach(q => events.push({ date: q.completedAt || q.sentAt || q.createdAt, label: `Questionnaire ${q.status || 'draft'}: ${q.title || ''}` }));
+  const toMs = d => { if (!d) return 0; const dt = d.toDate ? d.toDate() : new Date(d); return isNaN(dt) ? 0 : dt.getTime(); };
+  events.sort((a, b) => toMs(b.date) - toMs(a.date));
+  const timelineSection = events.length
+    ? events.slice(0, 12).map(e => `<div style="display:flex;gap:10px;padding:5px 0;font-size:12px">
+        <span style="color:var(--text-dim);white-space:nowrap">${e.date ? formatDate(e.date) : '—'}</span>
+        <span>${escHtml(e.label)}</span>
+      </div>`).join('')
+    : '<div class="empty-state" style="padding:14px"><i class="fa-regular fa-clock"></i>No activity yet</div>';
+
+  const section = (title, icon, body) => `<div style="margin-bottom:16px">
+    <div style="font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px"><i class="fa-solid ${icon}"></i> ${title}</div>
+    ${body}
+  </div>`;
+
+  return kpiRow + profileRow + `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px">
+      <div>
+        ${section('Services', 'fa-briefcase', servicesSection)}
+        ${section('Tickets', 'fa-comments', ticketsSection)}
+        ${section('Questionnaires', 'fa-list-ol', qnSection)}
+      </div>
+      <div>
+        ${section('Invoices', 'fa-file-invoice', invoicesSection)}
+        ${section('Tasks', 'fa-list-check', tasksSection)}
+        ${section('Recent Activity', 'fa-clock', timelineSection)}
+      </div>
+    </div>
+  `;
+}
+
+/* ══════════════════════════════════════════════
    LOAD ALL SETTINGS
 ══════════════════════════════════════════════ */
 async function loadAllSettings() {
   if (!db) return;
   try {
-    const [compDoc, pricDoc, accDoc] = await Promise.all([
+    const [compDoc, pricDoc] = await Promise.all([
       db.collection('settings').doc('company').get(),
       db.collection('settings').doc('pricing').get(),
-      db.collection('settings').doc('access').get(),
     ]);
     if (compDoc.exists) fillCompanyForm(compDoc.data());
     if (pricDoc.exists) fillPricingForm(pricDoc.data());
-    if (accDoc.exists) {
-      const d = accDoc.data();
-      if (d.partnerLogins) renderPartnerRows(d.partnerLogins);
-    }
     await loadExpertise();
     await loadTeamMembers();
     await loadIndustryContacts();
@@ -2711,6 +2995,7 @@ async function saveCompanyInfo() {
   };
   try {
     await db.collection('settings').doc('company').set(data);
+    await AppUtils.logAudit(currentAdminIdentity(), 'update', 'company', 'settings', {});
     toast('✓ Company info saved', 'success');
   } catch(e) { toast('Save failed: ' + e.message, 'error'); }
 }
@@ -2759,6 +3044,7 @@ async function savePricingSettings() {
       bundleDiscount: parseFloat(v('d-bdiscount')) || 0, bundleMin: parseInt(v('d-bmin')) || 5,
       promoCodes: collectPromos(), updatedAt: new Date().toISOString()
     });
+    await AppUtils.logAudit(currentAdminIdentity(), 'update', 'pricing', 'settings', {});
     toast('✓ Pricing saved', 'success');
   } catch(e) { toast('Save failed: ' + e.message, 'error'); }
 }
@@ -2870,6 +3156,7 @@ async function saveServicesToCloud() {
   try {
     await db.collection('catalog').doc('services').set({ items: updated, lastUpdated: new Date().toISOString().slice(0,10) });
     services = updated;
+    await AppUtils.logAudit(currentAdminIdentity(), 'update', 'services', 'catalog', {});
     toast('✓ Services saved to cloud', 'success');
   } catch(e) { toast('Save failed: ' + e.message, 'error'); }
 }
@@ -2877,30 +3164,6 @@ async function saveServicesToCloud() {
 /* ══════════════════════════════════════════════
    ACCESS
 ══════════════════════════════════════════════ */
-function renderPartnerRows(list = []) {
-  document.getElementById('partnerList').innerHTML = '';
-  list.forEach(p => addPartnerRow(p));
-}
-
-function addPartnerRow(data = {}) {
-  const row = document.createElement('div');
-  row.className = 'drow';
-  row.innerHTML = `
-    <input type="text"     placeholder="Name"     value="${escHtml(data.name || '')}"     style="max-width:90px">
-    <input type="email"    placeholder="Email"    value="${escHtml(data.email || '')}">
-    <input type="password" placeholder="Password" value="${data.password || ''}" style="max-width:80px">
-    <button class="ddel" onclick="this.closest('.drow').remove()">&#10005;</button>
-  `;
-  document.getElementById('partnerList').appendChild(row);
-}
-
-function collectPartners() {
-  return Array.from(document.querySelectorAll('#partnerList .drow')).map(r => {
-    const ins = r.querySelectorAll('input');
-    return { name: ins[0].value.trim(), email: ins[1].value.trim(), password: ins[2].value };
-  }).filter(p => p.email);
-}
-
 async function changePassword() {
   const cur = document.getElementById('d-cur-pw').value;
   const nw  = document.getElementById('d-new-pw').value;
@@ -2908,33 +3171,18 @@ async function changePassword() {
   if (nw.length < 8) { toast('New password must be at least 8 characters', 'error'); return; }
   if (nw !== con)    { toast('Passwords do not match', 'error'); return; }
 
-  if (auth && auth.currentUser) {
-    try {
-      const credential = firebase.auth.EmailAuthProvider.credential(auth.currentUser.email, cur);
-      await auth.currentUser.reauthenticateWithCredential(credential);
-      await auth.currentUser.updatePassword(nw);
-    } catch(e) {
-      toast(e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential'
-        ? 'Current password incorrect' : 'Update failed: ' + e.message, 'error');
-      return;
-    }
-  } else {
-    if (cur !== ADMIN_PASSWORD) { toast('Current password incorrect', 'error'); return; }
-    ADMIN_PASSWORD = nw;
+  if (!auth || !auth.currentUser) { toast('Not connected — sign in again first', 'error'); return; }
+  try {
+    const credential = firebase.auth.EmailAuthProvider.credential(auth.currentUser.email, cur);
+    await auth.currentUser.reauthenticateWithCredential(credential);
+    await auth.currentUser.updatePassword(nw);
+  } catch(e) {
+    toast(e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential'
+      ? 'Current password incorrect' : 'Update failed: ' + e.message, 'error');
+    return;
   }
   ['d-cur-pw','d-new-pw','d-con-pw'].forEach(id => document.getElementById(id).value = '');
   toast('✓ Password updated', 'success');
-}
-
-async function saveAccessSettings() {
-  if (!db) { toast('Connect Firebase first', 'error'); return; }
-  try {
-    await db.collection('settings').doc('access').set({
-      partnerLogins: collectPartners(),
-      updatedAt: new Date().toISOString()
-    }, { merge: true });
-    toast('✓ Access settings saved', 'success');
-  } catch(e) { toast('Save failed: ' + e.message, 'error'); }
 }
 
 /* ══════════════════════════════════════════════
@@ -2992,8 +3240,254 @@ async function saveExpertise() {
   }));
   try {
     await db.collection('content').doc('team').set({ members, updatedAt: new Date().toISOString() });
+    await AppUtils.logAudit(currentAdminIdentity(), 'update', 'team', 'content', {});
     toast('✓ Expertise saved', 'success');
   } catch(e) { toast('Save failed: ' + e.message, 'error'); }
+}
+
+/* ══════════════════════════════════════════════
+   VENDORS & MARKUP RULES
+   Vendor directory: persists contact/specialty info across engagements
+   instead of a disposable passcode link per report. Markup rules: a
+   configurable pct table (service override → phase override → default)
+   used by "Apply Rule-Based Markup" in a saved questionnaire report,
+   instead of only a manually-typed one-off %.
+══════════════════════════════════════════════ */
+let vendors = [];
+let editingVendorId = null;
+let markupRules = { defaultPct: 30, byPhase: {}, byService: {} };
+
+async function loadVendors() {
+  if (!db) return;
+  try {
+    const snap = await db.collection('vendors').orderBy('name').get().catch(() => db.collection('vendors').get());
+    vendors = snap.docs.map(d => ({ docId: d.id, ...d.data() }));
+  } catch(e) { vendors = []; toast('Failed to load vendors: ' + e.message, 'error'); }
+  renderVendorList();
+}
+
+function renderVendorList() {
+  const wrap = document.getElementById('vendorListWrap');
+  if (!wrap) return;
+  if (!vendors.length) {
+    wrap.innerHTML = '<div class="empty-state" style="padding:20px"><i class="fa-solid fa-truck-field"></i>No vendors yet — add one to start tracking outsourced costs and history.</div>';
+    return;
+  }
+  wrap.innerHTML = vendors.map(v => `
+    <div class="customer-row" style="cursor:pointer" onclick="openVendorModal('${v.docId}')" title="Edit vendor">
+      <div><div class="customer-name">${escHtml(v.name || 'Unnamed')}</div><div style="font-size:11px;color:var(--text-dim)">${(v.phases || []).map(p => 'Phase ' + p).join(', ') || 'No specialties set'}</div></div>
+      <div class="customer-email">${escHtml(v.email || '—')}</div>
+      <span class="customer-status">${v.active === false ? 'inactive' : 'active'}</span>
+    </div>
+  `).join('');
+}
+
+function openVendorModal(docId) {
+  editingVendorId = docId || null;
+  const v = docId ? vendors.find(x => x.docId === docId) : null;
+  document.getElementById('vendor-modal-title').textContent = v ? 'Edit Vendor' : 'Add Vendor';
+  document.getElementById('vd-name').value = (v && v.name) || '';
+  document.getElementById('vd-email').value = (v && v.email) || '';
+  document.getElementById('vd-phone').value = (v && v.phone) || '';
+  [1, 2, 3].forEach(p => { document.getElementById('vd-phase-' + p).checked = !!(v && (v.phases || []).includes(p)); });
+  document.getElementById('vd-notes').value = (v && v.notes) || '';
+  document.getElementById('vd-active').checked = !v || v.active !== false;
+  document.getElementById('vd-delete-btn').style.display = v ? '' : 'none';
+  document.getElementById('vendorModal').classList.add('open');
+}
+
+function closeVendorModal() {
+  document.getElementById('vendorModal').classList.remove('open');
+  editingVendorId = null;
+}
+
+let _savingVendor = false;
+async function saveVendor() {
+  if (!db) { toast('Firebase not connected', 'error'); return; }
+  if (_savingVendor) return;
+  const name = document.getElementById('vd-name').value.trim();
+  if (!name) { toast('Enter a vendor name', 'error'); return; }
+  _savingVendor = true;
+  try {
+    const data = {
+      name,
+      email: document.getElementById('vd-email').value.trim(),
+      phone: document.getElementById('vd-phone').value.trim(),
+      phases: [1, 2, 3].filter(p => document.getElementById('vd-phase-' + p).checked),
+      notes: document.getElementById('vd-notes').value.trim(),
+      active: document.getElementById('vd-active').checked,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    if (editingVendorId) {
+      await db.collection('vendors').doc(editingVendorId).update(data);
+      await AppUtils.logAudit(currentAdminIdentity(), 'update', editingVendorId, 'vendor', { name });
+    } else {
+      data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+      const ref = await db.collection('vendors').add(data);
+      await AppUtils.logAudit(currentAdminIdentity(), 'create', ref.id, 'vendor', { name });
+    }
+    toast('✓ Vendor saved', 'success');
+    closeVendorModal();
+    await loadVendors();
+  } catch(e) { toast('Save failed: ' + e.message, 'error'); }
+  finally { _savingVendor = false; }
+}
+
+function deleteVendor() {
+  if (!editingVendorId) return;
+  const docId = editingVendorId;
+  const v = vendors.find(x => x.docId === docId);
+  AppUtils.showConfirm('Delete Vendor', `Delete "${(v && v.name) || 'this vendor'}"? This does not affect any vendor cost sheets already sent using this vendor's info.`, async () => {
+    try {
+      await db.collection('vendors').doc(docId).delete();
+      await AppUtils.logAudit(currentAdminIdentity(), 'delete', docId, 'vendor', {});
+      toast('✓ Vendor deleted', 'success');
+      closeVendorModal();
+      await loadVendors();
+    } catch(e) { toast('Delete failed: ' + e.message, 'error'); }
+  });
+}
+
+/* ── Markup rules ── */
+async function loadMarkupRules() {
+  if (!db) return;
+  try {
+    const doc = await db.collection('settings').doc('markupRules').get();
+    markupRules = doc.exists ? Object.assign({ defaultPct: 30, byPhase: {}, byService: {} }, doc.data()) : { defaultPct: 30, byPhase: {}, byService: {} };
+  } catch(e) { toast('Failed to load markup rules: ' + e.message, 'error'); }
+  const defEl = document.getElementById('mk-default');
+  if (!defEl) return; // panel not in DOM yet on first call
+  defEl.value = markupRules.defaultPct ?? '';
+  [1, 2, 3].forEach(p => { document.getElementById('mk-phase-' + p).value = (markupRules.byPhase || {})[p] ?? ''; });
+  renderMarkupServicesList();
+}
+
+function renderMarkupServicesList() {
+  const wrap = document.getElementById('mk-services-list');
+  if (!wrap) return;
+  if (!services.length) { wrap.innerHTML = '<div style="padding:10px 12px;font-size:12px;color:var(--text-dim)">Catalog not loaded.</div>'; return; }
+  wrap.innerHTML = services.map(s => `
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 12px;font-size:13px;border-bottom:1px solid rgba(0,0,0,.05)">
+      <span>${escHtml(s.name)} <span style="font-size:10px;color:var(--text-dim)">· Phase ${s.phase}</span></span>
+      <input type="number" min="0" step="1" class="mk-svc-input" data-id="${s.id}" value="${(markupRules.byService || {})[s.id] ?? ''}" placeholder="Use phase/default" style="width:150px">
+    </div>
+  `).join('');
+}
+
+async function saveMarkupRules() {
+  if (!db) { toast('Firebase not connected', 'error'); return; }
+  try {
+    const byPhase = {};
+    [1, 2, 3].forEach(p => {
+      const v = document.getElementById('mk-phase-' + p).value;
+      if (v !== '') byPhase[p] = parseFloat(v);
+    });
+    const byService = {};
+    document.querySelectorAll('.mk-svc-input').forEach(inp => {
+      if (inp.value !== '') byService[inp.dataset.id] = parseFloat(inp.value);
+    });
+    markupRules = {
+      defaultPct: parseFloat(document.getElementById('mk-default').value) || 0,
+      byPhase, byService
+    };
+    await db.collection('settings').doc('markupRules').set({ ...markupRules, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    await AppUtils.logAudit(currentAdminIdentity(), 'update', 'markupRules', 'settings', {});
+    toast('✓ Markup rules saved', 'success');
+  } catch(e) { toast('Save failed: ' + e.message, 'error'); }
+}
+
+// Precedence: a specific service override beats its phase's override,
+// which beats the global default.
+function resolveMarkupPct(svc) {
+  if (!svc) return markupRules.defaultPct || 0;
+  const byService = markupRules.byService || {};
+  if (byService[svc.id] !== undefined && byService[svc.id] !== null && byService[svc.id] !== '') return byService[svc.id];
+  const byPhase = markupRules.byPhase || {};
+  if (byPhase[svc.phase] !== undefined && byPhase[svc.phase] !== null && byPhase[svc.phase] !== '') return byPhase[svc.phase];
+  return markupRules.defaultPct || 0;
+}
+
+async function applyRuleBasedMarkup() {
+  if (!qnReport) return;
+  await loadMarkupRules();
+  let n = 0;
+  qnReport.services.forEach(s => {
+    if (s.vendorCost != null) {
+      s.clientPrice = Math.round(s.vendorCost * (1 + resolveMarkupPct(s) / 100));
+      n++;
+    }
+  });
+  renderQnAnalysis();
+  toast(n ? `✓ Rule-based markup applied to ${n} service${n > 1 ? 's' : ''} — Save Report to persist` : 'No 3rd-party costs to mark up yet', n ? 'success' : 'error');
+}
+
+/* ── Portfolio margin report ── */
+async function renderMarginReport() {
+  const wrap = document.getElementById('marginReportWrap');
+  if (!wrap) return;
+  if (!db) { wrap.innerHTML = '<div class="empty-state" style="padding:16px">Firebase not connected.</div>'; return; }
+  wrap.innerHTML = '<div class="empty-state" style="padding:16px"><i class="fa-solid fa-spinner fa-spin"></i> Loading…</div>';
+  try {
+    const snap = await db.collection('qnReports').get();
+    let totalVendor = 0, totalClient = 0, reportCount = 0;
+    const byVendor = {}, byPhase = {};
+    snap.forEach(doc => {
+      const r = doc.data();
+      const svcs = Array.isArray(r.services) ? r.services : [];
+      let touched = false;
+      svcs.forEach(s => {
+        if (s.vendorCost == null) return;
+        touched = true;
+        const client = s.clientPrice != null ? s.clientPrice : s.vendorCost;
+        totalVendor += s.vendorCost;
+        totalClient += client;
+        const vName = r.vendorName || 'Unspecified';
+        byVendor[vName] = byVendor[vName] || { cost: 0, client: 0 };
+        byVendor[vName].cost += s.vendorCost;
+        byVendor[vName].client += client;
+        const ph = s.phase || 0;
+        byPhase[ph] = byPhase[ph] || { cost: 0, client: 0 };
+        byPhase[ph].cost += s.vendorCost;
+        byPhase[ph].client += client;
+      });
+      if (touched) reportCount++;
+    });
+    if (!reportCount) {
+      wrap.innerHTML = '<div class="empty-state" style="padding:16px"><i class="fa-solid fa-chart-line"></i>No vendor-costed reports yet.</div>';
+      return;
+    }
+    const margin = totalClient - totalVendor;
+    const marginPct = totalClient ? Math.round((margin / totalClient) * 100) : 0;
+    const fmt = n => '$' + Math.round(n).toLocaleString();
+    const kpi = (label, val) => `<div style="flex:1;min-width:120px;text-align:center;padding:10px 6px;background:rgba(255,255,255,.5);border-radius:8px">
+      <div style="font-size:18px;font-weight:800;color:var(--green)">${val}</div>
+      <div style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em">${label}</div>
+    </div>`;
+    const marginOf = v => v.client ? Math.round((v.client - v.cost) / v.client * 100) : 0;
+    const vendorRows = Object.entries(byVendor).sort((a, b) => b[1].client - a[1].client).map(([name, v]) => `
+      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(0,0,0,.05);font-size:12px">
+        <span>${escHtml(name)}</span>
+        <span>${fmt(v.cost)} cost → ${fmt(v.client)} billed <strong style="color:var(--green)">(${marginOf(v)}% margin)</strong></span>
+      </div>`).join('');
+    const phaseLabels = { 1: 'Phase 1', 2: 'Phase 2', 3: 'Phase 3' };
+    const phaseRows = Object.entries(byPhase).sort((a, b) => a[0] - b[0]).map(([ph, v]) => `
+      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(0,0,0,.05);font-size:12px">
+        <span>${phaseLabels[ph] || 'Phase ' + ph}</span>
+        <span>${fmt(v.cost)} cost → ${fmt(v.client)} billed <strong style="color:var(--green)">(${marginOf(v)}% margin)</strong></span>
+      </div>`).join('');
+    wrap.innerHTML = `
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+        ${kpi('Total Vendor Cost', fmt(totalVendor))}
+        ${kpi('Total Client Billed', fmt(totalClient))}
+        ${kpi('Margin', fmt(margin) + ' (' + marginPct + '%)')}
+        ${kpi('Reports w/ Costs', reportCount)}
+      </div>
+      <div style="font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);margin:10px 0 4px">By Vendor</div>
+      ${vendorRows || '<div style="font-size:12px;color:var(--text-dim)">—</div>'}
+      <div style="font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);margin:14px 0 4px">By Phase</div>
+      ${phaseRows || '<div style="font-size:12px;color:var(--text-dim)">—</div>'}
+    `;
+  } catch(e) { wrap.innerHTML = `<div class="empty-state" style="padding:16px"><i class="fa-solid fa-triangle-exclamation"></i>${escHtml(e.message)}</div>`; }
 }
 
 /* ══════════════════════════════════════════════
@@ -3003,17 +3497,17 @@ async function loadServiceMgmt() {
   if (!db) return;
   try {
     const [customers, services, custServices] = await Promise.all([
-      db.collection('customers').get(),
+      getAllCustomers(),
       db.collection('catalog').doc('services').get(),
       db.collection('customerServices').get()
     ]);
 
     const custSelect = document.getElementById('sm-customer');
     custSelect.innerHTML = '<option value="">Select customer...</option>';
-    customers.docs.forEach(doc => {
+    customers.forEach(c => {
       const opt = document.createElement('option');
-      opt.value = doc.id;
-      opt.text = doc.data().name || 'Unknown';
+      opt.value = c.docId;
+      opt.text = c.name || 'Unknown';
       custSelect.appendChild(opt);
     });
 
@@ -3063,7 +3557,7 @@ async function loadServiceMgmt() {
         `;
       });
     }
-  } catch(e) { console.error(e); }
+  } catch(e) { console.error(e); toast('Failed to load service assignments: ' + e.message, 'error'); }
 }
 
 let custServicesCache = {};
@@ -3099,8 +3593,10 @@ async function onSmCustomerChange() {
   } catch(e) { /* purely informational — fail silent */ }
 }
 
+let _assigningService = false;
 async function assignService() {
   if (!db) { toast('Firebase not connected', 'error'); return; }
+  if (_assigningService) return;
   const custId = document.getElementById('sm-customer').value;
   const svcIds = Array.from(document.querySelectorAll('#sm-services .sm-svc-chk:checked')).map(cb => parseInt(cb.value));
   const status = document.getElementById('sm-status').value || 'active';
@@ -3108,6 +3604,7 @@ async function assignService() {
   const completion = document.getElementById('sm-completion').value;
   const notes = document.getElementById('sm-notes').value.trim();
   if (!custId || !svcIds.length || !start) { toast('Pick a customer, at least one service, and a start date', 'error'); return; }
+  _assigningService = true;
 
   try {
     const [custDoc, svcDoc] = await Promise.all([
@@ -3118,7 +3615,7 @@ async function assignService() {
     if (!custDoc.exists) { toast('Customer not found', 'error'); return; }
     const catalog = svcDoc.data()?.items || [];
 
-    await Promise.all(svcIds.map(svcId => {
+    const refs = await Promise.all(svcIds.map(svcId => {
       const svc = catalog.find(s => String(s.id) === String(svcId)) || { name: 'Unknown', phase: 1 };
       return db.collection('customerServices').add({
         userId: custId,
@@ -3135,6 +3632,7 @@ async function assignService() {
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
     }));
+    await AppUtils.logAudit(currentAdminIdentity(), 'create', refs.map(r => r.id).join(','), 'customerService', { customerId: custId, serviceIds: svcIds });
 
     toast(`✓ ${svcIds.length} service${svcIds.length > 1 ? 's' : ''} assigned`, 'success');
     document.getElementById('sm-customer').value = '';
@@ -3146,6 +3644,7 @@ async function assignService() {
     document.getElementById('sm-suggested').innerHTML = '';
     await loadServiceMgmt();
   } catch(e) { toast('Assignment failed: ' + e.message, 'error'); }
+  finally { _assigningService = false; }
 }
 
 async function setServiceStatus(docId, status) {
@@ -3267,23 +3766,45 @@ async function saveSvcEdit() {
     const completion = document.getElementById('se-completion').value;
     const phone = document.getElementById('se-phone').value.trim();
     const d = custServicesCache[editingSvcId] || {};
-    await db.collection('customerServices').doc(editingSvcId).update({
-      status: document.getElementById('se-status').value,
-      startDate: start ? new Date(start) : null,
-      completionDate: completion ? new Date(completion) : null,
-      notes: document.getElementById('se-notes').value.trim(),
-      customerPhone: phone,
-      milestones: editingMilestones
-        .filter(hasMilestoneContent)
-        .map(m => ({
-          taskId: m.taskId || null,
-          title: m.title.trim() || 'Milestone',
-          date: m.date ? new Date(m.date) : null,
-          completed: !!m.completed,
-          assignedTo: (m.assignedTo || '').trim(),
-          note: (m.note || '').trim()
-        })),
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    const docRef = db.collection('customerServices').doc(editingSvcId);
+
+    const editedMilestones = editingMilestones
+      .filter(hasMilestoneContent)
+      .map(m => ({
+        taskId: m.taskId || null,
+        title: m.title.trim() || 'Milestone',
+        date: m.date ? new Date(m.date) : null,
+        completed: !!m.completed,
+        assignedTo: (m.assignedTo || '').trim(),
+        note: (m.note || '').trim()
+      }));
+
+    // Reconcile against whatever is live in Firestore right now, inside a
+    // transaction. If a task tied to one of these milestones was completed
+    // elsewhere while this modal was open, this modal's stale snapshot would
+    // otherwise silently revert that completion when saved — so for any
+    // task-linked milestone, a live "completed" always wins over a stale
+    // "not completed".
+    await db.runTransaction(async tx => {
+      const liveDoc = await tx.get(docRef);
+      const liveMilestones = liveDoc.exists && Array.isArray(liveDoc.data().milestones) ? liveDoc.data().milestones : [];
+      const reconciled = editedMilestones.map(m => {
+        if (!m.taskId) return m;
+        const live = liveMilestones.find(lm => lm.taskId === m.taskId);
+        if (live && live.completed && !m.completed) {
+          return { ...m, completed: true, note: live.note || m.note, date: live.date || m.date };
+        }
+        return m;
+      });
+      tx.update(docRef, {
+        status: document.getElementById('se-status').value,
+        startDate: start ? new Date(start) : null,
+        completionDate: completion ? new Date(completion) : null,
+        notes: document.getElementById('se-notes').value.trim(),
+        customerPhone: phone,
+        milestones: reconciled,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
     });
     const custId = d.customerId || d.userId;
     if (phone && custId) {
@@ -3338,7 +3859,19 @@ async function deleteSvcEdit() {
   const d = custServicesCache[docId] || {};
   AppUtils.showConfirm('Remove Service', `Remove "${d.serviceName || 'this service'}" from ${d.customerName || 'this customer'}? This cannot be undone.`, async () => {
     try {
-      await db.collection('customerServices').doc(docId).delete();
+      const batch = db.batch();
+      batch.delete(db.collection('customerServices').doc(docId));
+
+      // Unlink (don't delete) any task pointing at this service, so a removed
+      // service never leaves a task silently referencing a doc that no longer
+      // exists — the task and its history stay intact, just no longer linked.
+      // (tasks.serviceId stores the customerServices *document id*, not the
+      // catalog service number — see onTaskCustomerChange()/confirmCompleteTask().)
+      const linkedTasks = await db.collection('tasks').where('serviceId', '==', docId).get();
+      linkedTasks.forEach(t => batch.update(t.ref, { serviceId: null }));
+
+      await batch.commit();
+      await AppUtils.logAudit(currentAdminIdentity(), 'delete', docId, 'customerService', { serviceName: d.serviceName || '', customerName: d.customerName || '' });
       toast('✓ Service removed', 'success');
       closeSvcEditModal();
       await loadServiceMgmt();
@@ -3395,6 +3928,7 @@ async function saveTeamMembers() {
   try {
     teamMembers = collectTeamMembers();
     await db.collection('settings').doc('team').set({ members: teamMembers, updatedAt: new Date().toISOString() }, { merge: true });
+    await AppUtils.logAudit(currentAdminIdentity(), 'update', 'team', 'settings', {});
     toast('✓ Team saved', 'success');
     closeTeamModal();
     renderTasksTable();
@@ -3429,14 +3963,14 @@ async function loadTasks() {
   await loadServiceMgmt(); // populates custServicesCache for the linked-service picker
 
   try {
-    const [tasksSnap, custSnap] = await Promise.all([
-      db.collection('tasks').orderBy('createdAt', 'desc').get().catch(() => db.collection('tasks').get()),
-      db.collection('customers').get()
+    const [tasksSnap, custList] = await Promise.all([
+      db.collection('tasks').orderBy('createdAt', 'desc').limit(500).get().catch(() => db.collection('tasks').limit(500).get()),
+      getAllCustomers()
     ]);
     taskCustomers = {};
-    custSnap.docs.forEach(d => { taskCustomers[d.id] = d.data(); });
+    custList.forEach(c => { taskCustomers[c.docId] = c; });
     allTasks = tasksSnap.docs.map(d => ({ docId: d.id, ...d.data() }));
-  } catch(e) { console.error(e); allTasks = []; }
+  } catch(e) { console.error(e); allTasks = []; toast('Failed to load tasks: ' + e.message, 'error'); }
 
   allTasks.sort((a, b) => {
     const da = a.dueDate ? (a.dueDate.toDate ? a.dueDate.toDate() : new Date(a.dueDate)) : null;
@@ -3526,10 +4060,13 @@ function closeNewTaskModal() {
   document.getElementById('newTaskModal').classList.remove('open');
 }
 
+let _creatingTask = false;
 async function createTask() {
   if (!db) { toast('Firebase not connected', 'error'); return; }
+  if (_creatingTask) return;
   const title = document.getElementById('task-title').value.trim();
   if (!title) { toast('Enter a task title', 'error'); return; }
+  _creatingTask = true;
 
   const svcId = document.getElementById('task-service').value;
   const svc = svcId ? custServicesCache[svcId] : null;
@@ -3582,6 +4119,7 @@ async function createTask() {
     closeNewTaskModal();
     await loadTasks();
   } catch(e) { toast('Failed to create task: ' + e.message, 'error'); }
+  finally { _creatingTask = false; }
 }
 
 function renderTasksTable() {
@@ -3720,7 +4258,24 @@ function deleteTask(docId) {
   const t = allTasks.find(x => x.docId === docId);
   AppUtils.showConfirm('Delete Task', `Delete "${(t && t.title) || 'this task'}"? This cannot be undone.`, async () => {
     try {
-      await db.collection('tasks').doc(docId).delete();
+      const batch = db.batch();
+      batch.delete(db.collection('tasks').doc(docId));
+
+      // Clear dangling back-references so a deleted task never leaves an
+      // invoice or a service milestone pointing at a doc that no longer exists.
+      if (t && t.invoiceId) {
+        batch.update(db.collection('invoices').doc(t.invoiceId), { taskId: null });
+      }
+      if (t && t.serviceId) {
+        const svcDoc = await db.collection('customerServices').doc(t.serviceId).get();
+        if (svcDoc.exists) {
+          const milestones = (Array.isArray(svcDoc.data().milestones) ? svcDoc.data().milestones : [])
+            .map(m => m.taskId === docId ? { ...m, taskId: null } : m);
+          batch.update(db.collection('customerServices').doc(t.serviceId), { milestones });
+        }
+      }
+
+      await batch.commit();
       await AppUtils.logAudit(currentAdminIdentity(), 'delete', docId, 'task', {});
       toast('✓ Task deleted', 'success');
       await loadTasks();
@@ -3749,19 +4304,19 @@ async function loadInvoices() {
     return;
   }
   try {
-    const [invSnap, cSnap] = await Promise.all([
-      db.collection('invoices').orderBy('createdAt', 'desc').get().catch(() => db.collection('invoices').get()),
-      db.collection('customers').get()
+    const [invSnap, custList] = await Promise.all([
+      db.collection('invoices').orderBy('createdAt', 'desc').limit(500).get().catch(() => db.collection('invoices').limit(500).get()),
+      getAllCustomers()
     ]);
 
     invoiceCustomers = {};
     if (custSelect) custSelect.innerHTML = '<option value="">Select customer...</option>';
-    cSnap.docs.forEach(d => {
-      invoiceCustomers[d.id] = d.data();
+    custList.forEach(c => {
+      invoiceCustomers[c.docId] = c;
       if (custSelect) {
         const opt = document.createElement('option');
-        opt.value = d.id;
-        opt.text = d.data().name || d.data().email || 'Unknown';
+        opt.value = c.docId;
+        opt.text = c.name || c.email || 'Unknown';
         custSelect.appendChild(opt);
       }
     });
@@ -3814,18 +4369,21 @@ function renderInvoices() {
   }).join('');
 }
 
+let _creatingInvoice = false;
 async function createInvoice() {
   if (!db) { toast('Firebase not connected', 'error'); return; }
+  if (_creatingInvoice) return;
   const custId   = document.getElementById('inv-customer').value;
   const desc     = document.getElementById('inv-desc').value.trim();
   const amount   = parseFloat(document.getElementById('inv-amount').value);
   const currency = document.getElementById('inv-currency').value.trim() || '$';
   const due      = document.getElementById('inv-due').value;
   if (!custId || !desc || !(amount > 0) || !due) { toast('Fill in customer, description, amount and due date', 'error'); return; }
+  _creatingInvoice = true;
 
   try {
     const cust = invoiceCustomers[custId] || {};
-    await db.collection('invoices').add({
+    const ref = await db.collection('invoices').add({
       userId: custId,
       customerName: cust.name || '',
       description: desc,
@@ -3836,6 +4394,7 @@ async function createInvoice() {
       paidDate: null,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
+    await AppUtils.logAudit(currentAdminIdentity(), 'create', ref.id, 'invoice', { customerId: custId, amount, currency });
     toast('✓ Invoice created', 'success');
     document.getElementById('inv-customer').value = '';
     document.getElementById('inv-desc').value = '';
@@ -3844,6 +4403,7 @@ async function createInvoice() {
     document.getElementById('inv-due').value = '';
     await loadInvoices();
   } catch(e) { toast('Failed to create invoice: ' + e.message, 'error'); }
+  finally { _creatingInvoice = false; }
 }
 
 async function setInvoiceStatus(docId, status) {
@@ -3854,6 +4414,7 @@ async function setInvoiceStatus(docId, status) {
     await db.collection('invoices').doc(docId).update(update);
     const inv = invoices.find(x => x.docId === docId);
     if (inv) { inv.status = status; inv.paidDate = update.paidDate; }
+    await AppUtils.logAudit(currentAdminIdentity(), 'update', docId, 'invoice', { status });
     renderInvoices();
     toast(`✓ Invoice marked ${status}`, 'success');
   } catch(e) { toast('Update failed: ' + e.message, 'error'); }
@@ -3863,7 +4424,15 @@ function deleteInvoice(docId) {
   const inv = invoices.find(x => x.docId === docId);
   AppUtils.showConfirm('Delete Invoice', `Delete the "${(inv && inv.description) || 'this'}" invoice? This cannot be undone.`, async () => {
     try {
-      await db.collection('invoices').doc(docId).delete();
+      const batch = db.batch();
+      batch.delete(db.collection('invoices').doc(docId));
+      // Unlink the originating task (if this invoice was auto-created by
+      // completing one) so it stops pointing at a deleted invoice.
+      if (inv && inv.taskId) {
+        batch.update(db.collection('tasks').doc(inv.taskId), { invoiceId: null });
+      }
+      await batch.commit();
+      await AppUtils.logAudit(currentAdminIdentity(), 'delete', docId, 'invoice', { description: (inv && inv.description) || '' });
       toast('✓ Invoice deleted', 'success');
       await loadInvoices();
     } catch(e) { toast('Delete failed: ' + e.message, 'error'); }
@@ -3897,7 +4466,7 @@ async function loadAuditLogs() {
         `;
       });
     }
-  } catch(e) { console.error(e); }
+  } catch(e) { console.error(e); toast('Failed to load audit logs: ' + e.message, 'error'); }
 }
 
 async function filterAuditLogs() {
@@ -3949,7 +4518,7 @@ async function loadNotifications() {
       recipientsDiv.innerHTML = '';
       (d.emailRecipients || []).forEach(email => addNotifEmail(email));
     }
-  } catch(e) { console.error(e); }
+  } catch(e) { console.error(e); toast('Failed to load notification settings: ' + e.message, 'error'); }
 }
 
 function addNotifEmail(email = '') {
@@ -3995,14 +4564,14 @@ let viewingQnDocId = null;
 async function loadQuestionnaires() {
   if (!db) return;
   try {
-    const [qnSnap, custSnap] = await Promise.all([
-      db.collection('questionnaires').orderBy('createdAt', 'desc').get().catch(() => db.collection('questionnaires').get()),
-      db.collection('customers').get()
+    const [qnSnap, custList] = await Promise.all([
+      db.collection('questionnaires').orderBy('createdAt', 'desc').limit(500).get().catch(() => db.collection('questionnaires').limit(500).get()),
+      getAllCustomers()
     ]);
     qnCustomers = {};
-    custSnap.docs.forEach(d => { qnCustomers[d.id] = d.data(); });
+    custList.forEach(c => { qnCustomers[c.docId] = c; });
     questionnaires = qnSnap.docs.map(d => ({ docId: d.id, ...d.data() }));
-  } catch(e) { console.error(e); questionnaires = []; }
+  } catch(e) { console.error(e); questionnaires = []; toast('Failed to load questionnaires: ' + e.message, 'error'); }
 
   const custSel = document.getElementById('qn-customer');
   const custCurrent = custSel.value;
@@ -4346,16 +4915,33 @@ async function sendQuestionnaireWhatsApp() {
         sentAt: firebase.firestore.FieldValue.serverTimestamp()
       });
       await loadQuestionnaires();
-    } catch(e) {}
+    } catch(e) {
+      toast('Sent via WhatsApp, but failed to update status: ' + e.message, 'error');
+    }
   }
 }
 
 function deleteQuestionnaire(docId) {
   const qn = questionnaires.find(q => q.docId === docId);
-  AppUtils.showConfirm('Delete Questionnaire', `Delete "${(qn && qn.title) || 'this questionnaire'}"? This cannot be undone.`, async () => {
+  AppUtils.showConfirm('Delete Questionnaire', `Delete "${(qn && qn.title) || 'this questionnaire'}"? This also deletes any saved analysis report, vendor cost sheet, and published roadmap linked to it. This cannot be undone.`, async () => {
     try {
-      await db.collection('questionnaires').doc(docId).delete();
-      await AppUtils.logAudit(currentAdminIdentity(), 'delete', docId, 'questionnaire', {});
+      const batch = db.batch();
+      batch.delete(db.collection('questionnaires').doc(docId));
+
+      // A questionnaire can have a saved qnReport, which in turn can have a
+      // vendorQuotes and/or clientReports doc — clean up the whole chain so
+      // deleting a questionnaire never leaves those permanently orphaned
+      // (previously only reachable/cleanable via the Firebase console).
+      const repSnap = await db.collection('qnReports').where('questionnaireId', '==', docId).get();
+      repSnap.forEach(repDoc => {
+        const rep = repDoc.data();
+        batch.delete(repDoc.ref);
+        if (rep.vendorQuoteId) batch.delete(db.collection('vendorQuotes').doc(rep.vendorQuoteId));
+        if (rep.clientReportId) batch.delete(db.collection('clientReports').doc(rep.clientReportId));
+      });
+
+      await batch.commit();
+      await AppUtils.logAudit(currentAdminIdentity(), 'delete', docId, 'questionnaire', { cascadedReports: repSnap.size });
       toast('✓ Questionnaire deleted', 'success');
       await loadQuestionnaires();
     } catch(e) { toast('Delete failed: ' + e.message, 'error'); }
@@ -4777,9 +5363,13 @@ function qnaVendorCard() {
       <div style="font-size:12px;margin-top:4px"><strong>Passcode:</strong> <span style="font-weight:800;letter-spacing:.12em">${escHtml(r.vendorPasscode || '—')}</span>${r.vendorSubmittedAt ? ' · <strong>Submitted:</strong> ' + fmtDate(r.vendorSubmittedAt) : ''}</div>
       ${(r.vendorNote || '').trim() ? `<div style="font-size:12px;margin-top:6px;background:#fff;border-radius:7px;padding:8px 10px"><strong>Vendor note:</strong> ${escHtml(r.vendorNote)}</div>` : ''}
       <div style="display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap">
-        <span style="font-size:12px;font-weight:700">Markup vendor costs:</span>
+        <button type="button" class="btn-approve" onclick="applyRuleBasedMarkup()"><i class="fa-solid fa-wand-magic-sparkles"></i> Apply Rule-Based Markup</button>
+        <span style="font-size:11px;color:var(--text-dim)">Uses the configured markup rules (Site Content → Vendors) — service override, else phase, else default.</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap">
+        <span style="font-size:12px;font-weight:700">Or apply one flat %:</span>
         <input id="qnr-markup" type="number" step="1" placeholder="30" style="width:70px;padding:5px 7px;font-size:12px"> <span style="font-size:12px">%</span>
-        <button type="button" class="btn-approve" onclick="applyQnrMarkup()">Apply to Client Prices</button>
+        <button type="button" class="btn-reject" onclick="applyQnrMarkup()">Apply to Client Prices</button>
         <span style="font-size:11px;color:var(--text-dim)">Fills each client price with vendor cost + markup — adjust individual prices after.</span>
       </div>
     ` : `<div style="font-size:12px;color:var(--text-muted);margin-top:6px">Create a passcode-protected page listing the business name and the services below — no analysis, no your prices — and send it to your 3rd-party vendor. Their submitted costs load back into the 3rd-party column here so you can mark them up.</div>`}
@@ -4937,9 +5527,12 @@ function resetQnReportFromAnswers() {
   });
 }
 
+let _savingQnReport = false;
 async function saveQnReport(silent) {
   if (!qnReport) return false;
   if (!db) { toast('Firebase not connected', 'error'); return false; }
+  if (_savingQnReport) return false;
+  _savingQnReport = true;
   const data = { ...qnReport };
   delete data.docId;
   data.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
@@ -4955,6 +5548,7 @@ async function saveQnReport(silent) {
     if (!silent) { toast('✓ Report saved', 'success'); renderQnAnalysis(); }
     return true;
   } catch(e) { toast('Save failed: ' + e.message, 'error'); return false; }
+  finally { _savingQnReport = false; }
 }
 
 async function openQnReportTab() {
@@ -5301,6 +5895,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   document.getElementById('orderModal').addEventListener('click', e => {
     if (e.target === document.getElementById('orderModal')) closeOrderModal();
+  });
+  document.getElementById('cust360Modal').addEventListener('click', e => {
+    if (e.target === document.getElementById('cust360Modal')) closeCustomer360();
+  });
+  document.getElementById('vendorModal').addEventListener('click', e => {
+    if (e.target === document.getElementById('vendorModal')) closeVendorModal();
   });
   document.getElementById('convertOrderModal').addEventListener('click', e => {
     if (e.target === document.getElementById('convertOrderModal')) closeConvertOrderModal();
