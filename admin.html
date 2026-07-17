@@ -1544,6 +1544,7 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
       <button class="modal-cancel" onclick="closeQnViewModal()">Close</button>
       <button class="btn-reject" onclick="copyQuestionnaireLink(viewingQnDocId)"><i class="fa-solid fa-link"></i> Copy Link</button>
       <button class="btn-whatsapp" style="width:auto" onclick="sendQuestionnaireWhatsApp()"><i class="fa-brands fa-whatsapp"></i> Send via WhatsApp</button>
+      <button class="btn-reject" id="qnv-pdf-btn" style="display:none" onclick="exportQuestionnairePdf()"><i class="fa-regular fa-file-pdf"></i> Export PDF</button>
       <button class="modal-confirm" id="qnv-analyze-btn" style="display:none" onclick="analyzeFromViewModal()"><i class="fa-solid fa-wand-magic-sparkles"></i> Analyze</button>
     </div>
   </div>
@@ -4859,6 +4860,7 @@ function viewQuestionnaire(docId) {
 
   document.getElementById('qnv-phone').value = '';
   document.getElementById('qnv-analyze-btn').style.display = qnHasAnswers(qn) ? '' : 'none';
+  document.getElementById('qnv-pdf-btn').style.display = qnHasAnswers(qn) ? '' : 'none';
   document.getElementById('qnViewModal').classList.add('open');
 }
 
@@ -4866,6 +4868,15 @@ function analyzeFromViewModal() {
   const docId = viewingQnDocId;
   closeQnViewModal();
   if (docId) analyzeQuestionnaire(docId);
+}
+
+/* Opens the branded report.html pop-out with ?print=1 so the browser's
+   print dialog (Save as PDF) fires on load — same pattern as the saved
+   analysis report's Export PDF, but for the raw questionnaire responses. */
+function exportQuestionnairePdf() {
+  if (!viewingQnDocId) return;
+  const w = window.open(`report.html?qid=${encodeURIComponent(viewingQnDocId)}&print=1`, '_blank');
+  if (!w) toast('Popup blocked — allow popups for this site to export PDF', 'error');
 }
 
 function closeQnViewModal() {
