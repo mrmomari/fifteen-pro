@@ -1529,6 +1529,17 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
   </div>
 </div>
 
+<!-- ══ Customer 360 ══ -->
+<div class="modal-overlay" id="cust360Modal">
+  <div class="modal-box" style="width:820px;max-width:94vw;max-height:90vh;overflow-y:auto;text-align:left">
+    <h3 id="c360-title">Customer</h3>
+    <div id="c360-body" style="margin-top:14px"></div>
+    <div class="modal-actions" style="margin-top:18px">
+      <button class="modal-cancel" onclick="closeCustomer360()">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ Toast ══ -->
 <div class="t-toast" id="toast"></div>
 
@@ -1540,6 +1551,29 @@ let db = null, storage = null, auth = null;
 let services = [];
 let applications = [];
 let pendingApproval = null; // { docId, name, email, industry }
+
+/* ══════════════════════════════════════════════
+   SHARED CUSTOMERS CACHE
+   Every tab (Tickets, Service Mgmt, Team, Invoices, Questionnaires,
+   Access) used to independently fetch the entire customers collection on
+   every dashboard load/refresh. This caches that single fetch for the
+   lifetime of the session (or until invalidateCustomersCache() is called,
+   e.g. right after approving a new application) instead of re-reading it
+   6 separate times.
+══════════════════════════════════════════════ */
+let _customersCache = null;
+let _customersCachePromise = null;
+function invalidateCustomersCache() { _customersCache = null; _customersCachePromise = null; }
+async function getAllCustomers() {
+  if (!db) return [];
+  if (_customersCache) return _customersCache;
+  if (!_customersCachePromise) {
+    _customersCachePromise = db.collection('customers').get()
+      .then(snap => { _customersCache = snap.docs.map(d => ({ docId: d.id, ...d.data() })); return _customersCache; })
+      .finally(() => { _customersCachePromise = null; });
+  }
+  return _customersCachePromise;
+}
 
 /* ══════════════════════════════════════════════
    FIREBASE INIT
@@ -1768,7 +1802,7 @@ async function loadApplications() {
     return;
   }
   try {
-    const snap = await db.collection('applications').orderBy('createdAt', 'desc').get();
+    const snap = await db.collection('applications').orderBy('createdAt', 'desc').limit(500).get();
     applications = snap.docs.map(d => ({ docId: d.id, ...d.data() }));
     renderApplications();
   } catch(e) {
@@ -2074,6 +2108,7 @@ async function saveIndustryRouting() {
     });
     industryContacts = mapping;
     await db.collection('settings').doc('industryContacts').set({ mapping, updatedAt: new Date().toISOString() }, { merge: true });
+    await AppUtils.logAudit(currentAdminIdentity(), 'update', 'industryContacts', 'settings', {});
     toast('✓ Routing saved', 'success');
   } catch(e) { toast('Save failed: ' + e.message, 'error'); }
 }
@@ -2198,10 +2233,12 @@ async function approveApplication(docId, name, email, industry) {
   // password-setup invite and sign out of the secondary app.
   await secondaryAuth.sendPasswordResetEmail(email);
   await secondaryAuth.signOut();
+  invalidateCustomersCache();
 
   // Refresh local state
   const app = applications.find(a => a.docId === docId);
   if (app) { app.status = 'approved'; app.userId = uid; }
+  await AppUtils.logAudit(currentAdminIdentity(), 'approve', docId, 'application', { customerUid: uid, email });
   renderApplications();
   toast('✓ Approved — invite email sent to ' + email, 'success');
 }
@@ -2216,6 +2253,7 @@ async function rejectApp(docId) {
     });
     const app = applications.find(a => a.docId === docId);
     if (app) app.status = 'rejected';
+    await AppUtils.logAudit(currentAdminIdentity(), 'update', docId, 'application', { status: 'rejected' });
     renderApplications();
     toast('Application rejected', '');
   } catch(e) { toast('Error: ' + e.message, 'error'); }
@@ -2233,7 +2271,7 @@ async function loadOrders() {
     return;
   }
   try {
-    const snap = await db.collection('orders').orderBy('createdAt', 'desc').get();
+    const snap = await db.collection('orders').orderBy('createdAt', 'desc').limit(500).get();
     orders = snap.docs.map(d => ({ docId: d.id, ...d.data() }));
   } catch(e) {
     try {
@@ -2307,6 +2345,7 @@ async function setOrderStatus(docId, status) {
     });
     const o = orders.find(x => x.docId === docId);
     if (o) o.status = status;
+    await AppUtils.logAudit(currentAdminIdentity(), 'update', docId, 'order', { status });
     renderOrders();
     toast(`✓ Order marked ${status}`, 'success');
   } catch(e) { toast('Update failed: ' + e.message, 'error'); }
@@ -2477,12 +2516,12 @@ async function loadTickets() {
     return;
   }
   try {
-    const [tSnap, cSnap] = await Promise.all([
-      db.collection('tickets').orderBy('createdAt', 'desc').get().catch(() => db.collection('tickets').get()),
-      db.collection('customers').get()
+    const [tSnap, custList] = await Promise.all([
+      db.collection('tickets').orderBy('createdAt', 'desc').limit(500).get().catch(() => db.collection('tickets').limit(500).get()),
+      getAllCustomers()
     ]);
     ticketCustomers = {};
-    cSnap.docs.forEach(d => { ticketCustomers[d.id] = d.data(); });
+    custList.forEach(c => { ticketCustomers[c.docId] = c; });
     tickets = tSnap.docs.map(d => ({ docId: d.id, ...d.data() }));
     tickets.sort((a, b) => {
       const ta = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
@@ -2538,6 +2577,8 @@ function renderTicketBubble(r) {
   </div>`;
 }
 
+let _ticketRepliesUnsub = null;
+
 async function viewTicket(docId) {
   const t = tickets.find(x => x.docId === docId);
   if (!t) return;
@@ -2552,20 +2593,27 @@ async function viewTicket(docId) {
   threadEl.innerHTML = '<div class="empty-state" style="padding:20px"><i class="fa-solid fa-spinner fa-spin"></i></div>';
   document.getElementById('ticketModal').classList.add('open');
 
-  try {
-    const repliesSnap = await db.collection('tickets').doc(docId).collection('replies').orderBy('createdAt').get();
-    const replies = repliesSnap.docs.map(d => d.data());
-    const all = [{ from: 'customer', message: t.message, createdAt: t.createdAt, original: true }, ...replies];
-    threadEl.innerHTML = all.map(renderTicketBubble).join('');
-    threadEl.scrollTop = threadEl.scrollHeight;
-  } catch(e) {
-    threadEl.innerHTML = `<div class="empty-state" style="padding:20px"><i class="fa-solid fa-triangle-exclamation"></i>Error loading replies: ${escHtml(e.message)}</div>`;
-  }
+  // Live-updating thread: a customer reply sent while this modal is open
+  // appears immediately, instead of requiring the admin to close and
+  // reopen the ticket to see it.
+  if (_ticketRepliesUnsub) { _ticketRepliesUnsub(); _ticketRepliesUnsub = null; }
+  _ticketRepliesUnsub = db.collection('tickets').doc(docId).collection('replies').orderBy('createdAt')
+    .onSnapshot(snap => {
+      if (editingTicketId !== docId) return;
+      const replies = snap.docs.map(d => d.data());
+      const all = [{ from: 'customer', message: t.message, createdAt: t.createdAt, original: true }, ...replies];
+      const nearBottom = threadEl.scrollTop + threadEl.clientHeight >= threadEl.scrollHeight - 40;
+      threadEl.innerHTML = all.map(renderTicketBubble).join('');
+      if (nearBottom) threadEl.scrollTop = threadEl.scrollHeight;
+    }, e => {
+      threadEl.innerHTML = `<div class="empty-state" style="padding:20px"><i class="fa-solid fa-triangle-exclamation"></i>Error loading replies: ${escHtml(e.message)}</div>`;
+    });
 }
 
 function closeTicketModal() {
   document.getElementById('ticketModal').classList.remove('open');
   editingTicketId = null;
+  if (_ticketRepliesUnsub) { _ticketRepliesUnsub(); _ticketRepliesUnsub = null; }
 }
 
 async function sendTicketReply() {
@@ -2584,6 +2632,7 @@ async function sendTicketReply() {
     if (t && (t.status === 'open' || !t.status)) updates.status = 'in-progress';
     await db.collection('tickets').doc(editingTicketId).update(updates);
     if (t && updates.status) t.status = updates.status;
+    await AppUtils.logAudit(currentAdminIdentity(), 'reply', editingTicketId, 'ticket', {});
     msgEl.value = '';
     renderTickets();
     await viewTicket(editingTicketId);
@@ -2597,6 +2646,7 @@ async function setTicketStatus(docId, status) {
     await db.collection('tickets').doc(docId).update({ status, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
     const t = tickets.find(x => x.docId === docId);
     if (t) t.status = status;
+    await AppUtils.logAudit(currentAdminIdentity(), 'update', docId, 'ticket', { status });
     renderTickets();
     toast(`✓ Ticket marked ${status}`, 'success');
   } catch(e) { toast('Update failed: ' + e.message, 'error'); }
@@ -2610,14 +2660,17 @@ async function loadCustomers() {
   if (!db) { wrap.innerHTML = '<div class="empty-state" style="padding:24px"><i class="fa-solid fa-database"></i>Firebase not connected.</div>'; return; }
   wrap.innerHTML = '<div class="empty-state" style="padding:24px"><i class="fa-solid fa-spinner fa-spin"></i>Loading…</div>';
   try {
-    const snap = await db.collection('customers').orderBy('createdAt', 'desc').get().catch(async () => db.collection('customers').get());
-    const customers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const customers = (await getAllCustomers()).slice().sort((a, b) => {
+      const ta = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+      const tb = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+      return tb - ta;
+    });
     if (!customers.length) {
       wrap.innerHTML = '<div class="empty-state" style="padding:32px"><i class="fa-solid fa-users"></i>No customers yet — approve applications to create customer accounts.</div>';
       return;
     }
     wrap.innerHTML = `<div>
-      ${customers.map(c => `<div class="customer-row">
+      ${customers.map(c => `<div class="customer-row" style="cursor:pointer" onclick="openCustomer360('${c.docId}')" title="View full customer history">
         <div><div class="customer-name">${escHtml(c.name || '—')}</div><div style="font-size:11px;color:var(--text-dim)">${escHtml(c.industry || '')}</div></div>
         <div class="customer-email">${escHtml(c.email || '—')}</div>
         <span class="customer-status">${c.status || 'active'}</span>
@@ -2626,6 +2679,146 @@ async function loadCustomers() {
   } catch(e) {
     wrap.innerHTML = `<div class="empty-state" style="padding:24px"><i class="fa-solid fa-triangle-exclamation"></i>Error: ${e.message}</div>`;
   }
+}
+
+/* ══════════════════════════════════════════════
+   CUSTOMER 360
+   A single aggregated view of everything tied to one customer —
+   application, services + milestones, tickets, invoices, tasks,
+   questionnaires, and a merged activity timeline — instead of having to
+   check 6 separate tabs for the same person. Reads from the arrays
+   already loaded by showDashboard(), so opening this costs zero extra
+   Firestore reads.
+══════════════════════════════════════════════ */
+async function openCustomer360(custId) {
+  const all = await getAllCustomers();
+  const cust = all.find(c => c.docId === custId);
+  if (!cust) { toast('Customer not found', 'error'); return; }
+
+  document.getElementById('c360-title').innerHTML =
+    `${escHtml(cust.name || 'Customer')} <span style="font-size:12px;font-weight:600;color:var(--text-dim)">— ${escHtml(cust.email || '')}</span>`;
+  document.getElementById('c360-body').innerHTML = renderCustomer360Body(cust);
+  document.getElementById('cust360Modal').classList.add('open');
+}
+
+function closeCustomer360() {
+  document.getElementById('cust360Modal').classList.remove('open');
+}
+
+function renderCustomer360Body(cust) {
+  const custId = cust.docId;
+  const app = applications.find(a => a.docId === cust.applicationId);
+  const custTickets = tickets.filter(t => t.userId === custId);
+  const custInvoices = invoices.filter(i => i.userId === custId);
+  const custTasks = allTasks.filter(t => t.customerId === custId);
+  const custQuestionnaires = questionnaires.filter(q => q.customerId === custId || (cust.applicationId && q.applicationId === cust.applicationId));
+  const custServiceEntries = Object.entries(custServicesCache).filter(([, d]) => d.customerId === custId || d.userId === custId);
+
+  const kpi = (label, val) => `<div style="flex:1;min-width:90px;text-align:center;padding:10px 6px;background:rgba(255,255,255,.5);border-radius:8px">
+    <div style="font-size:20px;font-weight:800;color:var(--green)">${val}</div>
+    <div style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em">${label}</div>
+  </div>`;
+
+  const activeServices = custServiceEntries.filter(([, d]) => d.status === 'active').length;
+  const openTickets = custTickets.filter(t => t.status === 'open').length;
+  const pendingInvoices = custInvoices.filter(i => (i.status || 'pending') !== 'paid').length;
+  const pendingTasks = custTasks.filter(t => (t.status || 'pending') !== 'completed').length;
+
+  const kpiRow = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+    ${kpi('Active Services', activeServices)}
+    ${kpi('Open Tickets', openTickets)}
+    ${kpi('Unpaid Invoices', pendingInvoices)}
+    ${kpi('Pending Tasks', pendingTasks)}
+  </div>`;
+
+  const profileRow = `<div style="font-size:12px;color:var(--text-muted);line-height:1.8;margin-bottom:16px">
+    <strong>Industry:</strong> ${escHtml(cust.industry || '—')} &nbsp;·&nbsp;
+    <strong>Status:</strong> ${escHtml(cust.status || 'active')} &nbsp;·&nbsp;
+    <strong>Customer since:</strong> ${cust.createdAt ? formatDate(cust.createdAt) : '—'}
+    ${app ? `<br><strong>Originating application:</strong> ${escHtml(app.industry || '')} — <span class="status-badge status-approved">approved</span>` : ''}
+  </div>`;
+
+  const servicesSection = custServiceEntries.length
+    ? custServiceEntries.map(([docId, d]) => {
+        const milestones = Array.isArray(d.milestones) ? d.milestones : [];
+        const msDone = milestones.filter(m => m.completed).length;
+        const msPct = milestones.length ? Math.round((msDone / milestones.length) * 100) : 0;
+        return `<div style="border:1px solid rgba(0,0,0,.08);border-radius:8px;padding:8px 10px;margin-bottom:6px;cursor:pointer" onclick="closeCustomer360();editCustomerService('${docId}')">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <strong style="font-size:13px">${escHtml(d.serviceName || 'Unknown')}</strong>
+            <span class="status-badge ${d.status === 'active' ? 'status-approved' : d.status === 'completed' ? 'status-rejected' : 'status-pending'}">${escHtml(d.status || 'pending')}</span>
+          </div>
+          ${milestones.length ? `<div style="display:flex;align-items:center;gap:6px;margin-top:6px">
+            <div style="flex:1;height:5px;border-radius:99px;background:rgba(0,0,0,.08);overflow:hidden"><div style="height:100%;width:${msPct}%;background:var(--green);border-radius:99px"></div></div>
+            <span style="font-size:10px;color:var(--text-dim)">${msDone}/${milestones.length}</span>
+          </div>` : ''}
+        </div>`;
+      }).join('')
+    : '<div class="empty-state" style="padding:14px"><i class="fa-regular fa-briefcase"></i>No services assigned</div>';
+
+  const ticketsSection = custTickets.length
+    ? custTickets.slice(0, 10).map(t => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.05);font-size:12px;cursor:pointer" onclick="closeCustomer360();viewTicket('${t.docId}')">
+        <span>${escHtml(t.subject || 'Untitled')}</span>
+        <span class="status-badge ${t.status === 'resolved' ? 'status-approved' : t.status === 'in-progress' ? 'status-pending' : 'status-rejected'}">${escHtml(t.status || 'open')}</span>
+      </div>`).join('')
+    : '<div class="empty-state" style="padding:14px"><i class="fa-regular fa-comments"></i>No tickets</div>';
+
+  const invoicesSection = custInvoices.length
+    ? custInvoices.slice(0, 10).map(i => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.05);font-size:12px">
+        <span>${escHtml(i.description || '—')}</span>
+        <span><strong>${escHtml(invoiceAmountStr(i))}</strong> <span class="status-badge ${i.status === 'paid' ? 'status-approved' : i.status === 'overdue' ? 'status-rejected' : 'status-pending'}">${escHtml(i.status || 'pending')}</span></span>
+      </div>`).join('')
+    : '<div class="empty-state" style="padding:14px"><i class="fa-regular fa-file-invoice"></i>No invoices</div>';
+
+  const tasksSection = custTasks.length
+    ? custTasks.slice(0, 10).map(t => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.05);font-size:12px">
+        <span>${escHtml(t.title || 'Untitled')}${t.assignedTo ? ` <span style="color:var(--text-dim)">· ${escHtml(t.assignedTo)}</span>` : ''}</span>
+        <span class="status-badge ${(t.status || 'pending') === 'completed' ? 'status-approved' : 'status-pending'}">${escHtml(t.status || 'pending')}</span>
+      </div>`).join('')
+    : '<div class="empty-state" style="padding:14px"><i class="fa-solid fa-list-check"></i>No tasks</div>';
+
+  const qnSection = custQuestionnaires.length
+    ? custQuestionnaires.map(q => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.05);font-size:12px;cursor:pointer" onclick="closeCustomer360();viewQuestionnaire('${q.docId}')">
+        <span>${escHtml(q.title || 'Untitled')}</span>
+        <span class="status-badge ${q.status === 'completed' ? 'status-approved' : q.status === 'sent' ? 'status-pending' : 'status-rejected'}">${escHtml(q.status || 'draft')}</span>
+      </div>`).join('')
+    : '<div class="empty-state" style="padding:14px"><i class="fa-solid fa-list-ol"></i>No questionnaires</div>';
+
+  // Merged chronological activity feed — a lightweight, zero-extra-reads
+  // stand-in for a dedicated timeline collection.
+  const events = [];
+  custTickets.forEach(t => events.push({ date: t.createdAt, label: `Ticket opened: ${t.subject || 'Untitled'}` }));
+  custInvoices.forEach(i => events.push({ date: i.createdAt, label: `Invoice created: ${i.description || ''} (${invoiceAmountStr(i)})` }));
+  custTasks.forEach(t => events.push({ date: t.completedAt || t.createdAt, label: `${t.status === 'completed' ? 'Task completed' : 'Task created'}: ${t.title || ''}` }));
+  custQuestionnaires.forEach(q => events.push({ date: q.completedAt || q.sentAt || q.createdAt, label: `Questionnaire ${q.status || 'draft'}: ${q.title || ''}` }));
+  const toMs = d => { if (!d) return 0; const dt = d.toDate ? d.toDate() : new Date(d); return isNaN(dt) ? 0 : dt.getTime(); };
+  events.sort((a, b) => toMs(b.date) - toMs(a.date));
+  const timelineSection = events.length
+    ? events.slice(0, 12).map(e => `<div style="display:flex;gap:10px;padding:5px 0;font-size:12px">
+        <span style="color:var(--text-dim);white-space:nowrap">${e.date ? formatDate(e.date) : '—'}</span>
+        <span>${escHtml(e.label)}</span>
+      </div>`).join('')
+    : '<div class="empty-state" style="padding:14px"><i class="fa-regular fa-clock"></i>No activity yet</div>';
+
+  const section = (title, icon, body) => `<div style="margin-bottom:16px">
+    <div style="font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px"><i class="fa-solid ${icon}"></i> ${title}</div>
+    ${body}
+  </div>`;
+
+  return kpiRow + profileRow + `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px">
+      <div>
+        ${section('Services', 'fa-briefcase', servicesSection)}
+        ${section('Tickets', 'fa-comments', ticketsSection)}
+        ${section('Questionnaires', 'fa-list-ol', qnSection)}
+      </div>
+      <div>
+        ${section('Invoices', 'fa-file-invoice', invoicesSection)}
+        ${section('Tasks', 'fa-list-check', tasksSection)}
+        ${section('Recent Activity', 'fa-clock', timelineSection)}
+      </div>
+    </div>
+  `;
 }
 
 /* ══════════════════════════════════════════════
@@ -2700,6 +2893,7 @@ async function saveCompanyInfo() {
   };
   try {
     await db.collection('settings').doc('company').set(data);
+    await AppUtils.logAudit(currentAdminIdentity(), 'update', 'company', 'settings', {});
     toast('✓ Company info saved', 'success');
   } catch(e) { toast('Save failed: ' + e.message, 'error'); }
 }
@@ -2748,6 +2942,7 @@ async function savePricingSettings() {
       bundleDiscount: parseFloat(v('d-bdiscount')) || 0, bundleMin: parseInt(v('d-bmin')) || 5,
       promoCodes: collectPromos(), updatedAt: new Date().toISOString()
     });
+    await AppUtils.logAudit(currentAdminIdentity(), 'update', 'pricing', 'settings', {});
     toast('✓ Pricing saved', 'success');
   } catch(e) { toast('Save failed: ' + e.message, 'error'); }
 }
@@ -2859,6 +3054,7 @@ async function saveServicesToCloud() {
   try {
     await db.collection('catalog').doc('services').set({ items: updated, lastUpdated: new Date().toISOString().slice(0,10) });
     services = updated;
+    await AppUtils.logAudit(currentAdminIdentity(), 'update', 'services', 'catalog', {});
     toast('✓ Services saved to cloud', 'success');
   } catch(e) { toast('Save failed: ' + e.message, 'error'); }
 }
@@ -2942,6 +3138,7 @@ async function saveExpertise() {
   }));
   try {
     await db.collection('content').doc('team').set({ members, updatedAt: new Date().toISOString() });
+    await AppUtils.logAudit(currentAdminIdentity(), 'update', 'team', 'content', {});
     toast('✓ Expertise saved', 'success');
   } catch(e) { toast('Save failed: ' + e.message, 'error'); }
 }
@@ -2953,17 +3150,17 @@ async function loadServiceMgmt() {
   if (!db) return;
   try {
     const [customers, services, custServices] = await Promise.all([
-      db.collection('customers').get(),
+      getAllCustomers(),
       db.collection('catalog').doc('services').get(),
       db.collection('customerServices').get()
     ]);
 
     const custSelect = document.getElementById('sm-customer');
     custSelect.innerHTML = '<option value="">Select customer...</option>';
-    customers.docs.forEach(doc => {
+    customers.forEach(c => {
       const opt = document.createElement('option');
-      opt.value = doc.id;
-      opt.text = doc.data().name || 'Unknown';
+      opt.value = c.docId;
+      opt.text = c.name || 'Unknown';
       custSelect.appendChild(opt);
     });
 
@@ -3384,6 +3581,7 @@ async function saveTeamMembers() {
   try {
     teamMembers = collectTeamMembers();
     await db.collection('settings').doc('team').set({ members: teamMembers, updatedAt: new Date().toISOString() }, { merge: true });
+    await AppUtils.logAudit(currentAdminIdentity(), 'update', 'team', 'settings', {});
     toast('✓ Team saved', 'success');
     closeTeamModal();
     renderTasksTable();
@@ -3418,12 +3616,12 @@ async function loadTasks() {
   await loadServiceMgmt(); // populates custServicesCache for the linked-service picker
 
   try {
-    const [tasksSnap, custSnap] = await Promise.all([
-      db.collection('tasks').orderBy('createdAt', 'desc').get().catch(() => db.collection('tasks').get()),
-      db.collection('customers').get()
+    const [tasksSnap, custList] = await Promise.all([
+      db.collection('tasks').orderBy('createdAt', 'desc').limit(500).get().catch(() => db.collection('tasks').limit(500).get()),
+      getAllCustomers()
     ]);
     taskCustomers = {};
-    custSnap.docs.forEach(d => { taskCustomers[d.id] = d.data(); });
+    custList.forEach(c => { taskCustomers[c.docId] = c; });
     allTasks = tasksSnap.docs.map(d => ({ docId: d.id, ...d.data() }));
   } catch(e) { console.error(e); allTasks = []; toast('Failed to load tasks: ' + e.message, 'error'); }
 
@@ -3759,19 +3957,19 @@ async function loadInvoices() {
     return;
   }
   try {
-    const [invSnap, cSnap] = await Promise.all([
-      db.collection('invoices').orderBy('createdAt', 'desc').get().catch(() => db.collection('invoices').get()),
-      db.collection('customers').get()
+    const [invSnap, custList] = await Promise.all([
+      db.collection('invoices').orderBy('createdAt', 'desc').limit(500).get().catch(() => db.collection('invoices').limit(500).get()),
+      getAllCustomers()
     ]);
 
     invoiceCustomers = {};
     if (custSelect) custSelect.innerHTML = '<option value="">Select customer...</option>';
-    cSnap.docs.forEach(d => {
-      invoiceCustomers[d.id] = d.data();
+    custList.forEach(c => {
+      invoiceCustomers[c.docId] = c;
       if (custSelect) {
         const opt = document.createElement('option');
-        opt.value = d.id;
-        opt.text = d.data().name || d.data().email || 'Unknown';
+        opt.value = c.docId;
+        opt.text = c.name || c.email || 'Unknown';
         custSelect.appendChild(opt);
       }
     });
@@ -4019,12 +4217,12 @@ let viewingQnDocId = null;
 async function loadQuestionnaires() {
   if (!db) return;
   try {
-    const [qnSnap, custSnap] = await Promise.all([
-      db.collection('questionnaires').orderBy('createdAt', 'desc').get().catch(() => db.collection('questionnaires').get()),
-      db.collection('customers').get()
+    const [qnSnap, custList] = await Promise.all([
+      db.collection('questionnaires').orderBy('createdAt', 'desc').limit(500).get().catch(() => db.collection('questionnaires').limit(500).get()),
+      getAllCustomers()
     ]);
     qnCustomers = {};
-    custSnap.docs.forEach(d => { qnCustomers[d.id] = d.data(); });
+    custList.forEach(c => { qnCustomers[c.docId] = c; });
     questionnaires = qnSnap.docs.map(d => ({ docId: d.id, ...d.data() }));
   } catch(e) { console.error(e); questionnaires = []; toast('Failed to load questionnaires: ' + e.message, 'error'); }
 
@@ -5346,6 +5544,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   document.getElementById('orderModal').addEventListener('click', e => {
     if (e.target === document.getElementById('orderModal')) closeOrderModal();
+  });
+  document.getElementById('cust360Modal').addEventListener('click', e => {
+    if (e.target === document.getElementById('cust360Modal')) closeCustomer360();
   });
   document.getElementById('convertOrderModal').addEventListener('click', e => {
     if (e.target === document.getElementById('convertOrderModal')) closeConvertOrderModal();

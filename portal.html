@@ -1513,6 +1513,7 @@ document.getElementById('pwToggle').addEventListener('click', () => {
 ══════════════════════════════════════════════════════════ */
 async function handleLogout() {
   try {
+    detachTicketThreadListeners();
     await auth.signOut();
     showToast('You have been signed out.', 'success');
     setTimeout(() => showLogin(), 500);
@@ -1860,7 +1861,7 @@ function renderServices() {
 ══════════════════════════════════════════════════════════ */
 function renderTickets() {
   const el = document.getElementById('ticketsContent');
-  Object.keys(ticketRepliesLoaded).forEach(k => delete ticketRepliesLoaded[k]);
+  detachTicketThreadListeners();
   if (ticketsData.length === 0) {
     el.innerHTML = `<div class="card"><div class="empty-state">
       <div class="empty-state-icon"><i class="fa-solid fa-comments"></i></div>
@@ -1896,6 +1897,7 @@ function renderTickets() {
 }
 
 const ticketRepliesLoaded = {};
+const ticketRepliesUnsub = {};
 
 async function toggleTicketBody(idx) {
   const body = document.getElementById('ticket-body-' + idx);
@@ -1904,22 +1906,30 @@ async function toggleTicketBody(idx) {
   icon.classList.toggle('open');
   if (body.classList.contains('show') && !ticketRepliesLoaded[idx]) {
     ticketRepliesLoaded[idx] = true;
-    await loadTicketThread(idx);
+    loadTicketThread(idx);
   }
 }
 
-async function loadTicketThread(idx) {
+function loadTicketThread(idx) {
   const t = ticketsData[idx];
   const threadEl = document.getElementById('ticket-thread-' + idx);
   threadEl.innerHTML = '<div style="font-size:12px;color:var(--text-dim)"><i class="fa-solid fa-spinner fa-spin"></i> Loading…</div>';
-  try {
-    const snap = await db.collection('tickets').doc(t.id).collection('replies').orderBy('createdAt').get();
-    const replies = snap.docs.map(d => d.data());
-    const all = [{ from: 'customer', message: t.message, createdAt: t.createdAt, original: true }, ...replies];
-    threadEl.innerHTML = all.map(renderTicketBubble).join('');
-  } catch(e) {
-    threadEl.innerHTML = '<div style="font-size:12px;color:var(--text-dim)">Could not load replies.</div>';
-  }
+  // Live-updating thread: an admin reply sent while this ticket is expanded
+  // appears immediately instead of requiring a page reload to see it.
+  ticketRepliesUnsub[idx] = db.collection('tickets').doc(t.id).collection('replies').orderBy('createdAt')
+    .onSnapshot(snap => {
+      const replies = snap.docs.map(d => d.data());
+      const all = [{ from: 'customer', message: t.message, createdAt: t.createdAt, original: true }, ...replies];
+      threadEl.innerHTML = all.map(renderTicketBubble).join('');
+    }, e => {
+      threadEl.innerHTML = '<div style="font-size:12px;color:var(--text-dim)">Could not load replies.</div>';
+    });
+}
+
+function detachTicketThreadListeners() {
+  Object.values(ticketRepliesUnsub).forEach(unsub => { try { unsub(); } catch(e) {} });
+  Object.keys(ticketRepliesUnsub).forEach(k => delete ticketRepliesUnsub[k]);
+  Object.keys(ticketRepliesLoaded).forEach(k => delete ticketRepliesLoaded[k]);
 }
 
 function renderTicketBubble(r) {
