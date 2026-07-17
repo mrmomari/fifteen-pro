@@ -1434,8 +1434,26 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
   <div class="modal-box" style="width:560px;max-width:92vw;max-height:88vh;overflow-y:auto;text-align:left">
     <h3 id="ord-title">Order Details</h3>
     <div id="ord-body" style="margin-top:14px"></div>
-    <div class="modal-actions" style="margin-top:18px">
+    <div class="modal-actions" style="margin-top:18px;flex-wrap:wrap">
       <button class="modal-cancel" onclick="closeOrderModal()">Close</button>
+      <button class="btn-approve" onclick="openConvertOrderModal(viewingOrderDocId)"><i class="fa-solid fa-right-left"></i> Convert to Application</button>
+      <button class="btn-reject" onclick="copyOrderQuotationLink(viewingOrderDocId)"><i class="fa-solid fa-link"></i> Copy Quotation Link</button>
+      <button class="btn-whatsapp" onclick="sendOrderQuotationWhatsApp(viewingOrderDocId)"><i class="fa-brands fa-whatsapp"></i> Send Quotation via WhatsApp</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Convert Order → Application Modal ══ -->
+<div class="modal-overlay" id="convertOrderModal">
+  <div class="modal-box" style="width:420px;max-width:92vw;text-align:left">
+    <h3>Convert to Partner Application</h3>
+    <p style="font-size:13px;color:var(--text-muted);margin:10px 0 14px">Creates a pending application from this order's contact info so it can go through the normal approval flow (Applications tab).</p>
+    <div class="f-field"><label>Industry</label>
+      <select id="conv-industry"><option value="">— Select —</option></select>
+    </div>
+    <div class="modal-actions" style="margin-top:16px">
+      <button class="modal-cancel" onclick="closeConvertOrderModal()">Cancel</button>
+      <button class="modal-confirm" onclick="confirmConvertOrder()">Create Application</button>
     </div>
   </div>
 </div>
@@ -2295,9 +2313,12 @@ async function setOrderStatus(docId, status) {
   } catch(e) { toast('Update failed: ' + e.message, 'error'); }
 }
 
+let viewingOrderDocId = null;
+
 function viewOrder(docId) {
   const o = orders.find(x => x.docId === docId);
   if (!o) return;
+  viewingOrderDocId = docId;
   document.getElementById('ord-title').textContent = `Order — ${o.name || 'Unknown'}`;
   const items = Array.isArray(o.items) ? o.items : [];
   const fmt = n => '$' + (n || 0).toLocaleString();
@@ -2319,12 +2340,128 @@ function viewOrder(docId) {
       ${o.monthlyTotal ? `<div style="display:flex;justify-content:space-between"><span>Monthly retainer</span><strong>${fmt(o.monthlyTotal)}/mo</strong></div>` : ''}
       <div style="display:flex;justify-content:space-between;margin-top:6px;padding-top:8px;border-top:1px solid rgba(38,145,94,.15)"><span><strong>Total${o.monthlyTotal && o.oneTimeTotal ? ' (first month)' : ''}</strong></span><strong style="color:var(--green)">${fmt((o.oneTimeTotal || 0) + (o.monthlyTotal || 0))}</strong></div>
     </div>
+    <div style="font-size:12px;color:var(--text-dim);margin-top:12px">
+      ${o.clientReportId ? `Quotation generated · <a href="${escHtml(getQnClientReportLink(o.clientReportId))}" target="_blank" rel="noopener">open link</a>` : 'No quotation generated yet — use the buttons below.'}
+      ${o.convertedApplicationId ? '<br>Converted to a partner application — see the Applications tab.' : ''}
+    </div>
   `;
   document.getElementById('orderModal').classList.add('open');
 }
 
 function closeOrderModal() {
   document.getElementById('orderModal').classList.remove('open');
+  viewingOrderDocId = null;
+}
+
+/* ── Order → Quotation (reuses the same clientReports/report.html engine as the Questionnaire roadmap) ── */
+const ORDER_PHASE_LABELS = { 1: 'Brand & Authority', 2: 'Growth & Traffic', 3: 'Infrastructure & Scale' };
+
+function buildOrderClientSnapshot(o) {
+  const items = Array.isArray(o.items) ? o.items : [];
+  const phases = [1, 2, 3].map(ph => {
+    const rows = items.filter(it => it.phase === ph);
+    if (!rows.length) return null;
+    return {
+      phase: ph,
+      label: ORDER_PHASE_LABELS[ph] || '',
+      items: rows.map(it => ({ name: it.name || '', desc: '', price: it.price || 0, type: it.type || 'one-time' }))
+    };
+  }).filter(Boolean);
+  return {
+    title: 'Your Custom Quotation',
+    business: o.company || o.name || '',
+    intro: 'Thanks for building a plan with Fifteen! Here\'s a summary of the services you selected, ready for review.',
+    strengths: [],
+    needs: [],
+    phases,
+    nextSteps: [],
+    showPrices: true,
+    totals: { oneTime: o.oneTimeTotal || 0, monthly: o.monthlyTotal || 0 },
+    publishedAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+}
+
+async function generateOrderQuotation(docId, silent) {
+  const o = orders.find(x => x.docId === docId);
+  if (!o) return null;
+  if (!Array.isArray(o.items) || !o.items.length) { toast('This order has no services to quote', 'error'); return null; }
+  try {
+    const ref = o.clientReportId ? db.collection('clientReports').doc(o.clientReportId) : db.collection('clientReports').doc();
+    await ref.set(buildOrderClientSnapshot(o));
+    await db.collection('orders').doc(docId).update({ clientReportId: ref.id, quotedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    o.clientReportId = ref.id;
+    if (!silent) toast('✓ Quotation generated', 'success');
+    return getQnClientReportLink(ref.id);
+  } catch(e) { toast('Quotation failed: ' + e.message, 'error'); return null; }
+}
+
+async function copyOrderQuotationLink(docId) {
+  if (!docId) return;
+  const o = orders.find(x => x.docId === docId);
+  if (!o) return;
+  const link = o.clientReportId ? getQnClientReportLink(o.clientReportId) : await generateOrderQuotation(docId, true);
+  if (!link) return;
+  try {
+    await navigator.clipboard.writeText(link);
+    toast('✓ Quotation link copied', 'success');
+  } catch(e) { window.prompt('Copy the quotation link:', link); }
+  viewOrder(docId);
+}
+
+async function sendOrderQuotationWhatsApp(docId) {
+  if (!docId) return;
+  const o = orders.find(x => x.docId === docId);
+  if (!o) return;
+  const digits = (o.phone || '').replace(/[^\d]/g, '');
+  if (!digits) { toast('This order has no phone number on file', 'error'); return; }
+  const link = o.clientReportId ? getQnClientReportLink(o.clientReportId) : await generateOrderQuotation(docId, true);
+  if (!link) return;
+  const text = `Hi ${o.name || ''}! Thanks for building a plan with Fifteen. Here's your quotation:\n${link}\n\nLet us know if you'd like to move forward.\n— Fifteen`;
+  window.open(`https://wa.me/${digits}?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
+  viewOrder(docId);
+}
+
+/* ── Order → Application conversion ── */
+let convertingOrderId = null;
+
+function openConvertOrderModal(docId) {
+  if (!docId) return;
+  convertingOrderId = docId;
+  const sel = document.getElementById('conv-industry');
+  sel.innerHTML = '<option value="">— Select —</option>' + INDUSTRY_LIST.map(i => `<option value="${escHtml(i)}">${escHtml(i)}</option>`).join('');
+  document.getElementById('convertOrderModal').classList.add('open');
+}
+
+function closeConvertOrderModal() {
+  document.getElementById('convertOrderModal').classList.remove('open');
+  convertingOrderId = null;
+}
+
+async function confirmConvertOrder() {
+  const o = orders.find(x => x.docId === convertingOrderId);
+  if (!o) return;
+  const industry = document.getElementById('conv-industry').value;
+  if (!industry) { toast('Pick an industry', 'error'); return; }
+  try {
+    const ref = await db.collection('applications').add({
+      name: o.name || '',
+      email: o.email || '',
+      phone: o.phone || '',
+      website: '',
+      industry,
+      status: 'pending',
+      quizAnswers: {},
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    await db.collection('orders').doc(o.docId).update({
+      convertedApplicationId: ref.id,
+      convertedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    o.convertedApplicationId = ref.id;
+    closeConvertOrderModal();
+    closeOrderModal();
+    toast('✓ Converted — find it in the Applications tab', 'success');
+  } catch(e) { toast('Conversion failed: ' + e.message, 'error'); }
 }
 
 /* ══════════════════════════════════════════════
@@ -5106,6 +5243,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   document.getElementById('orderModal').addEventListener('click', e => {
     if (e.target === document.getElementById('orderModal')) closeOrderModal();
+  });
+  document.getElementById('convertOrderModal').addEventListener('click', e => {
+    if (e.target === document.getElementById('convertOrderModal')) closeConvertOrderModal();
   });
   document.getElementById('ticketModal').addEventListener('click', e => {
     if (e.target === document.getElementById('ticketModal')) closeTicketModal();
