@@ -1379,21 +1379,33 @@ auth?.onAuthStateChanged(async (user) => {
 
   currentUser = user;
 
-  // Verify customer exists in Firestore
-  try {
-    const doc = await db.collection('customers').doc(user.uid).get();
-    if (!doc.exists) {
-      showLogin();
-      showLoginError('Your account is not set up yet. Please contact support.');
-      await auth.signOut();
-      return;
+  // Verify customer exists in Firestore. A single automatic retry covers a
+  // transient network blip; if it still fails, sign out so the session
+  // never sits authenticated-but-stuck on the login screen with only a
+  // manual page refresh as the way out.
+  let doc;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      doc = await db.collection('customers').doc(user.uid).get();
+      break;
+    } catch(e) {
+      if (attempt === 1) {
+        showLogin();
+        showLoginError('Error loading your account. Please check your connection and try signing in again.');
+        await auth.signOut();
+        return;
+      }
+      await new Promise(r => setTimeout(r, 800));
     }
-    customerData = doc.data();
-  } catch(e) {
+  }
+
+  if (!doc.exists) {
     showLogin();
-    showLoginError('Error loading your account. Please try again.');
+    showLoginError('Your account is not set up yet. Please contact support.');
+    await auth.signOut();
     return;
   }
+  customerData = doc.data();
 
   showDashboard();
 });
@@ -2198,6 +2210,9 @@ async function loadServicesCatalog() {
     });
   } catch(e) {
     console.error('Error loading services:', e);
+    const select = document.getElementById('serviceSelect');
+    select.innerHTML = '<option value="">Failed to load services — try again</option>';
+    showToast('Could not load the service catalog. Please refresh and try again.', 'error');
   }
 }
 
@@ -2208,7 +2223,7 @@ document.getElementById('serviceSelect')?.addEventListener('change', function() 
     if (selected && selected.dataset.service) {
       const svc = JSON.parse(selected.dataset.service);
       document.getElementById('serviceDescription').innerHTML =
-        `<strong>${svc.name}</strong><br/>${svc.description}`;
+        `<strong>${esc(svc.name)}</strong><br/>${esc(svc.description)}`;
       container.style.display = 'block';
     }
   } else {

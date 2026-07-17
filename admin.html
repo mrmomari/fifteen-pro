@@ -870,15 +870,6 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
             <button class="form-save" onclick="changePassword()">Update Password</button>
           </div>
 
-          <div class="form-card" style="max-width:680px">
-            <div class="form-card-title">Partner Logins</div>
-            <div id="partnerList"></div>
-            <button class="as-add" onclick="addPartnerRow()"><i class="fa-solid fa-plus"></i> Add Partner</button>
-            <div style="margin-top:14px">
-              <button class="form-save" onclick="saveAccessSettings()">Save Access Settings</button>
-            </div>
-          </div>
-
           <div class="form-card" style="max-width:820px">
             <div class="form-card-title">Customers (Portal Users)</div>
             <div id="customerListWrap">
@@ -1546,8 +1537,6 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
    STATE
 ══════════════════════════════════════════════ */
 let db = null, storage = null, auth = null;
-const ADMIN_PASSWORD_DEFAULT = 'fifteen2025';
-let ADMIN_PASSWORD = ADMIN_PASSWORD_DEFAULT;
 let services = [];
 let applications = [];
 let pendingApproval = null; // { docId, name, email, industry }
@@ -1600,9 +1589,10 @@ function lockMins() { return Math.ceil((getAttempts().lock - Date.now()) / 60000
 /* ══════════════════════════════════════════════
    LOGIN / LOGOUT
    Admins sign in with Firebase Auth (email/password) and must
-   have a matching admins/{uid} doc in Firestore. The old
-   password-only check remains only as a fallback when Firebase
-   isn't configured (local development).
+   have a matching admins/{uid} doc in Firestore. There is no
+   password-only fallback — without Firebase there is no data to
+   show anyway, so a client-side-only login would be security
+   theater rather than a real fallback.
 ══════════════════════════════════════════════ */
 async function isAdminUser(uid) {
   if (!db || !uid) return false;
@@ -1614,36 +1604,24 @@ async function isAdminUser(uid) {
 
 async function doLogin() {
   if (isLocked()) { applyLockUI(); return; }
+  if (!auth) { loginFail('Could not connect to the service. Please try again later.', false); return; }
+
   const pw = document.getElementById('loginPw').value;
-
-  if (auth) {
-    const email = document.getElementById('loginEmail').value.trim();
-    if (!email || !pw) { loginFail('Enter your admin email and password.', false); return; }
-    try {
-      const cred = await auth.signInWithEmailAndPassword(email, pw);
-      if (!(await isAdminUser(cred.user.uid))) {
-        await auth.signOut();
-        loginFail('This account does not have admin access.');
-        return;
-      }
-      clearAttempts();
-      setSession();
-      document.getElementById('loginPw').value = '';
-      showDashboard();
-    } catch(e) {
-      loginFail('Incorrect email or password.');
+  const email = document.getElementById('loginEmail').value.trim();
+  if (!email || !pw) { loginFail('Enter your admin email and password.', false); return; }
+  try {
+    const cred = await auth.signInWithEmailAndPassword(email, pw);
+    if (!(await isAdminUser(cred.user.uid))) {
+      await auth.signOut();
+      loginFail('This account does not have admin access.');
+      return;
     }
-    return;
-  }
-
-  // Legacy fallback (Firebase unavailable)
-  if (pw === ADMIN_PASSWORD) {
     clearAttempts();
     setSession();
     document.getElementById('loginPw').value = '';
     showDashboard();
-  } else {
-    loginFail('Incorrect password.');
+  } catch(e) {
+    loginFail('Incorrect email or password.');
   }
 }
 
@@ -2656,17 +2634,12 @@ async function loadCustomers() {
 async function loadAllSettings() {
   if (!db) return;
   try {
-    const [compDoc, pricDoc, accDoc] = await Promise.all([
+    const [compDoc, pricDoc] = await Promise.all([
       db.collection('settings').doc('company').get(),
       db.collection('settings').doc('pricing').get(),
-      db.collection('settings').doc('access').get(),
     ]);
     if (compDoc.exists) fillCompanyForm(compDoc.data());
     if (pricDoc.exists) fillPricingForm(pricDoc.data());
-    if (accDoc.exists) {
-      const d = accDoc.data();
-      if (d.partnerLogins) renderPartnerRows(d.partnerLogins);
-    }
     await loadExpertise();
     await loadTeamMembers();
     await loadIndustryContacts();
@@ -2893,30 +2866,6 @@ async function saveServicesToCloud() {
 /* ══════════════════════════════════════════════
    ACCESS
 ══════════════════════════════════════════════ */
-function renderPartnerRows(list = []) {
-  document.getElementById('partnerList').innerHTML = '';
-  list.forEach(p => addPartnerRow(p));
-}
-
-function addPartnerRow(data = {}) {
-  const row = document.createElement('div');
-  row.className = 'drow';
-  row.innerHTML = `
-    <input type="text"     placeholder="Name"     value="${escHtml(data.name || '')}"     style="max-width:90px">
-    <input type="email"    placeholder="Email"    value="${escHtml(data.email || '')}">
-    <input type="password" placeholder="Password" value="${data.password || ''}" style="max-width:80px">
-    <button class="ddel" onclick="this.closest('.drow').remove()">&#10005;</button>
-  `;
-  document.getElementById('partnerList').appendChild(row);
-}
-
-function collectPartners() {
-  return Array.from(document.querySelectorAll('#partnerList .drow')).map(r => {
-    const ins = r.querySelectorAll('input');
-    return { name: ins[0].value.trim(), email: ins[1].value.trim(), password: ins[2].value };
-  }).filter(p => p.email);
-}
-
 async function changePassword() {
   const cur = document.getElementById('d-cur-pw').value;
   const nw  = document.getElementById('d-new-pw').value;
@@ -2924,33 +2873,18 @@ async function changePassword() {
   if (nw.length < 8) { toast('New password must be at least 8 characters', 'error'); return; }
   if (nw !== con)    { toast('Passwords do not match', 'error'); return; }
 
-  if (auth && auth.currentUser) {
-    try {
-      const credential = firebase.auth.EmailAuthProvider.credential(auth.currentUser.email, cur);
-      await auth.currentUser.reauthenticateWithCredential(credential);
-      await auth.currentUser.updatePassword(nw);
-    } catch(e) {
-      toast(e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential'
-        ? 'Current password incorrect' : 'Update failed: ' + e.message, 'error');
-      return;
-    }
-  } else {
-    if (cur !== ADMIN_PASSWORD) { toast('Current password incorrect', 'error'); return; }
-    ADMIN_PASSWORD = nw;
+  if (!auth || !auth.currentUser) { toast('Not connected — sign in again first', 'error'); return; }
+  try {
+    const credential = firebase.auth.EmailAuthProvider.credential(auth.currentUser.email, cur);
+    await auth.currentUser.reauthenticateWithCredential(credential);
+    await auth.currentUser.updatePassword(nw);
+  } catch(e) {
+    toast(e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential'
+      ? 'Current password incorrect' : 'Update failed: ' + e.message, 'error');
+    return;
   }
   ['d-cur-pw','d-new-pw','d-con-pw'].forEach(id => document.getElementById(id).value = '');
   toast('✓ Password updated', 'success');
-}
-
-async function saveAccessSettings() {
-  if (!db) { toast('Connect Firebase first', 'error'); return; }
-  try {
-    await db.collection('settings').doc('access').set({
-      partnerLogins: collectPartners(),
-      updatedAt: new Date().toISOString()
-    }, { merge: true });
-    toast('✓ Access settings saved', 'success');
-  } catch(e) { toast('Save failed: ' + e.message, 'error'); }
 }
 
 /* ══════════════════════════════════════════════
@@ -3079,7 +3013,7 @@ async function loadServiceMgmt() {
         `;
       });
     }
-  } catch(e) { console.error(e); }
+  } catch(e) { console.error(e); toast('Failed to load service assignments: ' + e.message, 'error'); }
 }
 
 let custServicesCache = {};
@@ -3491,7 +3425,7 @@ async function loadTasks() {
     taskCustomers = {};
     custSnap.docs.forEach(d => { taskCustomers[d.id] = d.data(); });
     allTasks = tasksSnap.docs.map(d => ({ docId: d.id, ...d.data() }));
-  } catch(e) { console.error(e); allTasks = []; }
+  } catch(e) { console.error(e); allTasks = []; toast('Failed to load tasks: ' + e.message, 'error'); }
 
   allTasks.sort((a, b) => {
     const da = a.dueDate ? (a.dueDate.toDate ? a.dueDate.toDate() : new Date(a.dueDate)) : null;
@@ -3987,7 +3921,7 @@ async function loadAuditLogs() {
         `;
       });
     }
-  } catch(e) { console.error(e); }
+  } catch(e) { console.error(e); toast('Failed to load audit logs: ' + e.message, 'error'); }
 }
 
 async function filterAuditLogs() {
@@ -4039,7 +3973,7 @@ async function loadNotifications() {
       recipientsDiv.innerHTML = '';
       (d.emailRecipients || []).forEach(email => addNotifEmail(email));
     }
-  } catch(e) { console.error(e); }
+  } catch(e) { console.error(e); toast('Failed to load notification settings: ' + e.message, 'error'); }
 }
 
 function addNotifEmail(email = '') {
@@ -4092,7 +4026,7 @@ async function loadQuestionnaires() {
     qnCustomers = {};
     custSnap.docs.forEach(d => { qnCustomers[d.id] = d.data(); });
     questionnaires = qnSnap.docs.map(d => ({ docId: d.id, ...d.data() }));
-  } catch(e) { console.error(e); questionnaires = []; }
+  } catch(e) { console.error(e); questionnaires = []; toast('Failed to load questionnaires: ' + e.message, 'error'); }
 
   const custSel = document.getElementById('qn-customer');
   const custCurrent = custSel.value;
