@@ -499,7 +499,7 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
         <div class="sb-divider"></div>
         <div class="sb-label">Settings</div>
         <nav class="sb-nav">
-          <button class="sb-tab" data-tab="company" data-group="company,pricing,services,expertise" onclick="switchTab('company')">
+          <button class="sb-tab" data-tab="company" data-group="company,pricing,services,expertise,vendors" onclick="switchTab('company')">
             <i class="fa-regular fa-building"></i> Site Content
           </button>
           <button class="sb-tab" data-tab="access" onclick="switchTab('access')">
@@ -738,6 +738,7 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
             <button class="subnav-pill" onclick="switchTab('pricing')">Pricing</button>
             <button class="subnav-pill" onclick="switchTab('services')">Catalog</button>
             <button class="subnav-pill" onclick="switchTab('expertise')">Expertise</button>
+            <button class="subnav-pill" onclick="switchTab('vendors')">Vendors</button>
           </div>
 
           <div class="form-card">
@@ -790,6 +791,7 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
             <button class="subnav-pill active" onclick="switchTab('pricing')">Pricing</button>
             <button class="subnav-pill" onclick="switchTab('services')">Catalog</button>
             <button class="subnav-pill" onclick="switchTab('expertise')">Expertise</button>
+            <button class="subnav-pill" onclick="switchTab('vendors')">Vendors</button>
           </div>
 
           <div class="form-card">
@@ -819,6 +821,7 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
             <button class="subnav-pill" onclick="switchTab('pricing')">Pricing</button>
             <button class="subnav-pill active" onclick="switchTab('services')">Catalog</button>
             <button class="subnav-pill" onclick="switchTab('expertise')">Expertise</button>
+            <button class="subnav-pill" onclick="switchTab('vendors')">Vendors</button>
           </div>
 
           <div class="form-card" style="max-width:820px">
@@ -886,6 +889,7 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
             <button class="subnav-pill" onclick="switchTab('pricing')">Pricing</button>
             <button class="subnav-pill" onclick="switchTab('services')">Catalog</button>
             <button class="subnav-pill active" onclick="switchTab('expertise')">Expertise</button>
+            <button class="subnav-pill" onclick="switchTab('vendors')">Vendors</button>
           </div>
           <div class="panel-sub">Manage the three team member profiles shown on the main site.</div>
 
@@ -929,6 +933,48 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
           </div>
 
           <button class="form-save" onclick="saveExpertise()">Save Expertise</button>
+        </div>
+
+        <!-- ═══ VENDORS PANEL ═══ -->
+        <div class="dash-panel" id="panel-vendors">
+          <div class="panel-heading">Site Content</div>
+          <div class="subnav">
+            <button class="subnav-pill" onclick="switchTab('company')">Company</button>
+            <button class="subnav-pill" onclick="switchTab('pricing')">Pricing</button>
+            <button class="subnav-pill" onclick="switchTab('services')">Catalog</button>
+            <button class="subnav-pill" onclick="switchTab('expertise')">Expertise</button>
+            <button class="subnav-pill active" onclick="switchTab('vendors')">Vendors</button>
+          </div>
+          <div class="panel-sub">Third-party vendors used to outsource services, and the markup rules applied when pricing their costs for a customer.</div>
+
+          <div class="form-card">
+            <div class="form-card-title">Markup Rules</div>
+            <p style="font-size:12px;color:var(--text-dim);margin:-6px 0 14px">Used by "Apply Rule-Based Markup" in a questionnaire report — service-level override wins over phase-level, which wins over the default.</p>
+            <div class="form-grid">
+              <div class="f-field"><label>Default Markup %</label><input id="mk-default" type="number" min="0" step="1" placeholder="30"></div>
+            </div>
+            <div class="form-grid">
+              <div class="f-field"><label>Phase 1 — Brand &amp; Authority %</label><input id="mk-phase-1" type="number" min="0" step="1" placeholder="Use default"></div>
+              <div class="f-field"><label>Phase 2 — Growth &amp; Traffic %</label><input id="mk-phase-2" type="number" min="0" step="1" placeholder="Use default"></div>
+              <div class="f-field"><label>Phase 3 — Infrastructure &amp; Scale %</label><input id="mk-phase-3" type="number" min="0" step="1" placeholder="Use default"></div>
+            </div>
+            <div class="f-field"><label>Per-Service Overrides</label>
+              <div id="mk-services-list" style="border:1px solid rgba(0,0,0,.12);border-radius:8px;max-height:220px;overflow-y:auto;background:#fff;padding:6px 0"></div>
+            </div>
+            <button class="form-save" onclick="saveMarkupRules()">Save Markup Rules</button>
+          </div>
+
+          <div class="form-card" style="max-width:900px">
+            <div class="form-card-title">Vendor Directory</div>
+            <div id="vendorListWrap"></div>
+            <button class="as-add" onclick="openVendorModal()"><i class="fa-solid fa-plus"></i> Add Vendor</button>
+          </div>
+
+          <div class="form-card" style="max-width:900px">
+            <div class="form-card-title">Portfolio Margin</div>
+            <p style="font-size:12px;color:var(--text-dim);margin:-6px 0 14px">Vendor cost vs. client price across every saved questionnaire report, so margin isn't only visible one report at a time.</p>
+            <div id="marginReportWrap"></div>
+          </div>
         </div>
 
         <!-- ═══ SERVICE MANAGEMENT PANEL ═══ -->
@@ -1529,6 +1575,30 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
   </div>
 </div>
 
+<!-- ══ Vendor (add/edit) ══ -->
+<div class="modal-overlay" id="vendorModal">
+  <div class="modal-box" style="width:460px;max-width:92vw;text-align:left">
+    <h3 id="vendor-modal-title">Add Vendor</h3>
+    <div class="f-field"><label>Name</label><input id="vd-name" placeholder="Studio XYZ"></div>
+    <div class="f-field"><label>Contact Email</label><input id="vd-email" type="email" placeholder="hello@studioxyz.com"></div>
+    <div class="f-field"><label>Contact Phone</label><input id="vd-phone" type="tel" placeholder="+1 555 123 4567"></div>
+    <div class="f-field"><label>Specialties (phases)</label>
+      <div style="display:flex;gap:14px;font-size:13px">
+        <label style="display:flex;align-items:center;gap:5px"><input type="checkbox" id="vd-phase-1"> Phase 1</label>
+        <label style="display:flex;align-items:center;gap:5px"><input type="checkbox" id="vd-phase-2"> Phase 2</label>
+        <label style="display:flex;align-items:center;gap:5px"><input type="checkbox" id="vd-phase-3"> Phase 3</label>
+      </div>
+    </div>
+    <div class="f-field"><label>Notes</label><textarea id="vd-notes" rows="3" placeholder="Strengths, past engagements, reliability…"></textarea></div>
+    <div class="f-field"><label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="vd-active" checked> Active</label></div>
+    <div class="modal-actions" style="margin-top:14px;flex-wrap:wrap">
+      <button class="modal-cancel" onclick="closeVendorModal()">Cancel</button>
+      <button id="vd-delete-btn" class="btn-reject" onclick="deleteVendor()" style="display:none">Delete</button>
+      <button class="modal-confirm" onclick="saveVendor()">Save Vendor</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ Customer 360 ══ -->
 <div class="modal-overlay" id="cust360Modal">
   <div class="modal-box" style="width:820px;max-width:94vw;max-height:90vh;overflow-y:auto;text-align:left">
@@ -1755,7 +1825,7 @@ function renderOverview() {
 /* ══════════════════════════════════════════════
    SIDEBAR TABS
 ══════════════════════════════════════════════ */
-const TABS = ['overview','applications','orders','tickets','access','services-mgmt','tasks','invoices','questionnaires','company','pricing','services','expertise','audit','notifications'];
+const TABS = ['overview','applications','orders','tickets','access','services-mgmt','tasks','invoices','questionnaires','company','pricing','services','expertise','vendors','audit','notifications'];
 
 function switchTab(name) {
   TABS.forEach(t => {
@@ -1779,6 +1849,7 @@ function switchTab(name) {
   if (name === 'questionnaires') loadQuestionnaires();
   if (name === 'audit') loadAuditLogs();
   if (name === 'notifications') loadNotifications();
+  if (name === 'vendors') { loadVendors(); loadMarkupRules(); renderMarginReport(); }
 }
 
 /* ══════════════════════════════════════════════
@@ -3141,6 +3212,251 @@ async function saveExpertise() {
     await AppUtils.logAudit(currentAdminIdentity(), 'update', 'team', 'content', {});
     toast('✓ Expertise saved', 'success');
   } catch(e) { toast('Save failed: ' + e.message, 'error'); }
+}
+
+/* ══════════════════════════════════════════════
+   VENDORS & MARKUP RULES
+   Vendor directory: persists contact/specialty info across engagements
+   instead of a disposable passcode link per report. Markup rules: a
+   configurable pct table (service override → phase override → default)
+   used by "Apply Rule-Based Markup" in a saved questionnaire report,
+   instead of only a manually-typed one-off %.
+══════════════════════════════════════════════ */
+let vendors = [];
+let editingVendorId = null;
+let markupRules = { defaultPct: 30, byPhase: {}, byService: {} };
+
+async function loadVendors() {
+  if (!db) return;
+  try {
+    const snap = await db.collection('vendors').orderBy('name').get().catch(() => db.collection('vendors').get());
+    vendors = snap.docs.map(d => ({ docId: d.id, ...d.data() }));
+  } catch(e) { vendors = []; toast('Failed to load vendors: ' + e.message, 'error'); }
+  renderVendorList();
+}
+
+function renderVendorList() {
+  const wrap = document.getElementById('vendorListWrap');
+  if (!wrap) return;
+  if (!vendors.length) {
+    wrap.innerHTML = '<div class="empty-state" style="padding:20px"><i class="fa-solid fa-truck-field"></i>No vendors yet — add one to start tracking outsourced costs and history.</div>';
+    return;
+  }
+  wrap.innerHTML = vendors.map(v => `
+    <div class="customer-row" style="cursor:pointer" onclick="openVendorModal('${v.docId}')" title="Edit vendor">
+      <div><div class="customer-name">${escHtml(v.name || 'Unnamed')}</div><div style="font-size:11px;color:var(--text-dim)">${(v.phases || []).map(p => 'Phase ' + p).join(', ') || 'No specialties set'}</div></div>
+      <div class="customer-email">${escHtml(v.email || '—')}</div>
+      <span class="customer-status">${v.active === false ? 'inactive' : 'active'}</span>
+    </div>
+  `).join('');
+}
+
+function openVendorModal(docId) {
+  editingVendorId = docId || null;
+  const v = docId ? vendors.find(x => x.docId === docId) : null;
+  document.getElementById('vendor-modal-title').textContent = v ? 'Edit Vendor' : 'Add Vendor';
+  document.getElementById('vd-name').value = (v && v.name) || '';
+  document.getElementById('vd-email').value = (v && v.email) || '';
+  document.getElementById('vd-phone').value = (v && v.phone) || '';
+  [1, 2, 3].forEach(p => { document.getElementById('vd-phase-' + p).checked = !!(v && (v.phases || []).includes(p)); });
+  document.getElementById('vd-notes').value = (v && v.notes) || '';
+  document.getElementById('vd-active').checked = !v || v.active !== false;
+  document.getElementById('vd-delete-btn').style.display = v ? '' : 'none';
+  document.getElementById('vendorModal').classList.add('open');
+}
+
+function closeVendorModal() {
+  document.getElementById('vendorModal').classList.remove('open');
+  editingVendorId = null;
+}
+
+let _savingVendor = false;
+async function saveVendor() {
+  if (!db) { toast('Firebase not connected', 'error'); return; }
+  if (_savingVendor) return;
+  const name = document.getElementById('vd-name').value.trim();
+  if (!name) { toast('Enter a vendor name', 'error'); return; }
+  _savingVendor = true;
+  try {
+    const data = {
+      name,
+      email: document.getElementById('vd-email').value.trim(),
+      phone: document.getElementById('vd-phone').value.trim(),
+      phases: [1, 2, 3].filter(p => document.getElementById('vd-phase-' + p).checked),
+      notes: document.getElementById('vd-notes').value.trim(),
+      active: document.getElementById('vd-active').checked,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    if (editingVendorId) {
+      await db.collection('vendors').doc(editingVendorId).update(data);
+      await AppUtils.logAudit(currentAdminIdentity(), 'update', editingVendorId, 'vendor', { name });
+    } else {
+      data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+      const ref = await db.collection('vendors').add(data);
+      await AppUtils.logAudit(currentAdminIdentity(), 'create', ref.id, 'vendor', { name });
+    }
+    toast('✓ Vendor saved', 'success');
+    closeVendorModal();
+    await loadVendors();
+  } catch(e) { toast('Save failed: ' + e.message, 'error'); }
+  finally { _savingVendor = false; }
+}
+
+function deleteVendor() {
+  if (!editingVendorId) return;
+  const docId = editingVendorId;
+  const v = vendors.find(x => x.docId === docId);
+  AppUtils.showConfirm('Delete Vendor', `Delete "${(v && v.name) || 'this vendor'}"? This does not affect any vendor cost sheets already sent using this vendor's info.`, async () => {
+    try {
+      await db.collection('vendors').doc(docId).delete();
+      await AppUtils.logAudit(currentAdminIdentity(), 'delete', docId, 'vendor', {});
+      toast('✓ Vendor deleted', 'success');
+      closeVendorModal();
+      await loadVendors();
+    } catch(e) { toast('Delete failed: ' + e.message, 'error'); }
+  });
+}
+
+/* ── Markup rules ── */
+async function loadMarkupRules() {
+  if (!db) return;
+  try {
+    const doc = await db.collection('settings').doc('markupRules').get();
+    markupRules = doc.exists ? Object.assign({ defaultPct: 30, byPhase: {}, byService: {} }, doc.data()) : { defaultPct: 30, byPhase: {}, byService: {} };
+  } catch(e) { toast('Failed to load markup rules: ' + e.message, 'error'); }
+  const defEl = document.getElementById('mk-default');
+  if (!defEl) return; // panel not in DOM yet on first call
+  defEl.value = markupRules.defaultPct ?? '';
+  [1, 2, 3].forEach(p => { document.getElementById('mk-phase-' + p).value = (markupRules.byPhase || {})[p] ?? ''; });
+  renderMarkupServicesList();
+}
+
+function renderMarkupServicesList() {
+  const wrap = document.getElementById('mk-services-list');
+  if (!wrap) return;
+  if (!services.length) { wrap.innerHTML = '<div style="padding:10px 12px;font-size:12px;color:var(--text-dim)">Catalog not loaded.</div>'; return; }
+  wrap.innerHTML = services.map(s => `
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 12px;font-size:13px;border-bottom:1px solid rgba(0,0,0,.05)">
+      <span>${escHtml(s.name)} <span style="font-size:10px;color:var(--text-dim)">· Phase ${s.phase}</span></span>
+      <input type="number" min="0" step="1" class="mk-svc-input" data-id="${s.id}" value="${(markupRules.byService || {})[s.id] ?? ''}" placeholder="Use phase/default" style="width:150px">
+    </div>
+  `).join('');
+}
+
+async function saveMarkupRules() {
+  if (!db) { toast('Firebase not connected', 'error'); return; }
+  try {
+    const byPhase = {};
+    [1, 2, 3].forEach(p => {
+      const v = document.getElementById('mk-phase-' + p).value;
+      if (v !== '') byPhase[p] = parseFloat(v);
+    });
+    const byService = {};
+    document.querySelectorAll('.mk-svc-input').forEach(inp => {
+      if (inp.value !== '') byService[inp.dataset.id] = parseFloat(inp.value);
+    });
+    markupRules = {
+      defaultPct: parseFloat(document.getElementById('mk-default').value) || 0,
+      byPhase, byService
+    };
+    await db.collection('settings').doc('markupRules').set({ ...markupRules, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    await AppUtils.logAudit(currentAdminIdentity(), 'update', 'markupRules', 'settings', {});
+    toast('✓ Markup rules saved', 'success');
+  } catch(e) { toast('Save failed: ' + e.message, 'error'); }
+}
+
+// Precedence: a specific service override beats its phase's override,
+// which beats the global default.
+function resolveMarkupPct(svc) {
+  if (!svc) return markupRules.defaultPct || 0;
+  const byService = markupRules.byService || {};
+  if (byService[svc.id] !== undefined && byService[svc.id] !== null && byService[svc.id] !== '') return byService[svc.id];
+  const byPhase = markupRules.byPhase || {};
+  if (byPhase[svc.phase] !== undefined && byPhase[svc.phase] !== null && byPhase[svc.phase] !== '') return byPhase[svc.phase];
+  return markupRules.defaultPct || 0;
+}
+
+async function applyRuleBasedMarkup() {
+  if (!qnReport) return;
+  await loadMarkupRules();
+  let n = 0;
+  qnReport.services.forEach(s => {
+    if (s.vendorCost != null) {
+      s.clientPrice = Math.round(s.vendorCost * (1 + resolveMarkupPct(s) / 100));
+      n++;
+    }
+  });
+  renderQnAnalysis();
+  toast(n ? `✓ Rule-based markup applied to ${n} service${n > 1 ? 's' : ''} — Save Report to persist` : 'No 3rd-party costs to mark up yet', n ? 'success' : 'error');
+}
+
+/* ── Portfolio margin report ── */
+async function renderMarginReport() {
+  const wrap = document.getElementById('marginReportWrap');
+  if (!wrap) return;
+  if (!db) { wrap.innerHTML = '<div class="empty-state" style="padding:16px">Firebase not connected.</div>'; return; }
+  wrap.innerHTML = '<div class="empty-state" style="padding:16px"><i class="fa-solid fa-spinner fa-spin"></i> Loading…</div>';
+  try {
+    const snap = await db.collection('qnReports').get();
+    let totalVendor = 0, totalClient = 0, reportCount = 0;
+    const byVendor = {}, byPhase = {};
+    snap.forEach(doc => {
+      const r = doc.data();
+      const svcs = Array.isArray(r.services) ? r.services : [];
+      let touched = false;
+      svcs.forEach(s => {
+        if (s.vendorCost == null) return;
+        touched = true;
+        const client = s.clientPrice != null ? s.clientPrice : s.vendorCost;
+        totalVendor += s.vendorCost;
+        totalClient += client;
+        const vName = r.vendorName || 'Unspecified';
+        byVendor[vName] = byVendor[vName] || { cost: 0, client: 0 };
+        byVendor[vName].cost += s.vendorCost;
+        byVendor[vName].client += client;
+        const ph = s.phase || 0;
+        byPhase[ph] = byPhase[ph] || { cost: 0, client: 0 };
+        byPhase[ph].cost += s.vendorCost;
+        byPhase[ph].client += client;
+      });
+      if (touched) reportCount++;
+    });
+    if (!reportCount) {
+      wrap.innerHTML = '<div class="empty-state" style="padding:16px"><i class="fa-solid fa-chart-line"></i>No vendor-costed reports yet.</div>';
+      return;
+    }
+    const margin = totalClient - totalVendor;
+    const marginPct = totalClient ? Math.round((margin / totalClient) * 100) : 0;
+    const fmt = n => '$' + Math.round(n).toLocaleString();
+    const kpi = (label, val) => `<div style="flex:1;min-width:120px;text-align:center;padding:10px 6px;background:rgba(255,255,255,.5);border-radius:8px">
+      <div style="font-size:18px;font-weight:800;color:var(--green)">${val}</div>
+      <div style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em">${label}</div>
+    </div>`;
+    const marginOf = v => v.client ? Math.round((v.client - v.cost) / v.client * 100) : 0;
+    const vendorRows = Object.entries(byVendor).sort((a, b) => b[1].client - a[1].client).map(([name, v]) => `
+      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(0,0,0,.05);font-size:12px">
+        <span>${escHtml(name)}</span>
+        <span>${fmt(v.cost)} cost → ${fmt(v.client)} billed <strong style="color:var(--green)">(${marginOf(v)}% margin)</strong></span>
+      </div>`).join('');
+    const phaseLabels = { 1: 'Phase 1', 2: 'Phase 2', 3: 'Phase 3' };
+    const phaseRows = Object.entries(byPhase).sort((a, b) => a[0] - b[0]).map(([ph, v]) => `
+      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(0,0,0,.05);font-size:12px">
+        <span>${phaseLabels[ph] || 'Phase ' + ph}</span>
+        <span>${fmt(v.cost)} cost → ${fmt(v.client)} billed <strong style="color:var(--green)">(${marginOf(v)}% margin)</strong></span>
+      </div>`).join('');
+    wrap.innerHTML = `
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+        ${kpi('Total Vendor Cost', fmt(totalVendor))}
+        ${kpi('Total Client Billed', fmt(totalClient))}
+        ${kpi('Margin', fmt(margin) + ' (' + marginPct + '%)')}
+        ${kpi('Reports w/ Costs', reportCount)}
+      </div>
+      <div style="font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);margin:10px 0 4px">By Vendor</div>
+      ${vendorRows || '<div style="font-size:12px;color:var(--text-dim)">—</div>'}
+      <div style="font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);margin:14px 0 4px">By Phase</div>
+      ${phaseRows || '<div style="font-size:12px;color:var(--text-dim)">—</div>'}
+    `;
+  } catch(e) { wrap.innerHTML = `<div class="empty-state" style="padding:16px"><i class="fa-solid fa-triangle-exclamation"></i>${escHtml(e.message)}</div>`; }
 }
 
 /* ══════════════════════════════════════════════
@@ -5016,9 +5332,13 @@ function qnaVendorCard() {
       <div style="font-size:12px;margin-top:4px"><strong>Passcode:</strong> <span style="font-weight:800;letter-spacing:.12em">${escHtml(r.vendorPasscode || '—')}</span>${r.vendorSubmittedAt ? ' · <strong>Submitted:</strong> ' + fmtDate(r.vendorSubmittedAt) : ''}</div>
       ${(r.vendorNote || '').trim() ? `<div style="font-size:12px;margin-top:6px;background:#fff;border-radius:7px;padding:8px 10px"><strong>Vendor note:</strong> ${escHtml(r.vendorNote)}</div>` : ''}
       <div style="display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap">
-        <span style="font-size:12px;font-weight:700">Markup vendor costs:</span>
+        <button type="button" class="btn-approve" onclick="applyRuleBasedMarkup()"><i class="fa-solid fa-wand-magic-sparkles"></i> Apply Rule-Based Markup</button>
+        <span style="font-size:11px;color:var(--text-dim)">Uses the configured markup rules (Site Content → Vendors) — service override, else phase, else default.</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap">
+        <span style="font-size:12px;font-weight:700">Or apply one flat %:</span>
         <input id="qnr-markup" type="number" step="1" placeholder="30" style="width:70px;padding:5px 7px;font-size:12px"> <span style="font-size:12px">%</span>
-        <button type="button" class="btn-approve" onclick="applyQnrMarkup()">Apply to Client Prices</button>
+        <button type="button" class="btn-reject" onclick="applyQnrMarkup()">Apply to Client Prices</button>
         <span style="font-size:11px;color:var(--text-dim)">Fills each client price with vendor cost + markup — adjust individual prices after.</span>
       </div>
     ` : `<div style="font-size:12px;color:var(--text-muted);margin-top:6px">Create a passcode-protected page listing the business name and the services below — no analysis, no your prices — and send it to your 3rd-party vendor. Their submitted costs load back into the 3rd-party column here so you can mark them up.</div>`}
@@ -5547,6 +5867,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   document.getElementById('cust360Modal').addEventListener('click', e => {
     if (e.target === document.getElementById('cust360Modal')) closeCustomer360();
+  });
+  document.getElementById('vendorModal').addEventListener('click', e => {
+    if (e.target === document.getElementById('vendorModal')) closeVendorModal();
   });
   document.getElementById('convertOrderModal').addEventListener('click', e => {
     if (e.target === document.getElementById('convertOrderModal')) closeConvertOrderModal();

@@ -197,6 +197,13 @@ service cloud.firestore {
                  .hasOnly(['costs', 'vendorName', 'vendorNote', 'status', 'submittedAt']));
     }
 
+    // ── Vendor directory (admin.html Vendors tab) ──
+    // Persistent vendor contact/specialty records — never exposed publicly
+    // (distinct from the disposable per-report vendorQuotes cost sheet link).
+    match /vendors/{id} {
+      allow read, write: if isAdmin();
+    }
+
     // ── Published client-facing roadmaps (report.html?cr=...) ──
     // Read-only snapshot of the polished engagement roadmap the admin
     // publishes and sends to the customer. Public get by direct id only.
