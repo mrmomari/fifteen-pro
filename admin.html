@@ -950,7 +950,10 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
             <div class="form-grid one">
               <div class="f-field"><label>Customer</label><select id="sm-customer" onchange="onSmCustomerChange()"></select></div>
               <div id="sm-suggested" style="font-size:11px;color:var(--text-dim);margin:-6px 0 2px"></div>
-              <div class="f-field"><label>Service</label><select id="sm-service"></select></div>
+              <div class="f-field"><label>Services</label>
+                <div id="sm-services" style="border:1px solid rgba(0,0,0,.12);border-radius:8px;max-height:200px;overflow-y:auto;background:#fff;padding:4px 0"></div>
+                <div style="font-size:11px;color:var(--text-dim);margin-top:4px">Check one or more — each becomes its own service assignment using the settings below.</div>
+              </div>
               <div class="f-field"><label>Status</label><select id="sm-status">
                 <option value="active">Active</option>
                 <option value="pending">Pending</option>
@@ -3014,15 +3017,15 @@ async function loadServiceMgmt() {
       custSelect.appendChild(opt);
     });
 
-    const svcSelect = document.getElementById('sm-service');
-    svcSelect.innerHTML = '<option value="">Select service...</option>';
+    const svcWrap = document.getElementById('sm-services');
     const svcData = services.data()?.items || services;
-    (Array.isArray(svcData) ? svcData : services.items || []).forEach(s => {
-      const opt = document.createElement('option');
-      opt.value = s.id;
-      opt.text = s.name;
-      svcSelect.appendChild(opt);
-    });
+    const svcList = Array.isArray(svcData) ? svcData : (services.items || []);
+    svcWrap.innerHTML = svcList.map(s => `
+      <label style="display:flex;align-items:center;gap:8px;padding:6px 12px;font-size:13px;border-bottom:1px solid rgba(0,0,0,.05);cursor:pointer">
+        <input type="checkbox" class="sm-svc-chk" value="${s.id}">
+        <span>${escHtml(s.name)} <span style="font-size:10px;color:var(--text-dim)">· Phase ${s.phase}</span></span>
+      </label>
+    `).join('') || '<div style="padding:10px 12px;font-size:12px;color:var(--text-dim)">No services in catalog.</div>';
 
     const tbody = document.getElementById('svcMgmtBody');
     tbody.innerHTML = '';
@@ -3099,12 +3102,12 @@ async function onSmCustomerChange() {
 async function assignService() {
   if (!db) { toast('Firebase not connected', 'error'); return; }
   const custId = document.getElementById('sm-customer').value;
-  const svcId = parseInt(document.getElementById('sm-service').value);
+  const svcIds = Array.from(document.querySelectorAll('#sm-services .sm-svc-chk:checked')).map(cb => parseInt(cb.value));
   const status = document.getElementById('sm-status').value || 'active';
   const start = document.getElementById('sm-start').value;
   const completion = document.getElementById('sm-completion').value;
   const notes = document.getElementById('sm-notes').value.trim();
-  if (!custId || !svcId || !start) { toast('Fill all fields', 'error'); return; }
+  if (!custId || !svcIds.length || !start) { toast('Pick a customer, at least one service, and a start date', 'error'); return; }
 
   try {
     const [custDoc, svcDoc] = await Promise.all([
@@ -3113,26 +3116,29 @@ async function assignService() {
     ]);
 
     if (!custDoc.exists) { toast('Customer not found', 'error'); return; }
-    const svc = (svcDoc.data()?.items || []).find(s => String(s.id) === String(svcId)) || { name: 'Unknown', phase: 1 };
+    const catalog = svcDoc.data()?.items || [];
 
-    await db.collection('customerServices').add({
-      userId: custId,
-      customerId: custId,
-      customerName: custDoc.data().name,
-      serviceId: svcId,
-      serviceName: svc.name,
-      phase: svc.phase,
-      status: status,
-      startDate: new Date(start),
-      completionDate: completion ? new Date(completion) : null,
-      milestones: [],
-      notes: notes,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+    await Promise.all(svcIds.map(svcId => {
+      const svc = catalog.find(s => String(s.id) === String(svcId)) || { name: 'Unknown', phase: 1 };
+      return db.collection('customerServices').add({
+        userId: custId,
+        customerId: custId,
+        customerName: custDoc.data().name,
+        serviceId: svcId,
+        serviceName: svc.name,
+        phase: svc.phase,
+        status: status,
+        startDate: new Date(start),
+        completionDate: completion ? new Date(completion) : null,
+        milestones: [],
+        notes: notes,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }));
 
-    toast('✓ Service assigned', 'success');
+    toast(`✓ ${svcIds.length} service${svcIds.length > 1 ? 's' : ''} assigned`, 'success');
     document.getElementById('sm-customer').value = '';
-    document.getElementById('sm-service').value = '';
+    document.querySelectorAll('#sm-services .sm-svc-chk:checked').forEach(cb => cb.checked = false);
     document.getElementById('sm-status').value = 'active';
     document.getElementById('sm-start').value = '';
     document.getElementById('sm-completion').value = '';
