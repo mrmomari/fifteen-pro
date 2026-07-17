@@ -948,7 +948,8 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
           <div class="form-card">
             <div class="form-card-title">Assign Service to Customer</div>
             <div class="form-grid one">
-              <div class="f-field"><label>Customer</label><select id="sm-customer"></select></div>
+              <div class="f-field"><label>Customer</label><select id="sm-customer" onchange="onSmCustomerChange()"></select></div>
+              <div id="sm-suggested" style="font-size:11px;color:var(--text-dim);margin:-6px 0 2px"></div>
               <div class="f-field"><label>Service</label><select id="sm-service"></select></div>
               <div class="f-field"><label>Status</label><select id="sm-status">
                 <option value="active">Active</option>
@@ -1297,8 +1298,9 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
     <div id="app-meta" style="font-size:12px;color:var(--text-muted);line-height:1.9;margin-top:10px"></div>
     <div style="font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);margin:18px 0 4px">Quiz Responses</div>
     <div id="app-answers"></div>
-    <div class="modal-actions" style="margin-top:18px">
+    <div class="modal-actions" style="margin-top:18px;flex-wrap:wrap">
       <button class="modal-cancel" onclick="closeApplicationModal()">Close</button>
+      <button class="btn-reject" onclick="openQuestionnaireBuilderFromApplication(viewingAppDocId)"><i class="fa-solid fa-clipboard-list"></i> Send Discovery Questionnaire</button>
       <button class="btn-whatsapp" onclick="sendApplicationWhatsApp(viewingAppDocId)">Send Report via WhatsApp</button>
     </div>
   </div>
@@ -3063,6 +3065,37 @@ async function loadServiceMgmt() {
 
 let custServicesCache = {};
 
+/* Looks up whether the selected customer's originating application ever
+   got a discovery questionnaire analyzed into a priced quote, and if so
+   surfaces its in-plan services as a hint — so assigning services here
+   can follow what was actually quoted instead of re-guessing. */
+async function onSmCustomerChange() {
+  const hint = document.getElementById('sm-suggested');
+  if (!hint) return;
+  hint.innerHTML = '';
+  const custId = document.getElementById('sm-customer').value;
+  if (!custId || !db) return;
+  try {
+    const custDoc = await db.collection('customers').doc(custId).get();
+    const appId = custDoc.exists ? custDoc.data().applicationId : null;
+    if (!appId) return;
+
+    const qnSnap = await db.collection('questionnaires').where('applicationId', '==', appId).get();
+    if (qnSnap.empty) return;
+    const qnDocs = qnSnap.docs.map(d => ({ docId: d.id, ...d.data() }));
+    qnDocs.sort((a, b) => {
+      const ta = a.completedAt?.toDate ? a.completedAt.toDate() : new Date(a.completedAt || a.createdAt || 0);
+      const tb = b.completedAt?.toDate ? b.completedAt.toDate() : new Date(b.completedAt || b.createdAt || 0);
+      return tb - ta;
+    });
+
+    const repSnap = await db.collection('qnReports').where('questionnaireId', '==', qnDocs[0].docId).limit(1).get();
+    if (repSnap.empty) return;
+    const names = (repSnap.docs[0].data().services || []).filter(s => s.inPlan !== false).map(s => s.name);
+    if (names.length) hint.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Suggested from their accepted quote: <strong>${escHtml(names.join(', '))}</strong>`;
+  } catch(e) { /* purely informational — fail silent */ }
+}
+
 async function assignService() {
   if (!db) { toast('Firebase not connected', 'error'); return; }
   const custId = document.getElementById('sm-customer').value;
@@ -3104,6 +3137,7 @@ async function assignService() {
     document.getElementById('sm-start').value = '';
     document.getElementById('sm-completion').value = '';
     document.getElementById('sm-notes').value = '';
+    document.getElementById('sm-suggested').innerHTML = '';
     await loadServiceMgmt();
   } catch(e) { toast('Assignment failed: ' + e.message, 'error'); }
 }
@@ -3949,6 +3983,7 @@ let questionnaires = [];
 let qnCustomers = {};
 let editingSections = [];
 let editingQnId = null;
+let editingApplicationId = null;
 let viewingQnDocId = null;
 
 async function loadQuestionnaires() {
@@ -4004,6 +4039,7 @@ function renderQnTable() {
 function openQuestionnaireBuilder(docId) {
   editingQnId = docId || null;
   const qn = docId ? questionnaires.find(q => q.docId === docId) : null;
+  editingApplicationId = (qn && qn.applicationId) || null;
 
   document.getElementById('qnBuilderTitle').textContent = qn ? 'Edit Questionnaire' : 'New Questionnaire';
   document.getElementById('qn-customer').value = (qn && qn.customerId) || '';
@@ -4015,9 +4051,24 @@ function openQuestionnaireBuilder(docId) {
   document.getElementById('qnBuilderModal').classList.add('open');
 }
 
+/* Opens the builder pre-filled for a partner application that hasn't
+   been approved yet (no customer account to link to), so its answers
+   can later be traced back to the application in Assign Service's
+   quote-suggestion lookup — see onSmCustomerChange(). */
+function openQuestionnaireBuilderFromApplication(appDocId) {
+  const app = applications.find(a => a.docId === appDocId);
+  if (!app) return;
+  openQuestionnaireBuilder(null);
+  editingApplicationId = appDocId;
+  document.getElementById('qn-business').value = app.name || '';
+  loadDiscoveryTemplate();
+  closeApplicationModal();
+}
+
 function closeQuestionnaireBuilder() {
   document.getElementById('qnBuilderModal').classList.remove('open');
   editingQnId = null;
+  editingApplicationId = null;
   editingSections = [];
 }
 
@@ -4142,6 +4193,7 @@ async function saveQuestionnaire() {
       customerId: custId || null,
       customerName: custId ? (qnCustomers[custId]?.name || '') : '',
       businessName,
+      applicationId: editingApplicationId || null,
       intro,
       sections
     };
