@@ -1557,6 +1557,7 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
     <div id="qna-meta" style="font-size:12px;color:var(--text-muted);margin:8px 0 12px;line-height:1.8"></div>
     <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
       <button type="button" id="qna-tab-internal" class="modal-confirm" style="flex:0 0 auto" onclick="setQnAnalysisMode('internal')"><i class="fa-solid fa-user-shield"></i> Internal Report</button>
+      <button type="button" id="qna-tab-pricing" class="modal-cancel" style="flex:0 0 auto" onclick="setQnAnalysisMode('pricing')"><i class="fa-solid fa-calculator"></i> Final Pricing</button>
       <button type="button" id="qna-tab-client" class="modal-cancel" style="flex:0 0 auto" onclick="setQnAnalysisMode('client')"><i class="fa-regular fa-handshake"></i> Client-Facing</button>
       <span style="flex:1 1 auto"></span>
       <button type="button" class="btn-reject" onclick="resetQnReportFromAnswers()" title="Rebuild the report from the questionnaire answers — keeps vendor costs, client prices and links"><i class="fa-solid fa-rotate-left"></i> Reset</button>
@@ -3414,7 +3415,7 @@ async function applyRuleBasedMarkup() {
   let n = 0;
   qnReport.services.forEach(s => {
     if (s.vendorCost != null) {
-      s.clientPrice = Math.round(s.vendorCost * (1 + resolveMarkupPct(s) / 100));
+      s.clientPrice = Math.round(effVendorCost(s) * (1 + resolveMarkupPct(s) / 100));
       n++;
     }
   });
@@ -5162,6 +5163,13 @@ function effClientPrice(s) {
   return s.clientPrice != null ? s.clientPrice : (s.catalogPrice || 0);
 }
 
+// Vendor cost after the Final Pricing tab's adjustment — the true cost
+// basis once the vendor's cost-sheet note (rush fee, exclusion, etc.) has
+// been reconciled into a number. Feeds both markup buttons and totals.
+function effVendorCost(s) {
+  return s.vendorCost != null ? s.vendorCost + (s.adjustment || 0) : null;
+}
+
 function reportFromAnalysis(a) {
   const svcs = [];
   [['priority', a.tiers.priority], ['recommended', a.tiers.recommended], ['later', a.tiers.later]].forEach(([tier, rows]) => {
@@ -5170,7 +5178,7 @@ function reportFromAnalysis(a) {
       phaseLabel: r.svc.phaseLabel || '', desc: r.svc.description || '',
       type: r.svc.type || 'one-time', tier, score: r.score,
       evidence: r.evidence || [], catalogPrice: r.svc.price || 0,
-      vendorCost: null, clientPrice: null, inPlan: tier !== 'later'
+      vendorCost: null, clientPrice: null, adjustment: null, adjustmentNote: '', inPlan: tier !== 'later'
     }));
   });
   return {
@@ -5228,7 +5236,7 @@ function qnrTotals() {
   qnrPlanServices().forEach(s => {
     const p = effClientPrice(s) || 0;
     if (s.type === 'monthly') monthly += p; else oneTime += p;
-    if (s.vendorCost != null) vendor += s.vendorCost;
+    if (s.vendorCost != null) vendor += effVendorCost(s);
   });
   return { oneTime, monthly, vendor };
 }
@@ -5315,9 +5323,10 @@ function qnaFactsEdit() {
 
 function qnaSvcEditRow(s, i) {
   let margin = '';
-  if (s.vendorCost != null && s.clientPrice != null) {
-    const diff = s.clientPrice - s.vendorCost;
-    const pct = s.vendorCost ? ` (${Math.round(diff / s.vendorCost * 100)}%)` : '';
+  const adjCost = effVendorCost(s);
+  if (adjCost != null && s.clientPrice != null) {
+    const diff = s.clientPrice - adjCost;
+    const pct = adjCost ? ` (${Math.round(diff / adjCost * 100)}%)` : '';
     margin = `<span style="font-size:11px;font-weight:700;white-space:nowrap;color:${diff >= 0 ? 'var(--green)' : '#c0392b'}">${diff >= 0 ? '+' : '−'}$${Math.abs(diff).toLocaleString()}${pct}</span>`;
   }
   return `<div style="background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:8px;padding:10px 12px;margin-bottom:6px">
@@ -5328,6 +5337,7 @@ function qnaSvcEditRow(s, i) {
       <label style="font-size:11px;color:#c0392b;font-weight:700;display:flex;align-items:center;gap:4px;white-space:nowrap">3rd-party $
         <input type="number" min="0" step="10" value="${s.vendorCost != null ? s.vendorCost : ''}" placeholder="—" style="width:84px;padding:5px 7px;font-size:12px" onchange="qnrSetSvc(${i},'vendorCost',this.value)">
       </label>
+      ${s.adjustment ? `<span style="font-size:10px;font-weight:800;color:var(--orange);white-space:nowrap" title="Set on the Final Pricing tab — reconciles the vendor's note into cost">adj ${s.adjustment > 0 ? '+' : ''}$${s.adjustment.toLocaleString()} → $${adjCost.toLocaleString()}</span>` : ''}
       <label style="font-size:11px;color:var(--green);font-weight:700;display:flex;align-items:center;gap:4px;white-space:nowrap">Client $
         <input type="number" min="0" step="10" value="${s.clientPrice != null ? s.clientPrice : ''}" placeholder="${s.catalogPrice || 0}" style="width:84px;padding:5px 7px;font-size:12px" onchange="qnrSetSvc(${i},'clientPrice',this.value)">
       </label>
@@ -5347,6 +5357,84 @@ function qnaSvcTier(tier, label, color) {
     <div style="font-size:11px;font-weight:800;color:${color};text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">${label}</div>
     ${rows.map(x => qnaSvcEditRow(x.s, x.i)).join('')}
   </div>`;
+}
+
+function qnrSetAdjustment(idx, value) {
+  const s = qnReport && qnReport.services && qnReport.services[idx];
+  if (!s) return;
+  const v = value === '' ? null : parseFloat(value);
+  s.adjustment = (v == null || isNaN(v)) ? null : v;
+  renderQnAnalysis();
+}
+
+function qnrSetAdjustmentNote(idx, value) {
+  const s = qnReport && qnReport.services && qnReport.services[idx];
+  if (s) s.adjustmentNote = value;
+}
+
+function qnaPricingRow(s, i) {
+  const adjCost = effVendorCost(s);
+  let margin = '';
+  if (adjCost != null && s.clientPrice != null) {
+    const diff = s.clientPrice - adjCost;
+    const pct = adjCost ? ` (${Math.round(diff / adjCost * 100)}%)` : '';
+    margin = `<span style="font-size:11px;font-weight:700;white-space:nowrap;color:${diff >= 0 ? 'var(--green)' : '#c0392b'}">${diff >= 0 ? '+' : '−'}$${Math.abs(diff).toLocaleString()}${pct}</span>`;
+  }
+  return `<div style="background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:8px;padding:10px 12px;margin-bottom:6px">
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <span style="font-size:10px;font-weight:800;color:var(--text-dim);flex-shrink:0">P${s.phase}</span>
+      <strong style="font-size:13px;flex:1;min-width:140px">${escHtml(s.name)}</strong>
+      <span style="font-size:11.5px;color:#c0392b;white-space:nowrap">Vendor $${s.vendorCost != null ? s.vendorCost.toLocaleString() : '—'}</span>
+      <label style="font-size:11px;color:var(--text-muted);font-weight:700;display:flex;align-items:center;gap:4px;white-space:nowrap">Adjustment $
+        <input type="number" step="10" value="${s.adjustment != null ? s.adjustment : ''}" placeholder="0" style="width:74px;padding:5px 7px;font-size:12px" onchange="qnrSetAdjustment(${i},this.value)">
+      </label>
+      <span style="font-size:11.5px;font-weight:800;color:var(--text);white-space:nowrap">= $${adjCost != null ? adjCost.toLocaleString() : '—'}</span>
+      <label style="font-size:11px;color:var(--green);font-weight:700;display:flex;align-items:center;gap:4px;white-space:nowrap">Client $
+        <input type="number" min="0" step="10" value="${s.clientPrice != null ? s.clientPrice : ''}" placeholder="${s.catalogPrice || 0}" style="width:84px;padding:5px 7px;font-size:12px" onchange="qnrSetSvc(${i},'clientPrice',this.value)">
+      </label>
+      ${margin}
+    </div>
+    <input value="${escHtml(s.adjustmentNote || '')}" placeholder="Why this adjustment — e.g. what the vendor's note said" style="width:100%;margin-top:6px;font-size:12px;padding:6px 8px" oninput="qnrSetAdjustmentNote(${i},this.value)">
+  </div>`;
+}
+
+function qnaPricingTab() {
+  const r = qnReport;
+  let html = `<div style="background:var(--cream-alt);border-radius:10px;padding:12px 14px;margin-bottom:14px">
+    <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em"><i class="fa-solid fa-calculator"></i> Final Pricing — internal working tool</div>
+    <div style="font-size:12px;color:var(--text-muted);margin-top:4px">Reconcile whatever the vendor wrote in their cost-sheet note (rush fees, exclusions, conditional pricing…) into an accurate per-service cost before you quote the customer. Never shown to them — only the resulting Client $ below carries over to the Engagement Roadmap.</div>
+    ${(r.vendorNote || '').trim() ? `<div style="font-size:12px;margin-top:8px;background:#fff;border-radius:7px;padding:8px 10px"><strong>Vendor note${r.vendorName ? ' — ' + escHtml(r.vendorName) : ''}:</strong> ${escHtml(r.vendorNote)}</div>` : '<div style="font-size:12px;color:var(--text-dim);margin-top:8px;font-style:italic">No vendor note on file for this cost sheet.</div>'}
+  </div>`;
+
+  const idxSvcs = qnReport.services.map((s, i) => ({ s, i }));
+  const svcs = idxSvcs.filter(x => x.s.inPlan !== false && (x.s.tier === 'priority' || x.s.tier === 'recommended'));
+  if (!svcs.length) {
+    html += '<div class="empty-state" style="padding:16px"><i class="fa-solid fa-calculator"></i>No services on the roadmap yet — add some from the Internal tab first.</div>';
+    return html;
+  }
+
+  html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+    <button type="button" class="btn-approve" onclick="applyRuleBasedMarkup()"><i class="fa-solid fa-wand-magic-sparkles"></i> Apply Rule-Based Markup</button>
+    <span style="font-size:11px;color:var(--text-dim)">Uses vendor cost + adjustment below, then the configured markup rules.</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+    <span style="font-size:12px;font-weight:700">Or apply one flat %:</span>
+    <input id="qnr-markup" type="number" step="1" placeholder="30" style="width:70px;padding:5px 7px;font-size:12px"> <span style="font-size:12px">%</span>
+    <button type="button" class="btn-reject" onclick="applyQnrMarkup()">Apply to Client Prices</button>
+  </div>`;
+
+  [1, 2, 3].forEach(ph => {
+    const rows = svcs.filter(x => x.s.phase === ph);
+    if (!rows.length) return;
+    html += `<div style="font-size:11px;font-weight:800;color:var(--green);text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px">Phase ${ph}${rows[0].s.phaseLabel ? ' — ' + escHtml(rows[0].s.phaseLabel) : ''}</div>`;
+    rows.forEach(({ s, i }) => { html += qnaPricingRow(s, i); });
+  });
+
+  const t = qnrTotals();
+  html += `<div style="background:var(--cream-alt);border-radius:8px;padding:10px 14px;font-size:13px;margin-top:4px">
+    <strong>Final proposal total</strong> (priority + recommended, client prices): $${t.oneTime.toLocaleString()} one-time${t.monthly ? ` + $${t.monthly.toLocaleString()}/month` : ''}${t.vendor ? ` · <span style="color:#c0392b">3rd-party cost basis incl. adjustments: $${t.vendor.toLocaleString()}</span>` : ''}
+  </div>`;
+  return html;
 }
 
 function qnaVendorCard() {
@@ -5433,12 +5521,15 @@ function renderQnAnalysis() {
   const r = qnReport;
   if (!r) return;
   const internal = qnAnalysisMode === 'internal';
+  const pricing = qnAnalysisMode === 'pricing';
+  const client = qnAnalysisMode === 'client';
   document.getElementById('qna-tab-internal').className = internal ? 'modal-confirm' : 'modal-cancel';
-  document.getElementById('qna-tab-client').className = internal ? 'modal-cancel' : 'modal-confirm';
-  document.getElementById('qna-title').textContent = internal ? `Analysis — ${r.business}` : `Engagement Roadmap — ${r.business}`;
-  document.getElementById('qna-wa-btn').innerHTML = internal
-    ? '<i class="fa-brands fa-whatsapp"></i> Send Summary'
-    : '<i class="fa-brands fa-whatsapp"></i> Send Roadmap to Customer';
+  document.getElementById('qna-tab-pricing').className = pricing ? 'modal-confirm' : 'modal-cancel';
+  document.getElementById('qna-tab-client').className = client ? 'modal-confirm' : 'modal-cancel';
+  document.getElementById('qna-title').textContent = client ? `Engagement Roadmap — ${r.business}` : pricing ? `Final Pricing — ${r.business}` : `Analysis — ${r.business}`;
+  document.getElementById('qna-wa-btn').innerHTML = client
+    ? '<i class="fa-brands fa-whatsapp"></i> Send Roadmap to Customer'
+    : '<i class="fa-brands fa-whatsapp"></i> Send Summary';
   document.getElementById('qna-meta').innerHTML = `
     <div><strong>Questionnaire:</strong> ${escHtml(r.qnTitle || 'Untitled')} · <strong>Answered:</strong> ${r.answered}/${r.total} (${r.pct}%)</div>
     <div><strong>Report:</strong> ${r.docId ? 'saved — everything below is editable, Save Report persists your changes' : '<span style="color:#c0392b;font-weight:700">not saved yet</span> — click Save Report to keep edits and enable links'}</div>`;
@@ -5469,6 +5560,8 @@ function renderQnAnalysis() {
     }
     html += qnaSectionTitle('Talking Points for the Call', 'talking');
     html += qnaEditList('talking', 'fa-comment-dots', 'var(--text-muted)');
+  } else if (pricing) {
+    html += qnaPricingTab();
   } else {
     html += qnaClientCard();
     html += qnaSectionTitle('Intro Message');
@@ -5530,7 +5623,12 @@ function resetQnReportFromAnswers() {
     });
     fresh.services.forEach(s => {
       const prev = (old.services || []).find(p => p.key === s.key);
-      if (prev) { s.vendorCost = prev.vendorCost != null ? prev.vendorCost : null; s.clientPrice = prev.clientPrice != null ? prev.clientPrice : null; }
+      if (prev) {
+        s.vendorCost = prev.vendorCost != null ? prev.vendorCost : null;
+        s.clientPrice = prev.clientPrice != null ? prev.clientPrice : null;
+        s.adjustment = prev.adjustment != null ? prev.adjustment : null;
+        s.adjustmentNote = prev.adjustmentNote || '';
+      }
     });
     qnReport = fresh;
     renderQnAnalysis();
@@ -5657,7 +5755,7 @@ function applyQnrMarkup() {
   if (isNaN(pct)) { toast('Enter a markup % first', 'error'); return; }
   let n = 0;
   qnReport.services.forEach(s => {
-    if (s.vendorCost != null) { s.clientPrice = Math.round(s.vendorCost * (1 + pct / 100)); n++; }
+    if (s.vendorCost != null) { s.clientPrice = Math.round(effVendorCost(s) * (1 + pct / 100)); n++; }
   });
   renderQnAnalysis();
   if (n) {
@@ -5725,7 +5823,7 @@ async function publishAndCopyQnClientLink() {
 /* ── Markdown export ── */
 function buildQnAnalysisMarkdown() {
   const r = qnReport;
-  const internal = qnAnalysisMode === 'internal';
+  const internal = qnAnalysisMode !== 'client'; // Final Pricing has no export view of its own — falls back to Internal
   const lines = [];
   const money = n => '$' + Number(n || 0).toLocaleString();
 
@@ -5744,7 +5842,7 @@ function buildQnAnalysisMarkdown() {
       lines.push(`### ${label}`, '');
       rows.forEach(s => {
         const bits = [`catalog ${money(s.catalogPrice)}${s.type === 'monthly' ? '/mo' : ''}`];
-        if (s.vendorCost != null) bits.push(`3rd-party ${money(s.vendorCost)}`);
+        if (s.vendorCost != null) bits.push(`3rd-party ${money(s.vendorCost)}${s.adjustment ? ` (adj ${s.adjustment > 0 ? '+' : ''}${money(s.adjustment)} → ${money(effVendorCost(s))})` : ''}`);
         if (s.clientPrice != null) bits.push(`client ${money(s.clientPrice)}${s.type === 'monthly' ? '/mo' : ''}`);
         lines.push(`- **${s.name}** (Phase ${s.phase} · ${bits.join(' · ')}) — ${s.desc || ''}`);
         (s.evidence || []).forEach(ev => lines.push(`  - _${ev}_`));
@@ -5784,7 +5882,7 @@ async function copyQnAnalysisMarkdown() {
   const md = buildQnAnalysisMarkdown();
   try {
     await navigator.clipboard.writeText(md);
-    toast(`✓ ${qnAnalysisMode === 'internal' ? 'Internal' : 'Client-facing'} markdown copied`, 'success');
+    toast(`✓ ${qnAnalysisMode === 'client' ? 'Client-facing' : 'Internal'} markdown copied`, 'success');
   } catch(e) {
     window.prompt('Copy the report:', md);
   }
