@@ -182,11 +182,19 @@ qnReports/{id}          — saved, editable analysis reports (admin-only; seeded
   questionnaireId, business, qnTitle, answered, total, pct
   facts, strengths, gaps, opps, risks, talking   — internal report content, all editable/deletable
   services: [{ key, id, name, phase, phaseLabel, desc, type, tier, score, evidence,
-               catalogPrice, vendorCost, clientPrice, inPlan }]
-    vendorCost  — 3rd-party cost (typed by admin or pulled from the linked vendorQuotes doc)
-    clientPrice — marked-up price the customer sees (manual, via a flat "Apply Markup %", or via
-                  "Apply Rule-Based Markup" using settings/markupRules)
-    inPlan      — false = removed from the client-facing roadmap (still visible internally)
+               catalogPrice, vendorCost, adjustment, adjustmentNote, clientPrice, inPlan }]
+    vendorCost     — 3rd-party cost (typed by admin or pulled from the linked vendorQuotes doc)
+    adjustment,
+    adjustmentNote — set on the Final Pricing tab (Analyze → Final Pricing) to reconcile whatever
+                     the vendor wrote in their cost-sheet note (rush fee, exclusion, conditional
+                     pricing…) into an actual number; adjustmentNote is the admin's free-text reason.
+                     vendorCost + adjustment is the "adjusted cost" both markup buttons (Apply
+                     Rule-Based Markup, Apply Markup %) and the investment-estimate totals use —
+                     internal only, never shown to the customer or exposed via report.html
+    clientPrice    — marked-up price the customer sees (manual, via a flat "Apply Markup %", or via
+                     "Apply Rule-Based Markup" using settings/markupRules, both computed from the
+                     adjusted cost above)
+    inPlan         — false = removed from the client-facing roadmap (still visible internally)
   clientIntro, clientStrengths, clientNeeds, clientNextSteps — client-facing content, independent copies
   vendorQuoteId, vendorPasscode, vendorStatus, vendorName, vendorNote, vendorSubmittedAt
   clientReportId, createdAt, updatedAt
@@ -293,8 +301,9 @@ auditLogs/{id}          — append-only action trail (admin.html Audit tab)
 1. Admin → Questionnaires → **Analyze** — first open seeds an editable report from the analyzer; every later open loads the saved `qnReports` doc instead (Reset rebuilds from the answers, keeping vendor costs/prices/links). Every line (facts, strengths, gaps, opportunities, risks, talking points) can be edited inline, added, or deleted; every service row can be deleted and has editable **3rd-party $** and **Client $** price fields next to the catalog price
 2. **Save Report** persists edits; **Open in New Tab** pops the current view (Internal or Client-Facing) full-screen via `report.html?rid=...`; **Export PDF** opens the same page with the print dialog
 3. Internal tab → **Create Vendor Link** builds a passcode-protected cost sheet (`vendorQuotes` + `report.html?vq=...`) showing the business name, questionnaire title, and service names/scopes (no analysis, no our prices) — Copy Link + Passcode or Send to Vendor via WhatsApp. Optionally link it to a saved `vendors/{id}` directory record (admin.html Vendors tab) instead of a one-off contact, so the vendor's info and engagement history persist across reports
-4. The 3rd party opens the link, enters the passcode, fills in their cost per service and submits (one-time; the sheet locks). **Refresh Costs** (also run automatically when the report opens) pulls the submitted numbers into the 3rd-party column
-5. Admin marks up: **Apply Rule-Based Markup** fills client price from vendor cost using the configured `settings/markupRules` (service override → phase override → default, edited in the Vendors tab), or type each Client $ by hand, or use the flat **Apply Markup %** — then fine-tune individual rows
+4. The 3rd party opens the link, enters the passcode, fills in their cost per service and submits (one-time; the sheet locks) — plus one free-text note for the whole submission (rush fees, exclusions, conditional pricing, etc.). **Refresh Costs** (also run automatically when the report opens) pulls the submitted numbers and note into the report
+4a. Internal tab → Analyze → **Final Pricing** tab — reconciles that note into the actual numbers: an editable **Adjustment $** + reason per service (added to the vendor's raw cost to get the "adjusted cost" — e.g. vendor wrote "+$300 if new domain needed", admin types +300 with that reason). Every downstream calculation (both markup buttons, the investment-estimate totals) uses vendor cost + adjustment, not the raw vendor cost — internal-only, never shown to the customer or exposed via report.html
+5. Admin marks up: **Apply Rule-Based Markup** fills client price from the adjusted cost using the configured `settings/markupRules` (service override → phase override → default, edited in the Vendors tab), or type each Client $ by hand, or use the flat **Apply Markup %** — then fine-tune individual rows
 6. Client-Facing tab → edit the intro/strengths/needs/next-steps, remove (and restore) services from the plan — prices shown are the marked-up client prices (catalog price when unset)
 7. **Publish & Copy Link** snapshots the roadmap to `clientReports` + `report.html?cr=...` (re-publish updates the same link), or **Send Roadmap to Customer** publishes and opens WhatsApp with the link — this is the engagement roadmap the customer receives
 8. Admin.html → Vendors tab → **Portfolio Margin** rolls up vendor cost vs. client price across every saved report, by vendor and by phase — a portfolio-wide view instead of only ever seeing margin one report at a time
