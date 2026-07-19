@@ -19,10 +19,22 @@ jobs:
       - uses: actions/checkout@v4
       - name: Write service account key
         run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > "$RUNNER_TEMP/fb-sa.json"
-      - name: Deploy Firestore rules and indexes
+      - name: Deploy Firestore rules
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/fb-sa.json
-        run: npx --yes firebase-tools@13 deploy --only firestore:rules,firestore:indexes --project fifteen-pro --non-interactive
+        run: npx --yes firebase-tools@13 deploy --only firestore:rules --project fifteen-pro --non-interactive
+      - name: Deploy Firestore indexes
+        # Kept as a separate, non-blocking step: the deploy service account may
+        # not have Firestore index-management permissions, and a missing index
+        # permission shouldn't prevent the more urgent Firestore rules (deployed
+        # above) from going out. If this step fails with a 403 on
+        # collectionGroups/{name}/indexes, grant the service account the
+        # "Cloud Datastore Index Admin" IAM role in Google Cloud Console → IAM,
+        # then re-run this workflow.
+        continue-on-error: true
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/fb-sa.json
+        run: npx --yes firebase-tools@13 deploy --only firestore:indexes --project fifteen-pro --non-interactive
       - name: Deploy Storage rules
         # Kept as a separate, non-blocking step: the deploy service account may
         # only have Hosting-deploy permissions today (Storage deploy needs the
