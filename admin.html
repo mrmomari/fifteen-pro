@@ -1642,6 +1642,46 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
   </div>
 </div>
 
+<div class="modal-overlay" id="contractTemplateModal">
+  <div class="modal-box modal-box-full" style="overflow-y:auto;text-align:left">
+    <h3 id="tpl-modal-title">New Contract Template</h3>
+    <div class="form-grid" style="margin-top:14px">
+      <div class="f-field"><label>Template Name</label><input id="tpl-name" placeholder="e.g. Digital Marketing Services Agreement"></div>
+      <div class="f-field"><label>Type</label>
+        <select id="tpl-type"><option value="customer">Customer Agreement</option><option value="vendor">Vendor Agreement</option></select>
+      </div>
+    </div>
+    <div class="f-field"><label>Recitals / Intro</label><textarea id="tpl-intro" rows="3" placeholder="WHEREAS Client desires to engage Provider..."></textarea></div>
+
+    <div style="display:flex;gap:10px;align-items:center;margin:16px 0 12px;flex-wrap:wrap">
+      <button type="button" class="btn-reject" onclick="loadSampleContractTemplate()"><i class="fa-solid fa-file-import"></i> Load Sample Agreement</button>
+      <span style="font-size:11px;color:var(--text-dim)">Pre-fills the Digital Marketing Services Agreement sample — edit or delete anything before saving.</span>
+    </div>
+
+    <div class="form-card-title" style="margin-top:10px">Scope of Services &amp; Delivery Timeline</div>
+    <div id="tplDeliverablesWrap"></div>
+    <button type="button" class="btn-approve" onclick="addTplDeliverable()">+ Add Deliverable</button>
+
+    <div class="form-card-title" style="margin-top:18px">Compensation</div>
+    <div class="form-grid">
+      <div class="f-field"><label>Fees Summary</label><input id="tpl-comp-summary" placeholder="e.g. $450/mo (Months 1-3), $350/mo (Month 4+)"></div>
+      <div class="f-field"><label>Term</label><input id="tpl-comp-term" placeholder="e.g. Initial 3-month term, auto-renewing"></div>
+      <div class="f-field"><label>Invoicing</label><input id="tpl-comp-invoicing" placeholder="e.g. Invoiced 1st of month, net-5"></div>
+      <div class="f-field"><label>Late Fees</label><input id="tpl-comp-latefees" placeholder="e.g. $25 after the 10th"></div>
+    </div>
+
+    <div class="form-card-title" style="margin-top:18px">Contract Sections</div>
+    <div id="tplSectionsWrap"></div>
+    <button type="button" class="btn-approve" style="margin-top:4px" onclick="addTplSection()">+ Add Section</button>
+
+    <div class="modal-actions" style="margin-top:18px;flex-wrap:wrap">
+      <button class="modal-cancel" onclick="closeContractTemplateModal()">Cancel</button>
+      <button id="tpl-delete-btn" class="btn-reject" onclick="deleteContractTemplate()" style="display:none">Delete</button>
+      <button class="modal-confirm" onclick="saveContractTemplate()">Save Template</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ Customer 360 ══ -->
 <div class="modal-overlay" id="cust360Modal">
   <div class="modal-box" style="width:820px;max-width:94vw;max-height:90vh;overflow-y:auto;text-align:left">
@@ -5027,6 +5067,128 @@ function setContractsView(view) {
   if (view === 'templates' && !contractTemplates.length) loadContractTemplates();
 }
 
+async function loadContractTemplates() {
+  if (!db) return;
+  try {
+    const snap = await db.collection('contractTemplates').orderBy('name').get().catch(() => db.collection('contractTemplates').get());
+    contractTemplates = snap.docs.map(d => ({ docId: d.id, ...d.data() }));
+  } catch(e) { contractTemplates = []; toast('Failed to load contract templates: ' + e.message, 'error'); }
+  renderContractTemplateList();
+}
+
+function renderContractTemplateList() {
+  const wrap = document.getElementById('contractTemplateListWrap');
+  if (!wrap) return;
+  if (!contractTemplates.length) {
+    wrap.innerHTML = '<div class="empty-state" style="padding:20px"><i class="fa-solid fa-file-signature"></i>No templates yet — create one or load the sample agreement.</div>';
+    return;
+  }
+  wrap.innerHTML = contractTemplates.map(t => `
+    <div class="customer-row" style="cursor:pointer" onclick="openContractTemplateModal('${t.docId}')" title="Edit template">
+      <div><div class="customer-name">${escHtml(t.name || 'Untitled')}</div><div style="font-size:11px;color:var(--text-dim)">${(t.deliverables || []).length} deliverable${(t.deliverables || []).length === 1 ? '' : 's'} · ${(t.sections || []).length} section${(t.sections || []).length === 1 ? '' : 's'}</div></div>
+      <div class="customer-email"><span class="status-badge ${t.type === 'vendor' ? 'status-pending' : 'status-approved'}">${escHtml(t.type || 'customer')}</span></div>
+    </div>
+  `).join('');
+}
+
+function renderTplBuilder() {
+  const secWrap = document.getElementById('tplSectionsWrap');
+  secWrap.innerHTML = editingTplSections.map((sec, i) => `
+    <div class="form-card" style="margin-bottom:10px">
+      <div class="f-field"><label>Section ${i + 1} Title</label><input value="${escHtml(sec.title)}" oninput="editingTplSections[${i}].title = this.value"></div>
+      <div class="f-field" style="margin-bottom:0"><label>Section Body</label><textarea rows="4" oninput="editingTplSections[${i}].body = this.value">${escHtml(sec.body)}</textarea></div>
+      <button type="button" class="btn-reject" style="margin-top:8px" onclick="editingTplSections.splice(${i},1); renderTplBuilder();">Remove Section</button>
+    </div>
+  `).join('');
+
+  const delivWrap = document.getElementById('tplDeliverablesWrap');
+  delivWrap.innerHTML = editingTplDeliverables.map((d, i) => `
+    <div class="form-card" style="margin-bottom:10px">
+      <div class="form-grid">
+        <div class="f-field"><label>Deliverable</label><input value="${escHtml(d.label)}" oninput="editingTplDeliverables[${i}].label = this.value"></div>
+        <div class="f-field"><label>Timeline / Due Rule</label><input placeholder="e.g. Within 7 Business Days of Effective Date" value="${escHtml(d.dueRule)}" oninput="editingTplDeliverables[${i}].dueRule = this.value"></div>
+      </div>
+      <div class="f-field" style="margin-bottom:0"><label>Detail</label><input value="${escHtml(d.detail)}" oninput="editingTplDeliverables[${i}].detail = this.value"></div>
+      <button type="button" class="btn-reject" style="margin-top:8px" onclick="editingTplDeliverables.splice(${i},1); renderTplBuilder();">Remove Deliverable</button>
+    </div>
+  `).join('');
+}
+
+function addTplSection() { editingTplSections.push({ title: '', body: '' }); renderTplBuilder(); }
+function addTplDeliverable() { editingTplDeliverables.push({ id: 'd' + Date.now() + Math.random().toString(36).slice(2, 6), label: '', detail: '', dueRule: '' }); renderTplBuilder(); }
+
+function openContractTemplateModal(docId) {
+  editingContractTemplateId = docId || null;
+  const t = docId ? contractTemplates.find(x => x.docId === docId) : null;
+  document.getElementById('tpl-modal-title').textContent = t ? 'Edit Contract Template' : 'New Contract Template';
+  document.getElementById('tpl-name').value = (t && t.name) || '';
+  document.getElementById('tpl-type').value = (t && t.type) || 'customer';
+  document.getElementById('tpl-intro').value = (t && t.intro) || '';
+  document.getElementById('tpl-comp-summary').value = (t && t.compensation && t.compensation.summary) || '';
+  document.getElementById('tpl-comp-term').value = (t && t.compensation && t.compensation.term) || '';
+  document.getElementById('tpl-comp-invoicing').value = (t && t.compensation && t.compensation.invoicing) || '';
+  document.getElementById('tpl-comp-latefees').value = (t && t.compensation && t.compensation.lateFees) || '';
+  editingTplSections = t ? JSON.parse(JSON.stringify(t.sections || [])) : [];
+  editingTplDeliverables = t ? JSON.parse(JSON.stringify(t.deliverables || [])) : [];
+  document.getElementById('tpl-delete-btn').style.display = t ? '' : 'none';
+  renderTplBuilder();
+  document.getElementById('contractTemplateModal').classList.add('open');
+}
+
+function closeContractTemplateModal() {
+  document.getElementById('contractTemplateModal').classList.remove('open');
+  editingContractTemplateId = null; editingTplSections = []; editingTplDeliverables = [];
+}
+
+async function saveContractTemplate() {
+  if (!db) { toast('Firebase not connected', 'error'); return; }
+  const name = document.getElementById('tpl-name').value.trim();
+  if (!name) { toast('Enter a template name', 'error'); return; }
+  const payload = {
+    name,
+    type: document.getElementById('tpl-type').value === 'vendor' ? 'vendor' : 'customer',
+    intro: document.getElementById('tpl-intro').value.trim(),
+    sections: editingTplSections.filter(s => s.title.trim()).map(s => ({ title: s.title.trim(), body: s.body.trim() })),
+    deliverables: editingTplDeliverables.filter(d => d.label.trim()).map(d => ({ id: d.id, label: d.label.trim(), detail: (d.detail || '').trim(), dueRule: (d.dueRule || '').trim() })),
+    compensation: {
+      summary: document.getElementById('tpl-comp-summary').value.trim(),
+      term: document.getElementById('tpl-comp-term').value.trim(),
+      invoicing: document.getElementById('tpl-comp-invoicing').value.trim(),
+      lateFees: document.getElementById('tpl-comp-latefees').value.trim()
+    }
+  };
+  try {
+    if (editingContractTemplateId) {
+      payload.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+      await db.collection('contractTemplates').doc(editingContractTemplateId).update(payload);
+      await AppUtils.logAudit(currentAdminIdentity(), 'update', editingContractTemplateId, 'contractTemplate', { name });
+    } else {
+      payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+      payload.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+      const ref = await db.collection('contractTemplates').add(payload);
+      await AppUtils.logAudit(currentAdminIdentity(), 'create', ref.id, 'contractTemplate', { name });
+    }
+    toast('✓ Template saved', 'success');
+    closeContractTemplateModal();
+    await loadContractTemplates();
+  } catch(e) { toast('Save failed: ' + e.message, 'error'); }
+}
+
+function deleteContractTemplate() {
+  if (!editingContractTemplateId) return;
+  const docId = editingContractTemplateId;
+  const t = contractTemplates.find(x => x.docId === docId);
+  AppUtils.showConfirm('Delete Template', `Delete "${(t && t.name) || 'this template'}"? This does not affect any contracts already generated from it.`, async () => {
+    try {
+      await db.collection('contractTemplates').doc(docId).delete();
+      await AppUtils.logAudit(currentAdminIdentity(), 'delete', docId, 'contractTemplate', {});
+      toast('✓ Template deleted', 'success');
+      closeContractTemplateModal();
+      await loadContractTemplates();
+    } catch(e) { toast('Delete failed: ' + e.message, 'error'); }
+  });
+}
+
 /* ══════════════════════════════════════════════
    QUESTIONNAIRE ANALYSIS ENGINE
    Rule-based sales/service-fit analyzer. Works on ANY questionnaire
@@ -6077,6 +6239,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   document.getElementById('vendorModal').addEventListener('click', e => {
     if (e.target === document.getElementById('vendorModal')) closeVendorModal();
+  });
+  document.getElementById('contractTemplateModal').addEventListener('click', e => {
+    if (e.target === document.getElementById('contractTemplateModal')) closeContractTemplateModal();
   });
   document.getElementById('convertOrderModal').addEventListener('click', e => {
     if (e.target === document.getElementById('convertOrderModal')) closeConvertOrderModal();
