@@ -1682,6 +1682,37 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
   </div>
 </div>
 
+<div class="modal-overlay" id="contractModal">
+  <div class="modal-box modal-box-full" style="overflow-y:auto;text-align:left">
+    <h3 id="cb-modal-title">New Contract</h3>
+    <div class="form-grid" style="margin-top:14px">
+      <div class="f-field"><label>Template</label><select id="cb-template" onchange="onContractTemplateSelectChange()"></select></div>
+      <div class="f-field"><label>Type</label><div id="cb-type" style="padding:11px 0;font-size:13.5px;font-weight:700;color:var(--text-dim)">—</div></div>
+    </div>
+    <div class="form-grid">
+      <div class="f-field"><label>Contract Title</label><input id="cb-title" placeholder="e.g. Digital Marketing Services Agreement"></div>
+      <div class="f-field"><label>Effective Date</label><input id="cb-effective-date" type="date"></div>
+    </div>
+
+    <div class="form-card-title" style="margin-top:14px">Counterparty</div>
+    <div class="form-grid">
+      <div class="f-field"><label>Existing Record</label><select id="cb-counterparty" onchange="onContractCounterpartySelectChange()"></select></div>
+      <div class="f-field"><label>Name</label><input id="cb-cp-name" placeholder="Legal name"></div>
+      <div class="f-field"><label>Email</label><input id="cb-cp-email" type="email"></div>
+      <div class="f-field"><label>Phone</label><input id="cb-cp-phone" type="tel"></div>
+    </div>
+    <div class="f-field"><label>Address</label><input id="cb-cp-address" placeholder="Street, City, State ZIP"></div>
+
+    <div class="form-card-title" style="margin-top:14px">Delivery Timeline</div>
+    <div id="cb-deliverables"></div>
+
+    <div class="modal-actions" style="margin-top:18px;flex-wrap:wrap">
+      <button class="modal-cancel" onclick="closeContractModal()">Cancel</button>
+      <button class="modal-confirm" onclick="saveContract()">Save Contract</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ Customer 360 ══ -->
 <div class="modal-overlay" id="cust360Modal">
   <div class="modal-box" style="width:820px;max-width:94vw;max-height:90vh;overflow-y:auto;text-align:left">
@@ -5250,6 +5281,250 @@ function deleteContractTemplate() {
   });
 }
 
+async function loadContracts() {
+  if (!db) return;
+  try {
+    const [ctSnap, custList] = await Promise.all([
+      db.collection('contracts').orderBy('createdAt', 'desc').limit(500).get().catch(() => db.collection('contracts').limit(500).get()),
+      getAllCustomers()
+    ]);
+    contractCustomersCache = {};
+    custList.forEach(c => { contractCustomersCache[c.docId] = c; });
+    contracts = ctSnap.docs.map(d => ({ docId: d.id, ...d.data() }));
+  } catch(e) { contracts = []; toast('Failed to load contracts: ' + e.message, 'error'); }
+  if (!contractTemplates.length) await loadContractTemplates();
+  renderContractsTable();
+}
+
+function contractStatusBadgeClass(status) {
+  if (status === 'executed') return 'status-approved';
+  if (status === 'sent' || status === 'signed') return 'status-pending';
+  return 'status-rejected'; // draft, terminated
+}
+
+function renderContractsTable() {
+  const tbody = document.getElementById('contractsTableBody');
+  if (!contracts.length) {
+    tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><i class="fa-solid fa-file-signature"></i>No contracts yet — create one from a template.</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = '';
+  contracts.forEach(c => {
+    const row = tbody.insertRow();
+    row.innerHTML = `
+      <td>${escHtml(c.title || 'Untitled')}</td>
+      <td><span class="status-badge ${c.type === 'vendor' ? 'status-pending' : 'status-approved'}">${escHtml(c.type || 'customer')}</span></td>
+      <td>${escHtml(c.counterpartyName || '—')}</td>
+      <td><span class="status-badge ${contractStatusBadgeClass(c.status)}">${escHtml(c.status || 'draft')}</span></td>
+      <td class="td-date">${c.effectiveDate ? escHtml(c.effectiveDate) : '—'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn-approve" onclick="window.open(getContractLink('${c.docId}'), '_blank', 'noopener')">View</button>
+        ${c.status === 'draft' || c.status === 'sent' ? `<button class="btn-reject" onclick="openContractModal('${c.docId}')">Edit</button>` : ''}
+        <button class="btn-reject" onclick="copyContractLink('${c.docId}')">Copy Link</button>
+        <button class="btn-reject" onclick="sendContractWhatsApp('${c.docId}')"><i class="fa-brands fa-whatsapp"></i></button>
+        ${c.counterpartySignature && (!c.providerSignature || !c.providerSignature.name) ? `<button class="btn-approve" onclick="countersignContract('${c.docId}')">Countersign</button>` : ''}
+        ${c.status === 'executed' ? `<button class="btn-reject" onclick="terminateContract('${c.docId}')">Terminate</button>` : ''}
+        <button class="btn-reject" onclick="deleteContract('${c.docId}')"><i class="fa-solid fa-trash"></i></button>
+      </td>
+    `;
+  });
+}
+
+function renderContractDeliverablesEditor() {
+  const wrap = document.getElementById('cb-deliverables');
+  wrap.innerHTML = editingContractDeliverables.map((d, i) => `
+    <div class="form-card" style="margin-bottom:8px">
+      <div style="font-size:13px;font-weight:700">${escHtml(d.label)}</div>
+      <div style="font-size:11.5px;color:var(--text-dim);margin-bottom:8px">${escHtml(d.detail || '')} — ${escHtml(d.dueRule || '')}</div>
+      <div class="form-grid">
+        <div class="f-field"><label>Due Date</label><input type="date" value="${escHtml(d.dueDate || '')}" onchange="editingContractDeliverables[${i}].dueDate = this.value"></div>
+        <div class="f-field"><label>Status</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;margin-top:10px">
+            <input type="checkbox" ${d.delivered ? 'checked' : ''} onchange="editingContractDeliverables[${i}].delivered = this.checked"> Delivered
+          </label>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function onContractTemplateSelectChange() {
+  const tplId = document.getElementById('cb-template').value;
+  const t = contractTemplates.find(x => x.docId === tplId);
+  if (!t) return;
+  document.getElementById('cb-title').value = t.name;
+  document.getElementById('cb-type').textContent = t.type === 'vendor' ? 'Vendor Agreement' : 'Customer Agreement';
+  editingContractSections = JSON.parse(JSON.stringify(t.sections || []));
+  editingContractDeliverables = (t.deliverables || []).map(d => ({ ...d, dueDate: '', delivered: false }));
+  editingContractIntro = t.intro || '';
+  editingContractCompensation = JSON.parse(JSON.stringify(t.compensation || {}));
+  editingContractType = t.type === 'vendor' ? 'vendor' : 'customer';
+  populateContractCounterpartySelect();
+  renderContractDeliverablesEditor();
+}
+
+function populateContractCounterpartySelect() {
+  const sel = document.getElementById('cb-counterparty');
+  if (editingContractType === 'vendor') {
+    sel.innerHTML = '<option value="">One-off vendor (type details below)</option>' +
+      vendors.map(v => `<option value="${v.docId}">${escHtml(v.name || 'Unnamed')}</option>`).join('');
+  } else {
+    sel.innerHTML = '<option value="">Prospect / one-off (type details below)</option>' +
+      Object.keys(contractCustomersCache).map(id => `<option value="${id}">${escHtml(contractCustomersCache[id].name || 'Unknown')}</option>`).join('');
+  }
+}
+
+function onContractCounterpartySelectChange() {
+  const id = document.getElementById('cb-counterparty').value;
+  if (!id) return;
+  if (editingContractType === 'vendor') {
+    const v = vendors.find(x => x.docId === id);
+    if (v) {
+      document.getElementById('cb-cp-name').value = v.name || '';
+      document.getElementById('cb-cp-email').value = v.email || '';
+      document.getElementById('cb-cp-phone').value = v.phone || '';
+    }
+  } else {
+    const c = contractCustomersCache[id];
+    if (c) {
+      document.getElementById('cb-cp-name').value = c.name || '';
+      document.getElementById('cb-cp-email').value = c.email || '';
+    }
+  }
+}
+
+async function openContractModal(docId) {
+  editingContractId = docId || null;
+  if (!contractTemplates.length) await loadContractTemplates();
+  if (!vendors.length) await loadVendors();
+  const c = docId ? contracts.find(x => x.docId === docId) : null;
+  document.getElementById('cb-modal-title').textContent = c ? 'Edit Contract' : 'New Contract';
+
+  const tplSel = document.getElementById('cb-template');
+  tplSel.innerHTML = contractTemplates.map(t => `<option value="${t.docId}">${escHtml(t.name)} (${t.type})</option>`).join('');
+  tplSel.disabled = !!c;
+
+  if (c) {
+    editingContractType = c.type || 'customer';
+    editingContractSections = JSON.parse(JSON.stringify(c.sections || []));
+    editingContractDeliverables = JSON.parse(JSON.stringify(c.deliverables || []));
+    editingContractIntro = c.intro || '';
+    editingContractCompensation = JSON.parse(JSON.stringify(c.compensation || {}));
+    tplSel.value = c.templateId || '';
+    document.getElementById('cb-title').value = c.title || '';
+    document.getElementById('cb-type').textContent = c.type === 'vendor' ? 'Vendor Agreement' : 'Customer Agreement';
+    document.getElementById('cb-effective-date').value = c.effectiveDate || '';
+    populateContractCounterpartySelect();
+    document.getElementById('cb-counterparty').value = c.customerId || c.vendorId || '';
+    document.getElementById('cb-cp-name').value = c.counterpartyName || '';
+    document.getElementById('cb-cp-address').value = c.counterpartyAddress || '';
+    document.getElementById('cb-cp-email').value = c.counterpartyEmail || '';
+    document.getElementById('cb-cp-phone').value = c.counterpartyPhone || '';
+    renderContractDeliverablesEditor();
+  } else {
+    editingContractSections = []; editingContractDeliverables = []; editingContractIntro = ''; editingContractCompensation = {};
+    document.getElementById('cb-title').value = '';
+    document.getElementById('cb-type').textContent = '—';
+    document.getElementById('cb-effective-date').value = '';
+    document.getElementById('cb-counterparty').innerHTML = '<option value="">Select a template first</option>';
+    document.getElementById('cb-cp-name').value = '';
+    document.getElementById('cb-cp-address').value = '';
+    document.getElementById('cb-cp-email').value = '';
+    document.getElementById('cb-cp-phone').value = '';
+    document.getElementById('cb-deliverables').innerHTML = '';
+    if (tplSel.options.length) { tplSel.selectedIndex = 0; onContractTemplateSelectChange(); }
+  }
+
+  document.getElementById('contractModal').classList.add('open');
+}
+
+function closeContractModal() {
+  document.getElementById('contractModal').classList.remove('open');
+  editingContractId = null;
+}
+
+async function saveContract() {
+  if (!db) { toast('Firebase not connected', 'error'); return; }
+  const title = document.getElementById('cb-title').value.trim();
+  if (!title) { toast('Enter a contract title', 'error'); return; }
+  const cpName = document.getElementById('cb-cp-name').value.trim();
+  if (!cpName) { toast('Enter the counterparty name', 'error'); return; }
+  const tplId = document.getElementById('cb-template').value;
+  const tpl = contractTemplates.find(t => t.docId === tplId);
+  const cpSelectId = document.getElementById('cb-counterparty').value || null;
+
+  const payload = {
+    templateId: tplId || (editingContractId ? contracts.find(c => c.docId === editingContractId).templateId : null),
+    templateName: (tpl && tpl.name) || (editingContractId ? contracts.find(c => c.docId === editingContractId).templateName : ''),
+    type: editingContractType,
+    customerId: editingContractType === 'customer' ? cpSelectId : null,
+    vendorId: editingContractType === 'vendor' ? cpSelectId : null,
+    counterpartyName: cpName,
+    counterpartyAddress: document.getElementById('cb-cp-address').value.trim(),
+    counterpartyEmail: document.getElementById('cb-cp-email').value.trim(),
+    counterpartyPhone: document.getElementById('cb-cp-phone').value.trim(),
+    title,
+    effectiveDate: document.getElementById('cb-effective-date').value || '',
+    intro: editingContractIntro,
+    sections: editingContractSections,
+    deliverables: editingContractDeliverables,
+    compensation: editingContractCompensation
+  };
+
+  try {
+    if (editingContractId) {
+      payload.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+      await db.collection('contracts').doc(editingContractId).update(payload);
+      await AppUtils.logAudit(currentAdminIdentity(), 'update', editingContractId, 'contract', { title });
+      toast('✓ Contract updated', 'success');
+    } else {
+      payload.status = 'draft';
+      payload.providerSignature = null;
+      payload.counterpartySignature = null;
+      payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+      payload.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+      const ref = await db.collection('contracts').add(payload);
+      await AppUtils.logAudit(currentAdminIdentity(), 'create', ref.id, 'contract', { title });
+      toast('✓ Contract created — copy its link to send it', 'success');
+    }
+    closeContractModal();
+    await loadContracts();
+  } catch(e) { toast('Save failed: ' + e.message, 'error'); }
+}
+
+function deleteContract(docId) {
+  const c = contracts.find(x => x.docId === docId);
+  AppUtils.showConfirm('Delete Contract', `Delete "${(c && c.title) || 'this contract'}"? This cannot be undone.`, async () => {
+    try {
+      await db.collection('contracts').doc(docId).delete();
+      await AppUtils.logAudit(currentAdminIdentity(), 'delete', docId, 'contract', {});
+      toast('✓ Contract deleted', 'success');
+      await loadContracts();
+    } catch(e) { toast('Delete failed: ' + e.message, 'error'); }
+  });
+}
+
+function getContractLink(docId) {
+  return new URL('contract.html?id=' + encodeURIComponent(docId), location.href).href;
+}
+
+async function copyContractLink(docId) {
+  const link = getContractLink(docId);
+  try {
+    await navigator.clipboard.writeText(link);
+    toast('✓ Link copied', 'success');
+  } catch(e) {
+    window.prompt('Copy this link:', link);
+  }
+  const c = contracts.find(x => x.docId === docId);
+  if (c && (!c.status || c.status === 'draft')) {
+    try {
+      await db.collection('contracts').doc(docId).update({ status: 'sent', sentAt: firebase.firestore.FieldValue.serverTimestamp() });
+      await loadContracts();
+    } catch(e) { /* link is already copied either way */ }
+  }
+}
+
 /* ══════════════════════════════════════════════
    QUESTIONNAIRE ANALYSIS ENGINE
    Rule-based sales/service-fit analyzer. Works on ANY questionnaire
@@ -6303,6 +6578,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   document.getElementById('contractTemplateModal').addEventListener('click', e => {
     if (e.target === document.getElementById('contractTemplateModal')) closeContractTemplateModal();
+  });
+  document.getElementById('contractModal').addEventListener('click', e => {
+    if (e.target === document.getElementById('contractModal')) closeContractModal();
   });
   document.getElementById('convertOrderModal').addEventListener('click', e => {
     if (e.target === document.getElementById('convertOrderModal')) closeConvertOrderModal();
