@@ -5525,6 +5525,43 @@ async function copyContractLink(docId) {
   }
 }
 
+async function countersignContract(docId) {
+  const c = contracts.find(x => x.docId === docId);
+  if (!c) return;
+  const name = window.prompt('Type the full name to countersign as (Service Provider):', (auth && auth.currentUser && auth.currentUser.email) || '');
+  if (!name || !name.trim()) return;
+  const title = window.prompt('Title (optional):', '') || '';
+  try {
+    const providerSignature = { name: name.trim(), title: title.trim(), signedAt: firebase.firestore.FieldValue.serverTimestamp() };
+    const newStatus = (c.counterpartySignature && c.counterpartySignature.name) ? 'executed' : 'signed';
+    await db.collection('contracts').doc(docId).update({ providerSignature, status: newStatus });
+    await AppUtils.logAudit(currentAdminIdentity(), 'update', docId, 'contract', { action: 'countersign' });
+    toast(newStatus === 'executed' ? '✓ Contract fully executed' : '✓ Countersigned — awaiting counterparty signature', 'success');
+    await loadContracts();
+  } catch(e) { toast('Countersign failed: ' + e.message, 'error'); }
+}
+
+function terminateContract(docId) {
+  const c = contracts.find(x => x.docId === docId);
+  AppUtils.showConfirm('Terminate Contract', `Mark "${(c && c.title) || 'this contract'}" as terminated?`, async () => {
+    try {
+      await db.collection('contracts').doc(docId).update({ status: 'terminated' });
+      await AppUtils.logAudit(currentAdminIdentity(), 'update', docId, 'contract', { action: 'terminate' });
+      toast('✓ Contract marked terminated', 'success');
+      await loadContracts();
+    } catch(e) { toast('Failed: ' + e.message, 'error'); }
+  });
+}
+
+function sendContractWhatsApp(docId) {
+  const c = contracts.find(x => x.docId === docId);
+  if (!c) return;
+  const digits = (c.counterpartyPhone || '').replace(/[^\d]/g, '');
+  if (!digits) { toast('This contract has no counterparty phone number on file', 'error'); return; }
+  const text = `Hi${c.counterpartyName ? ' ' + c.counterpartyName : ''}! Please review and sign your agreement with Fifteen here:\n${getContractLink(docId)}\n\nLet us know if you have any questions before signing.\n— Fifteen`;
+  window.open(`https://wa.me/${digits}?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
+}
+
 /* ══════════════════════════════════════════════
    QUESTIONNAIRE ANALYSIS ENGINE
    Rule-based sales/service-fit analyzer. Works on ANY questionnaire
