@@ -478,6 +478,9 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
           <button class="sb-tab" data-tab="questionnaires" onclick="switchTab('questionnaires')">
             <i class="fa-solid fa-list-ol"></i> Questionnaires
           </button>
+          <button class="sb-tab" data-tab="contracts" onclick="switchTab('contracts')">
+            <i class="fa-solid fa-file-signature"></i> Contracts
+          </button>
         </nav>
 
         <div class="sb-divider"></div>
@@ -1205,6 +1208,43 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
           </div>
         </div>
 
+        <!-- ═══ CONTRACTS PANEL ═══ -->
+        <div class="dash-panel" id="panel-contracts">
+          <div class="panel-heading">Contracts</div>
+          <div class="panel-sub">Build reusable contract templates, then generate a signed engagement for a customer or a 3rd-party vendor — each side signs via its own link, no login required.</div>
+
+          <div style="display:flex;gap:8px;margin-bottom:16px">
+            <button class="subnav-pill" id="ctViewBtn-list" onclick="setContractsView('list')">Contracts</button>
+            <button class="subnav-pill" id="ctViewBtn-templates" onclick="setContractsView('templates')">Templates</button>
+          </div>
+
+          <div id="contractsListView">
+            <div class="form-card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+              <div style="font-size:12.5px;color:var(--text-dim);max-width:520px">Every contract is generated from a template, then customized per engagement — parties, effective date, delivery dates, and every clause can be edited before sending.</div>
+              <button class="form-save" style="margin:0" onclick="openContractModal()"><i class="fa-solid fa-plus"></i> New Contract</button>
+            </div>
+            <div class="data-table-wrap">
+              <table class="data-table" id="contractsTable">
+                <thead><tr><th>Title</th><th>Type</th><th>Counterparty</th><th>Status</th><th>Effective Date</th><th>Actions</th></tr></thead>
+                <tbody id="contractsTableBody">
+                  <tr><td colspan="6"><div class="empty-state"><i class="fa-solid fa-file-signature"></i>Loading contracts…</div></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="contractsTemplatesView" style="display:none">
+            <div class="form-card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+              <div style="font-size:12.5px;color:var(--text-dim);max-width:520px">Templates define the default clauses, delivery timeline, and compensation terms for a contract type — build from scratch or load the sample agreement.</div>
+              <button class="form-save" style="margin:0" onclick="openContractTemplateModal()"><i class="fa-solid fa-plus"></i> New Template</button>
+            </div>
+            <div class="form-card" style="max-width:900px">
+              <div class="form-card-title">Contract Templates</div>
+              <div id="contractTemplateListWrap"></div>
+            </div>
+          </div>
+        </div>
+
         <!-- ═══ AUDIT LOGS PANEL ═══ -->
         <div class="dash-panel" id="panel-audit">
           <div class="panel-heading">System</div>
@@ -1828,7 +1868,7 @@ function renderOverview() {
 /* ══════════════════════════════════════════════
    SIDEBAR TABS
 ══════════════════════════════════════════════ */
-const TABS = ['overview','applications','orders','tickets','access','services-mgmt','tasks','invoices','questionnaires','company','pricing','services','expertise','vendors','audit','notifications'];
+const TABS = ['overview','applications','orders','tickets','access','services-mgmt','tasks','invoices','questionnaires','contracts','company','pricing','services','expertise','vendors','audit','notifications'];
 
 function switchTab(name) {
   TABS.forEach(t => {
@@ -1850,6 +1890,7 @@ function switchTab(name) {
   if (name === 'tasks') loadTasks();
   if (name === 'invoices') loadInvoices();
   if (name === 'questionnaires') loadQuestionnaires();
+  if (name === 'contracts') loadContracts();
   if (name === 'audit') loadAuditLogs();
   if (name === 'notifications') loadNotifications();
   if (name === 'vendors') { loadVendors(); loadMarkupRules(); renderMarginReport(); }
@@ -4958,6 +4999,32 @@ function deleteQuestionnaire(docId) {
       await loadQuestionnaires();
     } catch(e) { toast('Delete failed: ' + e.message, 'error'); }
   });
+}
+
+/* ══════════════════════════════════════════════
+   CONTRACTS
+══════════════════════════════════════════════ */
+let contractTemplates = [];
+let contracts = [];
+let editingContractTemplateId = null;
+let editingTplSections = [];
+let editingTplDeliverables = [];
+let editingContractId = null;
+let editingContractSections = [];
+let editingContractDeliverables = [];
+let editingContractIntro = '';
+let editingContractCompensation = {};
+let editingContractType = 'customer';
+let contractCustomersCache = {};
+let contractsView = 'list';
+
+function setContractsView(view) {
+  contractsView = view;
+  document.getElementById('contractsListView').style.display = view === 'list' ? 'block' : 'none';
+  document.getElementById('contractsTemplatesView').style.display = view === 'templates' ? 'block' : 'none';
+  document.getElementById('ctViewBtn-list').classList.toggle('active', view === 'list');
+  document.getElementById('ctViewBtn-templates').classList.toggle('active', view === 'templates');
+  if (view === 'templates' && !contractTemplates.length) loadContractTemplates();
 }
 
 /* ══════════════════════════════════════════════
