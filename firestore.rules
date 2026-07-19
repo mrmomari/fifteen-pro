@@ -227,6 +227,35 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    // ── Contract templates (admin.html Contracts tab) ──
+    // Reusable contract templates (customer- or vendor-facing) that seed
+    // new contract instances. Never exposed publicly — distinct from the
+    // per-engagement contracts collection below.
+    match /contractTemplates/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    // ── Contracts (admin.html Contracts tab + contract.html) ──
+    // A contract instance sent to a customer or a 3rd-party vendor for
+    // signature. Public get-by-id (same link-trust model as questionnaires/
+    // vendorQuotes — the link itself is the secret, and the collection
+    // can't be listed or browsed). The counterparty may sign exactly once
+    // via a restricted update; the provider (admin) countersigns in-app
+    // and may otherwise edit/delete freely.
+    match /contracts/{id} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin()
+        || (resource.data.counterpartySignature == null
+            && request.resource.data.counterpartySignature is map
+            && request.resource.data.counterpartySignature.keys().hasOnly(['name','title','signedAt'])
+            && request.resource.data.counterpartySignature.name is string
+            && request.resource.data.counterpartySignature.name.size() > 0
+            && request.resource.data.counterpartySignature.name.size() <= 200
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['counterpartySignature','status']));
+    }
+
     // ── Audit logs (append-only) ──
     // Non-admins may only create the one legitimate self-service entry
     // shape (portal.html's "requested a service" log) — arbitrary
