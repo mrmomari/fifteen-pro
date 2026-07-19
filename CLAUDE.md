@@ -20,6 +20,7 @@ B2B digital solutions website for **15fifteen15 / Fifteen**. One partner per ind
 | `shop.html` | Interactive service configurator / quote builder |
 | `questionnaire.html` | Public, no-login discovery questionnaire form — opened via a unique `?id=` link admin.html generates per customer (admin.html Questionnaires tab) |
 | `report.html` | Public report pages: `?vq=` passcode-protected 3rd-party vendor cost sheet, `?cr=` published client engagement roadmap, `?rid=&view=internal\|client` admin-only pop-out of a saved analysis report (requires admin sign-in in the same browser), `?qid=` raw completed-questionnaire Q&A (public get-by-id, same link-trust model as `questionnaire.html?id=`); `&print=1` auto-opens the print dialog (used by admin.html's Export PDF buttons) |
+| `contract.html` | Public contract review + signing page: `?id=` opens a customer- or vendor-facing contract instance (no login), shows parties/recitals/delivery timeline/compensation/clauses, and lets the counterparty type-sign it (name + timestamp); `&print=1` auto-opens the print dialog |
 | `firebase-config.js` | Firebase project credentials (project: `fifteen-pro`) |
 | `backend-config.js` | Optional backend service URL (`apiUrl`, empty = disabled) — see `server/README.md`. Contains no secrets, safe to commit like `firebase-config.js` |
 | `app.js` | Shared admin.html utilities (`AppUtils`: HTML escaping, audit logging, confirm-modal helper) |
@@ -91,6 +92,31 @@ vendors/{id}            — persistent vendor directory (admin.html Vendors tab)
   createdAt, updatedAt
   — distinct from vendorQuotes below: this is a reusable contact record; vendorQuotes is the disposable
     per-engagement passcode-protected cost sheet. vendorQuotes.vendorId can optionally link back here.
+
+contractTemplates/{id}   — reusable contract templates (admin.html Contracts tab → Templates)
+  name, type: 'customer' | 'vendor'
+  intro                    — recitals/whereas prose
+  sections: [{ title, body }]                        — numbered prose clauses
+  deliverables: [{ id, label, detail, dueRule }]      — Scope of Services / SLA timeline defaults
+  compensation: { summary, term, invoicing, lateFees }
+  createdAt, updatedAt
+  — Never exposed publicly; seeds new contracts/{id} instances. Includes a built-in
+    "Load Sample Agreement" template (Digital Marketing Services Agreement) as a starting point.
+
+contracts/{id}           — one per engagement, behind contract.html?id=... (admin.html Contracts tab)
+  templateId, templateName — snapshot of the template used
+  type: 'customer' | 'vendor'
+  customerId, vendorId     — optional link to customers/{uid} or vendors/{id} (mutually exclusive by type)
+  counterpartyName, counterpartyAddress, counterpartyEmail, counterpartyPhone
+  title, effectiveDate     — effectiveDate is 'YYYY-MM-DD'
+  intro, sections: [{ title, body }], compensation: { summary, term, invoicing, lateFees }  — editable snapshot from the template
+  deliverables: [{ id, label, detail, dueRule, dueDate, delivered }]  — dueDate/delivered are set per engagement
+  status: 'draft' | 'sent' | 'signed' | 'executed' | 'terminated'
+  providerSignature: { name, title, signedAt } | null   — set by admin in-app (Countersign button)
+  counterpartySignature: { name, title, signedAt } | null — set via the public contract.html link, one time only
+  createdAt, sentAt, updatedAt
+  — firestore.rules: public get by direct id (same link-trust model as questionnaires/vendorQuotes); the
+    counterparty may write counterpartySignature exactly once (blocked once already set), admins may do anything.
 
 customerTimeline/{customerId}/events/{id} — per-customer activity feed, maintained by the optional backend
                            service (server/) via onSnapshot listeners on tickets/invoices/tasks/
@@ -308,8 +334,17 @@ auditLogs/{id}          — append-only action trail (admin.html Audit tab)
 7. **Publish & Copy Link** snapshots the roadmap to `clientReports` + `report.html?cr=...` (re-publish updates the same link), or **Send Roadmap to Customer** publishes and opens WhatsApp with the link — this is the engagement roadmap the customer receives
 8. Admin.html → Vendors tab → **Portfolio Margin** rolls up vendor cost vs. client price across every saved report, by vendor and by phase — a portfolio-wide view instead of only ever seeing margin one report at a time
 
+**Admin drafts and executes a contract (customer or vendor):**
+1. Admin → Contracts → Templates → build a template from scratch or **Load Sample Agreement** (the Digital Marketing Services Agreement), edit its clauses, delivery timeline, and compensation, then Save
+2. Admin → Contracts → **New Contract** → pick the template (auto-fills title, clauses, and delivery timeline), pick an existing customer/vendor or type in a one-off counterparty's name/address/email/phone, set the Effective Date and each deliverable's Due Date → Save Contract (status `draft`)
+3. **Copy Link** (or the WhatsApp button, if a phone number is on file) generates `contract.html?id=...` and flips status to `sent`; the counterparty opens it with no login required
+4. Counterparty reviews the full agreement — parties, recitals, delivery timeline table, compensation, every clause — types their full legal name and an optional title, checks the agreement box, and clicks **Sign & Accept**; the page locks that signature in place immediately (status becomes `signed`)
+5. Admin → Contracts → **Countersign** (prompts for the signing name/title) records `providerSignature`; once both signatures are present, status becomes `executed` — order doesn't matter, whichever signature lands second flips it to `executed`
+6. **View** on any contract row (or the same `contract.html?id=...` link) opens the always-current state — provider and counterparty signature blocks show live status — and `&print=1` opens the print dialog for a PDF copy
+7. Once executed, **Terminate** is available to mark the engagement ended (does not delete the contract or its signatures — an audit record stays in `contracts` and `auditLogs`)
+
 **Admin manages content:**
-- Sidebar → Admin → `admin.html` → signs in (email/password) → tabs: Applications / Orders / Tickets / Access / Service Mgmt / Tasks / Invoices / Questionnaires / Company / Pricing / Services / Expertise / Vendors / Audit / Notifications
+- Sidebar → Admin → `admin.html` → signs in (email/password) → tabs: Applications / Orders / Tickets / Access / Service Mgmt / Tasks / Invoices / Questionnaires / Contracts / Company / Pricing / Services / Expertise / Vendors / Audit / Notifications
 - Access: click any customer row to open **Customer 360** — one view aggregating their application, services + milestone progress, tickets, invoices, tasks, questionnaires, and a merged chronological activity feed, instead of checking each tab separately
 - Service Mgmt: assign services to customers, edit status/notes, and manage the milestone checklist per service (progress bar + `x/y complete` shown both in the Active Services table and the edit modal) — this is what the customer sees in their portal. Each milestone can be assigned to a team member and, once checked complete, given a free-text "what was achieved" note — both are editable from the same edit modal, which also has a "Send Progress Update via WhatsApp" button. Milestones can still be added here directly (without a task), for backwards-compatible fine-grained editing.
 - Tasks: the backbone for all internal work — independent of any customer/service. A "Team Members" roster (`settings/team`, name-only, no login) feeds the "Assigned To" dropdown. Admin creates tasks directly (with an optional linked customer + service, due date, assignee, and invoice amount), completes them inline with a "what was achieved" note, and every priced task auto-invoices the linked customer on completion — no more jumping to Service Mgmt just to check something off. Filterable by assignee and status (pending/completed/all).
@@ -366,9 +401,9 @@ What it adds once deployed:
   login is Firebase Auth only now, matching how the rest of the app's
   security already worked in practice.
 - **Additive — new collections**: `vendors`, `customerTimeline` (backend-
-  only), `settings/markupRules`. None of these existed before; nothing
-  reads or depends on them until you use the corresponding new UI (Vendors
-  tab) or deploy `server/`.
+  only), `settings/markupRules`, `contractTemplates`, `contracts`. None of
+  these existed before; nothing reads or depends on them until you use the
+  corresponding new UI (Vendors tab, Contracts tab) or deploy `server/`.
 - **Additive — `firestore.indexes.json`**: newly deployed alongside
   `firestore.rules` in CI. Needed for the admin Audit Log's
   resource/action filters and a couple of `where + orderBy` queries that
