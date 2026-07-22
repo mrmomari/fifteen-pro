@@ -198,8 +198,11 @@ questionnaires/{id}     — discovery questionnaires (admin.html Questionnaires 
   answers: { [questionId]: string | string[] | string[][] }   ← filled in by the respondent
   createdAt, sentAt, completedAt
   — Each questionnaire's content can be entirely different per customer — admin.html's builder can
-    start from the "Discovery Template" (DISCOVERY_TEMPLATE in admin.html) or from scratch, and every
-    section/question can be freely added, edited, or removed before sending.
+    start from the retail/farm-store "Discovery Template" (DISCOVERY_TEMPLATE in admin.html), the
+    roofing-industry "Roofing Discovery Template" (ROOFING_DISCOVERY_TEMPLATE in admin.html — Company
+    Info, Business Overview, Services Offered, Marketing & Lead Gen, Operations & Technology,
+    Challenges & Pain Points, Goals & Budget), or from scratch, and every section/question can be
+    freely added, edited, or removed before sending.
   — The link (questionnaire.html?id=...) requires no customer login: firestore.rules allows a public
     `get` by direct doc id (not `list`) and a one-time `update` restricted to the answers/status/
     completedAt fields, blocked once status is already 'completed'.
