@@ -212,15 +212,28 @@ if ((!vqId && !crId && !rid && !qid) || typeof FIREBASE_CONFIG === 'undefined' |
 firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.firestore();
 
-db.collection('settings').doc('company').get().then(doc => {
-  if (!doc.exists) return;
-  const logoUrl = (doc.data().logo || '').trim();
+let companyInfo = {};
+const companyPromise = db.collection('settings').doc('company').get().then(doc => {
+  companyInfo = doc.exists ? doc.data() : {};
+  const logoUrl = (companyInfo.logo || '').trim();
   if (!logoUrl) return;
   const img = document.getElementById('rpLogoImg');
   img.onload = () => { img.style.display = 'block'; document.getElementById('rpLogoText').style.display = 'none'; };
   img.onerror = () => {};
   img.src = logoUrl;
 }).catch(() => {});
+
+function bankDetailsBox() {
+  const b = companyInfo.bank || {};
+  const rows = [
+    ['Bank', b.bankName], ['Account Name', b.accountName], ['Account Number', b.accountNumber],
+    ['Routing Number', b.routingNumber], ['SWIFT / BIC', b.swift], ['IBAN', b.iban], ['Notes', b.notes]
+  ].filter(([, v]) => v);
+  if (!rows.length) return '';
+  return `<div class="rp-box"><div class="rp-sec-title">Pay via Bank Transfer</div>` +
+    rows.map(([label, v], i) => `<div style="padding:6px 0;font-size:13px;${i ? 'border-top:1px solid rgba(0,0,0,.06);' : ''}display:flex;gap:10px"><span style="font-weight:700;color:var(--text-dim);flex-shrink:0;width:130px">${escHtml(label)}</span><span>${escHtml(v)}</span></div>`).join('') +
+    `</div>`;
+}
 
 function setHeader(title, sub, meta, tagHtml) {
   document.title = title + ' — Fifteen';
@@ -456,7 +469,7 @@ function renderQuestionnaireDoc(qn) {
 
 /* ════════ PUBLISHED CLIENT ROADMAP (?cr=) ════════ */
 if (crId) {
-  db.collection('clientReports').doc(crId).get().then(doc => {
+  Promise.all([companyPromise, db.collection('clientReports').doc(crId).get()]).then(([, doc]) => {
     if (!doc.exists) { fail(); return; }
     renderClientRoadmap(doc.data());
   }).catch(err => { console.error(err); fail(); });
@@ -494,6 +507,7 @@ function renderClientRoadmap(cr) {
       html += `<div class="rp-total"><strong>Total investment:</strong> ${fmtMoney(cr.totals.oneTime)} one-time${cr.totals.monthly ? ` + ${fmtMoney(cr.totals.monthly)}/month` : ''}</div>`;
     }
     html += `</div>`;
+    if (cr.showPrices) html += bankDetailsBox();
   }
   if ((cr.nextSteps || []).length) html += `<div class="rp-box"><div class="rp-sec-title">Next Steps</div>${listHtml(cr.nextSteps, 'fa-arrow-right', 'var(--green)')}</div>`;
 
