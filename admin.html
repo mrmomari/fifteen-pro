@@ -777,6 +777,20 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
             </div>
           </div>
 
+          <div class="form-card">
+            <div class="form-card-title">Bank Account</div>
+            <p style="font-size:12px;color:var(--text-dim);margin:-6px 0 14px">Shown to customers/counterparties as payment details on invoices (portal.html Billing), signed contracts, and the published client roadmap. Leave blank to hide it everywhere.</p>
+            <div class="form-grid">
+              <div class="f-field"><label>Bank Name</label><input id="d-bank-name" placeholder="e.g. Chase Bank"></div>
+              <div class="f-field"><label>Account Holder Name</label><input id="d-bank-account-name" placeholder="e.g. Fifteen LLC"></div>
+              <div class="f-field"><label>Account Number</label><input id="d-bank-account-number" placeholder="e.g. 000123456789"></div>
+              <div class="f-field"><label>Routing Number (ABA)</label><input id="d-bank-routing" placeholder="e.g. 021000021"></div>
+              <div class="f-field"><label>SWIFT / BIC Code</label><input id="d-bank-swift" placeholder="e.g. CHASUS33"></div>
+              <div class="f-field"><label>IBAN</label><input id="d-bank-iban" placeholder="optional, for international transfers"></div>
+            </div>
+            <div class="f-field"><label>Bank Address / Notes</label><textarea id="d-bank-notes" rows="2" placeholder="Branch address, reference instructions, etc. (optional)"></textarea></div>
+          </div>
+
           <button class="form-save" onclick="saveCompanyInfo()">Save Company Info</button>
 
           <div class="form-card" style="max-width:680px;margin-top:22px">
@@ -3187,6 +3201,9 @@ function fillCompanyForm(d) {
   s('d-facebook', d.social?.facebook); s('d-tiktok', d.social?.tiktok);
   s('d-twitter', d.social?.twitter); s('d-youtube', d.social?.youtube);
   s('d-whatsapp', d.social?.whatsapp); s('d-snapchat', d.social?.snapchat);
+  s('d-bank-name', d.bank?.bankName); s('d-bank-account-name', d.bank?.accountName);
+  s('d-bank-account-number', d.bank?.accountNumber); s('d-bank-routing', d.bank?.routingNumber);
+  s('d-bank-swift', d.bank?.swift); s('d-bank-iban', d.bank?.iban); s('d-bank-notes', d.bank?.notes);
 }
 
 function previewLogo() {
@@ -3224,6 +3241,11 @@ async function saveCompanyInfo() {
       linkedin: v('d-linkedin'), instagram: v('d-instagram'), facebook: v('d-facebook'),
       tiktok: v('d-tiktok'), twitter: v('d-twitter'), youtube: v('d-youtube'),
       whatsapp: v('d-whatsapp'), snapchat: v('d-snapchat')
+    },
+    bank: {
+      bankName: v('d-bank-name'), accountName: v('d-bank-account-name'),
+      accountNumber: v('d-bank-account-number'), routingNumber: v('d-bank-routing'),
+      swift: v('d-bank-swift'), iban: v('d-bank-iban'), notes: v('d-bank-notes')
     },
     updatedAt: new Date().toISOString()
   };

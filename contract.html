@@ -175,7 +175,7 @@ const db = firebase.firestore();
 let contract = null;
 let company = {};
 
-db.collection('settings').doc('company').get().then(doc => {
+const companyPromise = db.collection('settings').doc('company').get().then(doc => {
   company = doc.exists ? doc.data() : {};
   const logoUrl = (company.logo || '').trim();
   if (!logoUrl) return;
@@ -185,7 +185,7 @@ db.collection('settings').doc('company').get().then(doc => {
   img.src = logoUrl;
 }).catch(() => {});
 
-db.collection('contracts').doc(cid).get().then(doc => {
+Promise.all([companyPromise, db.collection('contracts').doc(cid).get()]).then(([, doc]) => {
   if (!doc.exists) { fail(); return; }
   contract = doc.data();
   render();
@@ -195,6 +195,18 @@ db.collection('contracts').doc(cid).get().then(doc => {
 
 function maybePrint() {
   if (params.get('print')) setTimeout(() => window.print(), 600);
+}
+
+function bankDetailsHtml() {
+  const b = company.bank || {};
+  const rows = [
+    ['Bank', b.bankName], ['Account Name', b.accountName], ['Account Number', b.accountNumber],
+    ['Routing Number', b.routingNumber], ['SWIFT / BIC', b.swift], ['IBAN', b.iban], ['Notes', b.notes]
+  ].filter(([, v]) => v);
+  if (!rows.length) return '';
+  return `<div class="ct-comp-row" style="border-top:2px solid rgba(0,0,0,.08);margin-top:4px;padding-top:12px">
+    <span class="ct-comp-label">Pay Via</span><span><strong>Bank Transfer</strong></span>
+  </div>` + rows.map(([label, v]) => `<div class="ct-comp-row"><span class="ct-comp-label">${escHtml(label)}</span><span>${escHtml(v)}</span></div>`).join('');
 }
 
 function partyBlock(label, name, address, email, phone) {
@@ -265,6 +277,7 @@ function render() {
       ${c.compensation.term ? `<div class="ct-comp-row"><span class="ct-comp-label">Term</span><span>${escHtml(c.compensation.term)}</span></div>` : ''}
       ${c.compensation.invoicing ? `<div class="ct-comp-row"><span class="ct-comp-label">Invoicing</span><span>${escHtml(c.compensation.invoicing)}</span></div>` : ''}
       ${c.compensation.lateFees ? `<div class="ct-comp-row"><span class="ct-comp-label">Late Fees</span><span>${escHtml(c.compensation.lateFees)}</span></div>` : ''}
+      ${bankDetailsHtml()}
     </div>`;
   }
 

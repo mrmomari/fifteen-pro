@@ -74,7 +74,11 @@ All answers + contact saved to `applications/{id}` with `quizAnswers` object and
 ## Firebase Collections
 
 ```
-settings/company        — company info, logo URL, social links
+settings/company        — company info, logo URL, social links, bank account (bank: { bankName, accountName,
+                           accountNumber, routingNumber, swift, iban, notes }) — surfaced wherever the customer
+                           needs to pay: portal.html Billing tab (when an invoice is pending/overdue),
+                           contract.html's Compensation section, and report.html's published client roadmap
+                           (?cr=, only when showPrices is on). Admin-only otherwise; blank fields are hidden
 settings/pricing        — currency, tax, bundle discount, promo codes
 settings/team           — { members: [name, ...] } — internal team roster for milestone "Assigned To"; no login, admin-managed (admin.html Tasks tab)
 settings/industryContacts — { mapping: { industryName: phoneNumber, ... } } — per-industry WhatsApp routing for application quiz reports (admin.html Applications tab)

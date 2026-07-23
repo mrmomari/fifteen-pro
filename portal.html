@@ -1320,6 +1320,7 @@ body{
 let db, auth, currentUser, customerData;
 let servicesData = [], ticketsData = [], invoicesData = [];
 let dataLoaded = { services: false, tickets: false, invoices: false };
+let companyBank = null;
 const googleBtnHtml = document.getElementById('googleBtn').innerHTML;
 
 /* ══════════════════════════════════════════════════════════
@@ -1603,8 +1604,23 @@ async function loadAllData() {
     loadTickets(),
     loadInvoices(),
     loadServicesCatalog(),
-    loadAuditLog()
+    loadAuditLog(),
+    loadCompanyBank()
   ]);
+}
+
+/* ══════════════════════════════════════════════════════════
+   LOAD COMPANY BANK DETAILS (for Billing tab)
+══════════════════════════════════════════════════════════ */
+async function loadCompanyBank() {
+  try {
+    const doc = await db.collection('settings').doc('company').get();
+    companyBank = doc.exists ? (doc.data().bank || {}) : {};
+  } catch(e) {
+    console.error('Error loading company bank details:', e);
+    companyBank = {};
+  }
+  if (dataLoaded.invoices) renderBilling();
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -2044,6 +2060,26 @@ async function submitTicket() {
 }
 
 /* ══════════════════════════════════════════════════════════
+   BANK DETAILS CARD
+══════════════════════════════════════════════════════════ */
+function bankDetailsCardHtml() {
+  const b = companyBank || {};
+  const rows = [
+    ['Bank', b.bankName], ['Account Name', b.accountName], ['Account Number', b.accountNumber],
+    ['Routing Number', b.routingNumber], ['SWIFT / BIC', b.swift], ['IBAN', b.iban], ['Notes', b.notes]
+  ].filter(([, v]) => v);
+  if (!rows.length) return '';
+  return `<div class="card" style="margin-bottom:16px">
+    <div class="card-body">
+      <div style="font-weight:700;margin-bottom:10px;color:var(--text)"><i class="fa-solid fa-building-columns" style="color:var(--green);margin-right:6px"></i>Pay via Bank Transfer</div>
+      ${rows.map(([label, v], i) => `<div style="padding:6px 0;font-size:13px;${i ? 'border-top:1px solid var(--cream-alt);' : ''}display:flex;gap:10px">
+        <span style="font-weight:600;color:var(--text-muted);flex-shrink:0;width:130px">${esc(label)}</span><span>${esc(v)}</span>
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+/* ══════════════════════════════════════════════════════════
    RENDER BILLING
 ══════════════════════════════════════════════════════════ */
 function renderBilling() {
@@ -2075,6 +2111,9 @@ function renderBilling() {
 
   // Invoice list
   const billingEl = document.getElementById('billingContent');
+  const hasUnpaid = invoicesData.some(i => i.status === 'pending' || i.status === 'overdue');
+  const bankHtml = (hasUnpaid && companyBank) ? bankDetailsCardHtml() : '';
+
   if (invoicesData.length === 0) {
     billingEl.innerHTML = `<div class="card"><div class="empty-state">
       <div class="empty-state-icon"><i class="fa-solid fa-file-invoice-dollar"></i></div>
@@ -2084,7 +2123,7 @@ function renderBilling() {
     return;
   }
 
-  billingEl.innerHTML = `
+  billingEl.innerHTML = bankHtml + `
     <div class="invoice-table-wrap">
       <div class="invoice-table-header">Invoices</div>
       <div class="invoice-row header-row">
