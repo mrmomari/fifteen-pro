@@ -96,6 +96,9 @@ vendors/{id}            — persistent vendor directory (admin.html Vendors tab)
   createdAt, updatedAt
   — distinct from vendorQuotes below: this is a reusable contact record; vendorQuotes is the disposable
     per-engagement passcode-protected cost sheet. vendorQuotes.vendorId can optionally link back here.
+  — a vendor's edit modal also shows any contracts/{id} where vendorId matches it ("Linked Contract"), with
+    an inline editor for that contract's deliverables' dueDate + cost (writes straight to the contracts doc)
+    and a picker to link any existing unlinked type:'vendor' contract to this vendor
 
 contractTemplates/{id}   — reusable contract templates (admin.html Contracts tab → Templates)
   name, type: 'customer' | 'vendor'
@@ -113,8 +116,12 @@ contracts/{id}           — one per engagement, behind contract.html?id=... (ad
   customerId, vendorId     — optional link to customers/{uid} or vendors/{id} (mutually exclusive by type)
   counterpartyName, counterpartyAddress, counterpartyEmail, counterpartyPhone
   title, effectiveDate     — effectiveDate is 'YYYY-MM-DD'
-  intro, sections: [{ title, body }], compensation: { summary, term, invoicing, lateFees }  — editable snapshot from the template
-  deliverables: [{ id, label, detail, dueRule, dueDate, delivered }]  — dueDate/delivered are set per engagement
+  intro, sections: [{ title, body }], compensation: { summary, term, invoicing, lateFees }  — editable per contract
+    (no longer locked to the template's snapshot — admin.html's New/Edit Contract modal exposes all four fields)
+  deliverables: [{ id, label, detail, dueRule, dueDate, delivered, cost }]  — dueDate/delivered/cost are set per
+    engagement (cost is optional, admin-entered per line item — primarily used on type:'vendor' contracts to
+    track what's owed to that vendor for each service, editable both from the Contracts tab and from the
+    vendor's own edit modal in the Vendors tab)
   status: 'draft' | 'sent' | 'signed' | 'executed' | 'terminated'
   providerSignature: { name, title, signedAt } | null   — set by admin in-app (Countersign button)
   counterpartySignature: { name, title, signedAt } | null — set via the public contract.html link, one time only
