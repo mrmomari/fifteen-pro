@@ -101,6 +101,11 @@ vendors/{id}            — persistent vendor directory (admin.html Vendors tab)
     the contracts doc) and a picker to link any existing unassigned contract to this vendor — this works
     regardless of the contract's type/counterparty (e.g. a signed customer/client contract that this vendor
     is the one actually fulfilling), see contracts/{id}.fulfillmentVendorId below
+  — each linked contract also has a **Create Vendor Agreement** button: opens a brand-new draft contract
+    (type: 'vendor', this vendor as counterparty) seeded from the linked contract's clauses/timeline, with
+    every service's Cost pre-filled from the price already entered above (delivery dates left blank — a
+    separate engagement, its own schedule) — for formalizing an actual signed agreement between Fifteen and
+    the vendor using the same per-service prices already captured, without retyping them
 
 contractTemplates/{id}   — reusable contract templates (admin.html Contracts tab → Templates)
   name, type: 'customer' | 'vendor'
@@ -361,7 +366,8 @@ auditLogs/{id}          — append-only action trail (admin.html Audit tab)
 
 **Admin drafts and executes a contract (customer or vendor):**
 1. Admin → Contracts → Templates → build a template from scratch or **Load Sample Agreement** (the Digital Marketing Services Agreement), edit its clauses, delivery timeline, and compensation, then Save
-2. Admin → Contracts → **New Contract** → pick the template (auto-fills title, clauses, and delivery timeline), pick an existing customer/vendor or type in a one-off counterparty's name/address/email/phone, set the Effective Date and each deliverable's Due Date → Save Contract (status `draft`)
+2. Admin → Contracts → **New Contract** → pick the template (auto-fills title, clauses, delivery timeline, and Type), pick an existing customer/vendor or type in a one-off counterparty's name/address/email/phone, set the Effective Date and each deliverable's Due Date and Cost → Save Contract (status `draft`). Type is its own Customer/Vendor selector, independent of which template was picked, so it can be changed after the fact (e.g. after **Duplicate**, see below) without discarding the duplicated clauses/timeline/costs
+2a. Admin → Contracts → any row → **Duplicate** starts a new draft pre-filled with that contract's clauses, delivery timeline (due dates cleared), and Cost per service — for reusing an already-signed agreement as the starting point for a different counterparty/rate (e.g. turning a signed customer agreement into a vendor agreement with the same services at a different price)
 3. **Copy Link** (or the WhatsApp button, if a phone number is on file) generates `contract.html?id=...` and flips status to `sent`; the counterparty opens it with no login required
 4. Counterparty reviews the full agreement — parties, recitals, delivery timeline table, compensation, every clause — types their full legal name and an optional title, checks the agreement box, and clicks **Sign & Accept**; the page locks that signature in place immediately (status becomes `signed`)
 5. Admin → Contracts → **Countersign** (prompts for the signing name/title) records `providerSignature`; once both signatures are present, status becomes `executed` — order doesn't matter, whichever signature lands second flips it to `executed`
