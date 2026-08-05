@@ -96,9 +96,11 @@ vendors/{id}            — persistent vendor directory (admin.html Vendors tab)
   createdAt, updatedAt
   — distinct from vendorQuotes below: this is a reusable contact record; vendorQuotes is the disposable
     per-engagement passcode-protected cost sheet. vendorQuotes.vendorId can optionally link back here.
-  — a vendor's edit modal also shows any contracts/{id} where vendorId matches it ("Linked Contract"), with
-    an inline editor for that contract's deliverables' dueDate + cost (writes straight to the contracts doc)
-    and a picker to link any existing unlinked type:'vendor' contract to this vendor
+  — a vendor's edit modal also shows any contracts/{id} where fulfillmentVendorId matches it ("Linked
+    Contract"), with an inline editor for that contract's deliverables' dueDate + cost (writes straight to
+    the contracts doc) and a picker to link any existing unassigned contract to this vendor — this works
+    regardless of the contract's type/counterparty (e.g. a signed customer/client contract that this vendor
+    is the one actually fulfilling), see contracts/{id}.fulfillmentVendorId below
 
 contractTemplates/{id}   — reusable contract templates (admin.html Contracts tab → Templates)
   name, type: 'customer' | 'vendor'
@@ -113,15 +115,24 @@ contractTemplates/{id}   — reusable contract templates (admin.html Contracts t
 contracts/{id}           — one per engagement, behind contract.html?id=... (admin.html Contracts tab)
   templateId, templateName — snapshot of the template used
   type: 'customer' | 'vendor'
-  customerId, vendorId     — optional link to customers/{uid} or vendors/{id} (mutually exclusive by type)
+  customerId, vendorId     — optional link to customers/{uid} or vendors/{id} (mutually exclusive by type;
+                            vendorId here means the vendor IS this contract's signing counterparty — set via
+                            the New/Edit Contract modal's counterparty picker when type is 'vendor')
+  fulfillmentVendorId      — separate, optional link to vendors/{id}: which vendor is actually delivering the
+                            contracted services, independent of who signed (type/customerId/vendorId above).
+                            Set from the Vendors tab's "Linked Contract" picker on any contract of either type
+                            — e.g. linking a signed client contract to the 3rd-party vendor fulfilling it.
+                            Deliberately a different field from vendorId: saveContract() in admin.html always
+                            overwrites vendorId (null for type:'customer') on every edit, so reusing it here
+                            would silently unlink on the next unrelated contract edit
   counterpartyName, counterpartyAddress, counterpartyEmail, counterpartyPhone
   title, effectiveDate     — effectiveDate is 'YYYY-MM-DD'
   intro, sections: [{ title, body }], compensation: { summary, term, invoicing, lateFees }  — editable per contract
     (no longer locked to the template's snapshot — admin.html's New/Edit Contract modal exposes all four fields)
   deliverables: [{ id, label, detail, dueRule, dueDate, delivered, cost }]  — dueDate/delivered/cost are set per
-    engagement (cost is optional, admin-entered per line item — primarily used on type:'vendor' contracts to
-    track what's owed to that vendor for each service, editable both from the Contracts tab and from the
-    vendor's own edit modal in the Vendors tab)
+    engagement (cost is optional, admin-entered per line item — what's owed to whichever vendor is linked via
+    fulfillmentVendorId for each service, editable both from the Contracts tab and from that vendor's own edit
+    modal in the Vendors tab)
   status: 'draft' | 'sent' | 'signed' | 'executed' | 'terminated'
   providerSignature: { name, title, signedAt } | null   — set by admin in-app (Countersign button)
   counterpartySignature: { name, title, signedAt } | null — set via the public contract.html link, one time only

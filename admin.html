@@ -3587,16 +3587,20 @@ function closeVendorModal() {
 function renderVendorLinkedContracts() {
   const wrap = document.getElementById('vd-linked-contracts-wrap');
   if (!wrap || !editingVendorId) return;
-  const linked = contracts.filter(c => c.vendorId === editingVendorId);
+  const linked = contracts.filter(c => c.fulfillmentVendorId === editingVendorId);
 
-  const linkableOptions = contracts.filter(c => c.type === 'vendor' && !c.vendorId);
+  // Any contract not already assigned to a fulfillment vendor is linkable — this works regardless of
+  // who actually signed the contract (a customer like a client, or a vendor counterparty): it just
+  // records "this vendor is who delivers the work", independent of contracts.customerId/vendorId.
+  const linkableOptions = contracts.filter(c => !c.fulfillmentVendorId);
   const linkPicker = `
     <div class="form-card" style="margin-bottom:8px">
+      <div class="panel-sub" style="margin:0 0 8px">Link any signed contract here to track what this vendor is paid per service — independent of who actually signed it (a client contract works the same as a vendor's own contract).</div>
       <div class="form-grid" style="align-items:end">
-        <div class="f-field"><label>Link an existing signed vendor contract</label>
+        <div class="f-field"><label>Link an existing contract</label>
           <select id="vd-link-contract-select">
-            <option value="">${linkableOptions.length ? 'Select a contract…' : 'No unlinked vendor contracts available'}</option>
-            ${linkableOptions.map(c => `<option value="${c.docId}">${escHtml(c.title || 'Untitled')} — ${escHtml(c.counterpartyName || 'no counterparty')} (${escHtml(c.status || 'draft')})</option>`).join('')}
+            <option value="">${linkableOptions.length ? 'Select a contract…' : 'No unlinked contracts available'}</option>
+            ${linkableOptions.map(c => `<option value="${c.docId}">${escHtml(c.title || 'Untitled')} — ${escHtml(c.counterpartyName || 'no counterparty')} (${escHtml(c.type || 'customer')}, ${escHtml(c.status || 'draft')})</option>`).join('')}
           </select>
         </div>
         <div class="f-field"><button class="form-save" style="margin:0" onclick="linkContractToVendor()">Link</button></div>
@@ -3604,7 +3608,7 @@ function renderVendorLinkedContracts() {
     </div>`;
 
   if (!linked.length) {
-    wrap.innerHTML = linkPicker + '<div class="empty-state" style="padding:16px"><i class="fa-solid fa-file-signature"></i>No contract linked yet — create one in the Contracts tab (or Duplicate a signed one) with this vendor as the counterparty, or link an existing one above.</div>';
+    wrap.innerHTML = linkPicker + '<div class="empty-state" style="padding:16px"><i class="fa-solid fa-file-signature"></i>No contract linked yet — pick one above (e.g. a signed client contract this vendor is fulfilling, or the vendor\'s own signed agreement).</div>';
     return;
   }
 
@@ -3617,7 +3621,7 @@ function renderVendorLinkedContracts() {
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px">
         <div>
           <div style="font-size:13.5px;font-weight:700">${escHtml(c.title || 'Untitled')}</div>
-          <div style="font-size:11px;color:var(--text-dim)">Status: ${escHtml(c.status || 'draft')} · Effective ${escHtml(c.effectiveDate || '—')}</div>
+          <div style="font-size:11px;color:var(--text-dim)">Signed by ${escHtml(c.counterpartyName || 'no counterparty')} (${escHtml(c.type || 'customer')}) · Status: ${escHtml(c.status || 'draft')} · Effective ${escHtml(c.effectiveDate || '—')}</div>
         </div>
         <div style="display:flex;gap:8px">
           <button class="btn-approve" onclick="window.open(getContractLink('${c.docId}'), '_blank', 'noopener')">View</button>
@@ -3655,8 +3659,8 @@ async function linkContractToVendor() {
   const contractId = document.getElementById('vd-link-contract-select').value;
   if (!contractId) { toast('Pick a contract to link', 'error'); return; }
   try {
-    await db.collection('contracts').doc(contractId).update({ vendorId: editingVendorId, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
-    await AppUtils.logAudit(currentAdminIdentity(), 'update', contractId, 'contract', { action: 'link-vendor', vendorId: editingVendorId });
+    await db.collection('contracts').doc(contractId).update({ fulfillmentVendorId: editingVendorId, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    await AppUtils.logAudit(currentAdminIdentity(), 'update', contractId, 'contract', { action: 'link-vendor', fulfillmentVendorId: editingVendorId });
     toast('✓ Contract linked', 'success');
     await loadContracts();
     renderVendorLinkedContracts();
@@ -3665,9 +3669,9 @@ async function linkContractToVendor() {
 
 async function unlinkVendorContract(contractId) {
   const c = contracts.find(x => x.docId === contractId);
-  AppUtils.showConfirm('Unlink Contract', `Unlink "${(c && c.title) || 'this contract'}" from this vendor? The contract itself is not deleted.`, async () => {
+  AppUtils.showConfirm('Unlink Contract', `Unlink "${(c && c.title) || 'this contract'}" from this vendor? The contract itself is not deleted, and its signatures are untouched.`, async () => {
     try {
-      await db.collection('contracts').doc(contractId).update({ vendorId: null, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+      await db.collection('contracts').doc(contractId).update({ fulfillmentVendorId: null, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
       await AppUtils.logAudit(currentAdminIdentity(), 'update', contractId, 'contract', { action: 'unlink-vendor' });
       toast('✓ Contract unlinked', 'success');
       delete vendorContractEdits[contractId];
