@@ -1708,7 +1708,10 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
     <h3 id="cb-modal-title">New Contract</h3>
     <div class="form-grid" style="margin-top:14px">
       <div class="f-field"><label>Template</label><select id="cb-template" onchange="onContractTemplateSelectChange()"></select></div>
-      <div class="f-field"><label>Type</label><div id="cb-type" style="padding:11px 0;font-size:13.5px;font-weight:700;color:var(--text-dim)">—</div></div>
+      <div class="f-field"><label>Type</label><select id="cb-type" onchange="onContractTypeChange()">
+        <option value="customer">Customer Agreement</option>
+        <option value="vendor">Vendor Agreement</option>
+      </select></div>
     </div>
     <div class="form-grid">
       <div class="f-field"><label>Contract Title</label><input id="cb-title" placeholder="e.g. Digital Marketing Services Agreement"></div>
@@ -3639,9 +3642,12 @@ function renderVendorLinkedContracts() {
           </div>
         `).join('')}
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;flex-wrap:wrap;gap:8px">
         <div style="font-size:12.5px;font-weight:700" id="vd-contract-total-${c.docId}">Total cost: ${total.toFixed(2)}</div>
-        <button class="form-save" style="margin:0" onclick="saveVendorContractDeliverables('${c.docId}')">Save Delivery &amp; Cost</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn-reject" style="margin:0" onclick="createVendorAgreementFromLinked('${c.docId}')" title="Start a new Vendor Agreement between Fifteen and this vendor, pre-filled with the prices above"><i class="fa-solid fa-file-contract"></i> Create Vendor Agreement</button>
+          <button class="form-save" style="margin:0" onclick="saveVendorContractDeliverables('${c.docId}')">Save Delivery &amp; Cost</button>
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -3690,6 +3696,46 @@ async function saveVendorContractDeliverables(contractId) {
     toast('✓ Delivery dates & costs saved', 'success');
     await loadContracts();
   } catch(e) { toast('Save failed: ' + e.message, 'error'); }
+}
+
+// Starts a brand-new type:'vendor' contract (Fifteen ↔ this vendor) seeded from the linked contract's
+// clauses/timeline, with each service's Cost pre-filled from the price already entered above — so the
+// admin isn't retyping prices that were already captured while linking. Delivery dates are left blank
+// since this is a separate engagement with its own schedule; the linked contract itself is untouched.
+async function createVendorAgreementFromLinked(contractId) {
+  const src = contracts.find(x => x.docId === contractId);
+  if (!src || !editingVendorId) return;
+  const targetVendorId = editingVendorId; // closeVendorModal() below clears the global
+  const vendor = vendors.find(x => x.docId === targetVendorId);
+  const rows = vendorContractEdits[contractId] || JSON.parse(JSON.stringify(src.deliverables || []));
+
+  if (!contractTemplates.length) await loadContractTemplates();
+
+  editingContractId = null;
+  editingContractType = 'vendor';
+  editingContractSections = JSON.parse(JSON.stringify(src.sections || []));
+  editingContractDeliverables = rows.map(d => ({ ...d, dueDate: '', delivered: false }));
+  editingContractIntro = src.intro || '';
+
+  closeVendorModal();
+
+  document.getElementById('cb-modal-title').textContent = `New Vendor Agreement — ${(vendor && vendor.name) || 'Vendor'} (prices from "${src.title || 'linked contract'}")`;
+  const tplSel = document.getElementById('cb-template');
+  tplSel.innerHTML = contractTemplates.map(t => `<option value="${t.docId}">${escHtml(t.name)} (${t.type})</option>`).join('');
+  tplSel.value = src.templateId || '';
+  tplSel.disabled = false;
+  document.getElementById('cb-title').value = src.title || '';
+  document.getElementById('cb-type').value = 'vendor';
+  document.getElementById('cb-effective-date').value = '';
+  setContractCompensationFields(src.compensation || {});
+  populateContractCounterpartySelect();
+  document.getElementById('cb-counterparty').value = targetVendorId;
+  onContractCounterpartySelectChange();
+  document.getElementById('cb-cp-address').value = '';
+  renderContractDeliverablesEditor();
+
+  document.getElementById('contractModal').classList.add('open');
+  toast('Vendor prices carried over from the linked contract — set a new Effective Date and delivery dates, then Save', 'success');
 }
 
 let _savingVendor = false;
@@ -5582,7 +5628,7 @@ function onContractTemplateSelectChange() {
   const t = contractTemplates.find(x => x.docId === tplId);
   if (!t) return;
   document.getElementById('cb-title').value = t.name;
-  document.getElementById('cb-type').textContent = t.type === 'vendor' ? 'Vendor Agreement' : 'Customer Agreement';
+  document.getElementById('cb-type').value = t.type === 'vendor' ? 'vendor' : 'customer';
   editingContractSections = JSON.parse(JSON.stringify(t.sections || []));
   editingContractDeliverables = (t.deliverables || []).map(d => ({ ...d, dueDate: '', delivered: false }));
   editingContractIntro = t.intro || '';
@@ -5590,6 +5636,14 @@ function onContractTemplateSelectChange() {
   setContractCompensationFields(t.compensation || {});
   populateContractCounterpartySelect();
   renderContractDeliverablesEditor();
+}
+
+// Type is independent of which template was picked — lets the admin flip Customer/Vendor after
+// duplicating a contract (see duplicateContract) without losing the duplicated clauses/timeline/costs,
+// since only the counterparty picker is affected, not editingContractSections/Deliverables/Intro.
+function onContractTypeChange() {
+  editingContractType = document.getElementById('cb-type').value === 'vendor' ? 'vendor' : 'customer';
+  populateContractCounterpartySelect();
 }
 
 function setContractCompensationFields(comp) {
@@ -5648,7 +5702,7 @@ async function openContractModal(docId) {
     setContractCompensationFields(c.compensation || {});
     tplSel.value = c.templateId || '';
     document.getElementById('cb-title').value = c.title || '';
-    document.getElementById('cb-type').textContent = c.type === 'vendor' ? 'Vendor Agreement' : 'Customer Agreement';
+    document.getElementById('cb-type').value = editingContractType;
     document.getElementById('cb-effective-date').value = c.effectiveDate || '';
     populateContractCounterpartySelect();
     document.getElementById('cb-counterparty').value = c.customerId || c.vendorId || '';
@@ -5658,10 +5712,10 @@ async function openContractModal(docId) {
     document.getElementById('cb-cp-phone').value = c.counterpartyPhone || '';
     renderContractDeliverablesEditor();
   } else {
-    editingContractSections = []; editingContractDeliverables = []; editingContractIntro = '';
+    editingContractSections = []; editingContractDeliverables = []; editingContractIntro = ''; editingContractType = 'customer';
     setContractCompensationFields({});
     document.getElementById('cb-title').value = '';
-    document.getElementById('cb-type').textContent = '—';
+    document.getElementById('cb-type').value = 'customer';
     document.getElementById('cb-effective-date').value = '';
     document.getElementById('cb-counterparty').innerHTML = '<option value="">Select a template first</option>';
     document.getElementById('cb-cp-name').value = '';
@@ -5693,7 +5747,7 @@ async function duplicateContract(docId) {
   tplSel.value = src.templateId || '';
   tplSel.disabled = false;
   document.getElementById('cb-title').value = src.title || '';
-  document.getElementById('cb-type').textContent = editingContractType === 'vendor' ? 'Vendor Agreement' : 'Customer Agreement';
+  document.getElementById('cb-type').value = editingContractType;
   document.getElementById('cb-effective-date').value = '';
   setContractCompensationFields(src.compensation || {});
   populateContractCounterpartySelect();
