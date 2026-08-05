@@ -1635,21 +1635,27 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
 
 <!-- ══ Vendor (add/edit) ══ -->
 <div class="modal-overlay" id="vendorModal">
-  <div class="modal-box" style="width:460px;max-width:92vw;text-align:left">
+  <div class="modal-box modal-box-full" style="overflow-y:auto;text-align:left">
     <h3 id="vendor-modal-title">Add Vendor</h3>
-    <div class="f-field"><label>Name</label><input id="vd-name" placeholder="Studio XYZ"></div>
-    <div class="f-field"><label>Contact Email</label><input id="vd-email" type="email" placeholder="hello@studioxyz.com"></div>
-    <div class="f-field"><label>Contact Phone</label><input id="vd-phone" type="tel" placeholder="+1 555 123 4567"></div>
-    <div class="f-field"><label>Specialties (phases)</label>
-      <div style="display:flex;gap:14px;font-size:13px">
-        <label style="display:flex;align-items:center;gap:5px"><input type="checkbox" id="vd-phase-1"> Phase 1</label>
-        <label style="display:flex;align-items:center;gap:5px"><input type="checkbox" id="vd-phase-2"> Phase 2</label>
-        <label style="display:flex;align-items:center;gap:5px"><input type="checkbox" id="vd-phase-3"> Phase 3</label>
+    <div class="form-grid">
+      <div class="f-field"><label>Name</label><input id="vd-name" placeholder="Studio XYZ"></div>
+      <div class="f-field"><label>Contact Email</label><input id="vd-email" type="email" placeholder="hello@studioxyz.com"></div>
+      <div class="f-field"><label>Contact Phone</label><input id="vd-phone" type="tel" placeholder="+1 555 123 4567"></div>
+      <div class="f-field"><label>Specialties (phases)</label>
+        <div style="display:flex;gap:14px;font-size:13px;padding-top:11px">
+          <label style="display:flex;align-items:center;gap:5px"><input type="checkbox" id="vd-phase-1"> Phase 1</label>
+          <label style="display:flex;align-items:center;gap:5px"><input type="checkbox" id="vd-phase-2"> Phase 2</label>
+          <label style="display:flex;align-items:center;gap:5px"><input type="checkbox" id="vd-phase-3"> Phase 3</label>
+        </div>
       </div>
     </div>
     <div class="f-field"><label>Notes</label><textarea id="vd-notes" rows="3" placeholder="Strengths, past engagements, reliability…"></textarea></div>
     <div class="f-field"><label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="vd-active" checked> Active</label></div>
-    <div class="modal-actions" style="margin-top:14px;flex-wrap:wrap">
+
+    <div class="form-card-title" style="margin-top:14px">Linked Contract</div>
+    <div id="vd-linked-contracts-wrap"></div>
+
+    <div class="modal-actions" style="margin-top:18px;flex-wrap:wrap">
       <button class="modal-cancel" onclick="closeVendorModal()">Cancel</button>
       <button id="vd-delete-btn" class="btn-reject" onclick="deleteVendor()" style="display:none">Delete</button>
       <button class="modal-confirm" onclick="saveVendor()">Save Vendor</button>
@@ -3521,6 +3527,7 @@ async function saveExpertise() {
 let vendors = [];
 let editingVendorId = null;
 let markupRules = { defaultPct: 30, byPhase: {}, byService: {} };
+let vendorContractEdits = {}; // contractId -> working copy of that contract's deliverables, edited from the vendor modal
 
 async function loadVendors() {
   if (!db) return;
@@ -3547,7 +3554,7 @@ function renderVendorList() {
   `).join('');
 }
 
-function openVendorModal(docId) {
+async function openVendorModal(docId) {
   editingVendorId = docId || null;
   const v = docId ? vendors.find(x => x.docId === docId) : null;
   document.getElementById('vendor-modal-title').textContent = v ? 'Edit Vendor' : 'Add Vendor';
@@ -3559,11 +3566,126 @@ function openVendorModal(docId) {
   document.getElementById('vd-active').checked = !v || v.active !== false;
   document.getElementById('vd-delete-btn').style.display = v ? '' : 'none';
   document.getElementById('vendorModal').classList.add('open');
+
+  vendorContractEdits = {};
+  const linkWrap = document.getElementById('vd-linked-contracts-wrap');
+  if (!docId) {
+    linkWrap.innerHTML = '<div class="panel-sub" style="margin:0">Save this vendor first, then reopen it to link a signed contract.</div>';
+    return;
+  }
+  linkWrap.innerHTML = '<div class="panel-sub" style="margin:0">Loading contracts…</div>';
+  if (!contracts.length) await loadContracts();
+  renderVendorLinkedContracts();
 }
 
 function closeVendorModal() {
   document.getElementById('vendorModal').classList.remove('open');
   editingVendorId = null;
+  vendorContractEdits = {};
+}
+
+function renderVendorLinkedContracts() {
+  const wrap = document.getElementById('vd-linked-contracts-wrap');
+  if (!wrap || !editingVendorId) return;
+  const linked = contracts.filter(c => c.vendorId === editingVendorId);
+
+  const linkableOptions = contracts.filter(c => c.type === 'vendor' && !c.vendorId);
+  const linkPicker = `
+    <div class="form-card" style="margin-bottom:8px">
+      <div class="form-grid" style="align-items:end">
+        <div class="f-field"><label>Link an existing signed vendor contract</label>
+          <select id="vd-link-contract-select">
+            <option value="">${linkableOptions.length ? 'Select a contract…' : 'No unlinked vendor contracts available'}</option>
+            ${linkableOptions.map(c => `<option value="${c.docId}">${escHtml(c.title || 'Untitled')} — ${escHtml(c.counterpartyName || 'no counterparty')} (${escHtml(c.status || 'draft')})</option>`).join('')}
+          </select>
+        </div>
+        <div class="f-field"><button class="form-save" style="margin:0" onclick="linkContractToVendor()">Link</button></div>
+      </div>
+    </div>`;
+
+  if (!linked.length) {
+    wrap.innerHTML = linkPicker + '<div class="empty-state" style="padding:16px"><i class="fa-solid fa-file-signature"></i>No contract linked yet — create one in the Contracts tab (or Duplicate a signed one) with this vendor as the counterparty, or link an existing one above.</div>';
+    return;
+  }
+
+  wrap.innerHTML = linkPicker + linked.map(c => {
+    if (!vendorContractEdits[c.docId]) vendorContractEdits[c.docId] = JSON.parse(JSON.stringify(c.deliverables || []));
+    const rows = vendorContractEdits[c.docId];
+    const total = rows.reduce((sum, d) => sum + (Number(d.cost) || 0), 0);
+    return `
+    <div class="form-card" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+        <div>
+          <div style="font-size:13.5px;font-weight:700">${escHtml(c.title || 'Untitled')}</div>
+          <div style="font-size:11px;color:var(--text-dim)">Status: ${escHtml(c.status || 'draft')} · Effective ${escHtml(c.effectiveDate || '—')}</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-approve" onclick="window.open(getContractLink('${c.docId}'), '_blank', 'noopener')">View</button>
+          <button class="btn-reject" onclick="unlinkVendorContract('${c.docId}')">Unlink</button>
+        </div>
+      </div>
+      <div style="max-height:320px;overflow-y:auto">
+        ${rows.map((d, i) => `
+          <div class="form-card" style="margin-bottom:6px">
+            <div style="font-size:12.5px;font-weight:700">${escHtml(d.label)}</div>
+            <div class="form-grid">
+              <div class="f-field"><label>Delivery Date</label><input type="date" value="${escHtml(d.dueDate || '')}" onchange="vendorContractEdits['${c.docId}'][${i}].dueDate = this.value"></div>
+              <div class="f-field"><label>Cost</label><input type="number" min="0" step="0.01" placeholder="0.00" value="${d.cost != null ? d.cost : ''}" oninput="vendorContractEdits['${c.docId}'][${i}].cost = this.value === '' ? null : parseFloat(this.value); updateVendorContractTotal('${c.docId}')"></div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+        <div style="font-size:12.5px;font-weight:700" id="vd-contract-total-${c.docId}">Total cost: ${total.toFixed(2)}</div>
+        <button class="form-save" style="margin:0" onclick="saveVendorContractDeliverables('${c.docId}')">Save Delivery &amp; Cost</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateVendorContractTotal(contractId) {
+  const rows = vendorContractEdits[contractId] || [];
+  const total = rows.reduce((sum, d) => sum + (Number(d.cost) || 0), 0);
+  const el = document.getElementById('vd-contract-total-' + contractId);
+  if (el) el.textContent = 'Total cost: ' + total.toFixed(2);
+}
+
+async function linkContractToVendor() {
+  if (!editingVendorId) return;
+  const contractId = document.getElementById('vd-link-contract-select').value;
+  if (!contractId) { toast('Pick a contract to link', 'error'); return; }
+  try {
+    await db.collection('contracts').doc(contractId).update({ vendorId: editingVendorId, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    await AppUtils.logAudit(currentAdminIdentity(), 'update', contractId, 'contract', { action: 'link-vendor', vendorId: editingVendorId });
+    toast('✓ Contract linked', 'success');
+    await loadContracts();
+    renderVendorLinkedContracts();
+  } catch(e) { toast('Link failed: ' + e.message, 'error'); }
+}
+
+async function unlinkVendorContract(contractId) {
+  const c = contracts.find(x => x.docId === contractId);
+  AppUtils.showConfirm('Unlink Contract', `Unlink "${(c && c.title) || 'this contract'}" from this vendor? The contract itself is not deleted.`, async () => {
+    try {
+      await db.collection('contracts').doc(contractId).update({ vendorId: null, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+      await AppUtils.logAudit(currentAdminIdentity(), 'update', contractId, 'contract', { action: 'unlink-vendor' });
+      toast('✓ Contract unlinked', 'success');
+      delete vendorContractEdits[contractId];
+      await loadContracts();
+      renderVendorLinkedContracts();
+    } catch(e) { toast('Unlink failed: ' + e.message, 'error'); }
+  });
+}
+
+async function saveVendorContractDeliverables(contractId) {
+  const deliverables = vendorContractEdits[contractId];
+  if (!deliverables) return;
+  try {
+    await db.collection('contracts').doc(contractId).update({ deliverables, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    await AppUtils.logAudit(currentAdminIdentity(), 'update', contractId, 'contract', { action: 'update-deliverables' });
+    toast('✓ Delivery dates & costs saved', 'success');
+    await loadContracts();
+  } catch(e) { toast('Save failed: ' + e.message, 'error'); }
 }
 
 let _savingVendor = false;
@@ -5440,6 +5562,7 @@ function renderContractDeliverablesEditor() {
       <div style="font-size:11.5px;color:var(--text-dim);margin-bottom:8px">${escHtml(d.detail || '')} — ${escHtml(d.dueRule || '')}</div>
       <div class="form-grid">
         <div class="f-field"><label>Due Date</label><input type="date" value="${escHtml(d.dueDate || '')}" onchange="editingContractDeliverables[${i}].dueDate = this.value"></div>
+        <div class="f-field"><label>Cost</label><input type="number" min="0" step="0.01" placeholder="0.00" value="${d.cost != null ? d.cost : ''}" oninput="editingContractDeliverables[${i}].cost = this.value === '' ? null : parseFloat(this.value)"></div>
         <div class="f-field"><label>Status</label>
           <label style="display:flex;align-items:center;gap:6px;font-size:13px;margin-top:10px">
             <input type="checkbox" ${d.delivered ? 'checked' : ''} onchange="editingContractDeliverables[${i}].delivered = this.checked"> Delivered
