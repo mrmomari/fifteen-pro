@@ -1718,6 +1718,15 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
     </div>
     <div class="f-field"><label>Address</label><input id="cb-cp-address" placeholder="Street, City, State ZIP"></div>
 
+    <div class="form-card-title" style="margin-top:14px">Compensation</div>
+    <div class="panel-sub" style="margin:-4px 0 10px">Carried over from the template — edit per engagement (e.g. a different rate for this counterparty).</div>
+    <div class="form-grid">
+      <div class="f-field"><label>Fees Summary</label><input id="cb-comp-summary" placeholder="e.g. $450/mo (Months 1-3), $350/mo (Month 4+)"></div>
+      <div class="f-field"><label>Term</label><input id="cb-comp-term" placeholder="e.g. Initial 3-month term, auto-renewing"></div>
+      <div class="f-field"><label>Invoicing</label><input id="cb-comp-invoicing" placeholder="e.g. Invoiced 1st of month, net-5"></div>
+      <div class="f-field"><label>Late Fees</label><input id="cb-comp-latefees" placeholder="e.g. $25 after the 10th"></div>
+    </div>
+
     <div class="form-card-title" style="margin-top:14px">Delivery Timeline</div>
     <div id="cb-deliverables"></div>
 
@@ -5238,7 +5247,6 @@ let editingContractId = null;
 let editingContractSections = [];
 let editingContractDeliverables = [];
 let editingContractIntro = '';
-let editingContractCompensation = {};
 let editingContractType = 'customer';
 let contractCustomersCache = {};
 let contractsView = 'list';
@@ -5413,6 +5421,7 @@ function renderContractsTable() {
       <td style="white-space:nowrap">
         <button class="btn-approve" onclick="window.open(getContractLink('${c.docId}'), '_blank', 'noopener')">View</button>
         ${c.status === 'draft' || c.status === 'sent' ? `<button class="btn-reject" onclick="openContractModal('${c.docId}')">Edit</button>` : ''}
+        <button class="btn-reject" onclick="duplicateContract('${c.docId}')" title="Start a new contract pre-filled with this one's clauses, timeline &amp; compensation"><i class="fa-solid fa-copy"></i> Duplicate</button>
         <button class="btn-reject" onclick="copyContractLink('${c.docId}')">Copy Link</button>
         <button class="btn-reject" onclick="sendContractWhatsApp('${c.docId}')"><i class="fa-brands fa-whatsapp"></i></button>
         ${c.counterpartySignature && (!c.providerSignature || !c.providerSignature.name) ? `<button class="btn-approve" onclick="countersignContract('${c.docId}')">Countersign</button>` : ''}
@@ -5450,10 +5459,17 @@ function onContractTemplateSelectChange() {
   editingContractSections = JSON.parse(JSON.stringify(t.sections || []));
   editingContractDeliverables = (t.deliverables || []).map(d => ({ ...d, dueDate: '', delivered: false }));
   editingContractIntro = t.intro || '';
-  editingContractCompensation = JSON.parse(JSON.stringify(t.compensation || {}));
   editingContractType = t.type === 'vendor' ? 'vendor' : 'customer';
+  setContractCompensationFields(t.compensation || {});
   populateContractCounterpartySelect();
   renderContractDeliverablesEditor();
+}
+
+function setContractCompensationFields(comp) {
+  document.getElementById('cb-comp-summary').value = (comp && comp.summary) || '';
+  document.getElementById('cb-comp-term').value = (comp && comp.term) || '';
+  document.getElementById('cb-comp-invoicing').value = (comp && comp.invoicing) || '';
+  document.getElementById('cb-comp-latefees').value = (comp && comp.lateFees) || '';
 }
 
 function populateContractCounterpartySelect() {
@@ -5502,7 +5518,7 @@ async function openContractModal(docId) {
     editingContractSections = JSON.parse(JSON.stringify(c.sections || []));
     editingContractDeliverables = JSON.parse(JSON.stringify(c.deliverables || []));
     editingContractIntro = c.intro || '';
-    editingContractCompensation = JSON.parse(JSON.stringify(c.compensation || {}));
+    setContractCompensationFields(c.compensation || {});
     tplSel.value = c.templateId || '';
     document.getElementById('cb-title').value = c.title || '';
     document.getElementById('cb-type').textContent = c.type === 'vendor' ? 'Vendor Agreement' : 'Customer Agreement';
@@ -5515,7 +5531,8 @@ async function openContractModal(docId) {
     document.getElementById('cb-cp-phone').value = c.counterpartyPhone || '';
     renderContractDeliverablesEditor();
   } else {
-    editingContractSections = []; editingContractDeliverables = []; editingContractIntro = ''; editingContractCompensation = {};
+    editingContractSections = []; editingContractDeliverables = []; editingContractIntro = '';
+    setContractCompensationFields({});
     document.getElementById('cb-title').value = '';
     document.getElementById('cb-type').textContent = '—';
     document.getElementById('cb-effective-date').value = '';
@@ -5529,6 +5546,39 @@ async function openContractModal(docId) {
   }
 
   document.getElementById('contractModal').classList.add('open');
+}
+
+async function duplicateContract(docId) {
+  const src = contracts.find(x => x.docId === docId);
+  if (!src) return;
+  editingContractId = null;
+  if (!contractTemplates.length) await loadContractTemplates();
+  if (!vendors.length) await loadVendors();
+
+  editingContractType = src.type || 'customer';
+  editingContractSections = JSON.parse(JSON.stringify(src.sections || []));
+  editingContractDeliverables = (src.deliverables || []).map(d => ({ ...d, dueDate: '', delivered: false }));
+  editingContractIntro = src.intro || '';
+
+  document.getElementById('cb-modal-title').textContent = `New Contract — duplicated from "${src.title || 'Untitled'}"`;
+  const tplSel = document.getElementById('cb-template');
+  tplSel.innerHTML = contractTemplates.map(t => `<option value="${t.docId}">${escHtml(t.name)} (${t.type})</option>`).join('');
+  tplSel.value = src.templateId || '';
+  tplSel.disabled = false;
+  document.getElementById('cb-title').value = src.title || '';
+  document.getElementById('cb-type').textContent = editingContractType === 'vendor' ? 'Vendor Agreement' : 'Customer Agreement';
+  document.getElementById('cb-effective-date').value = '';
+  setContractCompensationFields(src.compensation || {});
+  populateContractCounterpartySelect();
+  document.getElementById('cb-counterparty').value = '';
+  document.getElementById('cb-cp-name').value = '';
+  document.getElementById('cb-cp-address').value = '';
+  document.getElementById('cb-cp-email').value = '';
+  document.getElementById('cb-cp-phone').value = '';
+  renderContractDeliverablesEditor();
+
+  document.getElementById('contractModal').classList.add('open');
+  toast('Duplicated — pick the counterparty, set a new Effective Date, delivery dates, and Compensation, then Save', 'success');
 }
 
 function closeContractModal() {
@@ -5561,7 +5611,12 @@ async function saveContract() {
     intro: editingContractIntro,
     sections: editingContractSections,
     deliverables: editingContractDeliverables,
-    compensation: editingContractCompensation
+    compensation: {
+      summary: document.getElementById('cb-comp-summary').value.trim(),
+      term: document.getElementById('cb-comp-term').value.trim(),
+      invoicing: document.getElementById('cb-comp-invoicing').value.trim(),
+      lateFees: document.getElementById('cb-comp-latefees').value.trim()
+    }
   };
 
   try {
