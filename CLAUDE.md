@@ -102,10 +102,12 @@ vendors/{id}            — persistent vendor directory (admin.html Vendors tab)
     regardless of the contract's type/counterparty (e.g. a signed customer/client contract that this vendor
     is the one actually fulfilling), see contracts/{id}.fulfillmentVendorId below
   — each linked contract also has a **Create Vendor Agreement** button: opens a brand-new draft contract
-    (type: 'vendor', this vendor as counterparty) seeded from the linked contract's clauses/timeline, with
-    every service's Cost pre-filled from the price already entered above (delivery dates left blank — a
-    separate engagement, its own schedule) — for formalizing an actual signed agreement between Fifteen and
-    the vendor using the same per-service prices already captured, without retyping them
+    (type: 'vendor', this vendor as counterparty) seeded from the linked contract's clauses and delivery
+    timeline (each deliverable's dueDate and cost carried over as-is, editable from there), with a fresh
+    Compensation section built from this vendor's own per-service costs (never the linked contract's
+    compensation object — that's the client's price/terms, so it's deliberately not copied, kept off the
+    vendor's contract) — for formalizing an actual signed agreement between Fifteen and the vendor using
+    the same per-service prices already captured, without retyping them or exposing the client's pricing
 
 contractTemplates/{id}   — reusable contract templates (admin.html Contracts tab → Templates)
   name, type: 'customer' | 'vendor'
