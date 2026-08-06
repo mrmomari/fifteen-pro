@@ -162,7 +162,8 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
 /* ── Cards / tiles ── */
 .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px}
 .stats-row.six{grid-template-columns:repeat(6,1fr)}
-@media(max-width:1200px){.stats-row.six{grid-template-columns:repeat(3,1fr)}}
+.stats-row.eight{grid-template-columns:repeat(8,1fr)}
+@media(max-width:1200px){.stats-row.six{grid-template-columns:repeat(3,1fr)}.stats-row.eight{grid-template-columns:repeat(4,1fr)}}
 .stat-tile.clickable{cursor:pointer;transition:all .15s}
 .stat-tile.clickable:hover{border-color:var(--green);transform:translateY(-1px)}
 
@@ -393,7 +394,7 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
   .mob-bar{display:flex}
   .dash-header{display:none}
   .dash-body{padding:20px 16px}
-  .stats-row,.stats-row.six{grid-template-columns:1fr 1fr}
+  .stats-row,.stats-row.six,.stats-row.eight{grid-template-columns:1fr 1fr}
   .form-grid{grid-template-columns:1fr}
   .data-table th:nth-child(3),.data-table td:nth-child(3),
   .data-table th:nth-child(5),.data-table td:nth-child(5){display:none}
@@ -548,7 +549,7 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
           <div class="panel-heading">Overview</div>
           <div class="panel-sub">Everything that needs your attention, at a glance. Click a tile to jump to it.</div>
 
-          <div class="stats-row six">
+          <div class="stats-row eight">
             <div class="stat-tile clickable" onclick="switchTab('applications')">
               <div class="stat-tile-num orange" id="ovApps">—</div>
               <div class="stat-tile-label">Pending Applications</div>
@@ -572,6 +573,14 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
             <div class="stat-tile clickable" onclick="switchTab('services-mgmt')">
               <div class="stat-tile-num green" id="ovServices">—</div>
               <div class="stat-tile-label">Active Services</div>
+            </div>
+            <div class="stat-tile clickable" onclick="switchTab('contracts')">
+              <div class="stat-tile-num orange" id="ovContractsAwaiting">—</div>
+              <div class="stat-tile-label">Contracts Awaiting Countersign</div>
+            </div>
+            <div class="stat-tile clickable" onclick="switchTab('vendors')">
+              <div class="stat-tile-num green" id="ovVendors">—</div>
+              <div class="stat-tile-label">Active Vendors</div>
             </div>
           </div>
 
@@ -1946,6 +1955,8 @@ async function showDashboard() {
   await loadInvoices();
   await loadAuditLogs();
   await loadNotifications();
+  await loadContracts();
+  await loadVendors();
   renderOverview();
 }
 
@@ -1960,6 +1971,10 @@ function renderOverview() {
   set('ovTasks',    allTasks.filter(t => (t.status || 'pending') !== 'completed').length);
   set('ovInvoices', invoices.filter(i => i.status === 'pending' || i.status === 'overdue').length);
   set('ovServices', Object.values(custServicesCache).filter(s => s.status === 'active').length);
+  // "Awaiting countersign" = counterparty has signed but Fifteen hasn't yet — the concrete next
+  // action for the admin, not just "sent and waiting on someone else".
+  set('ovContractsAwaiting', contracts.filter(c => c.counterpartySignature && c.counterpartySignature.name && (!c.providerSignature || !c.providerSignature.name)).length);
+  set('ovVendors', vendors.filter(v => v.active !== false).length);
 
   const wrap = document.getElementById('ovActivity');
   if (!wrap) return;
