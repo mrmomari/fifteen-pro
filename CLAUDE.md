@@ -107,7 +107,13 @@ vendors/{id}            — persistent vendor directory (admin.html Vendors tab)
     Compensation section built from this vendor's own per-service costs (never the linked contract's
     compensation object — that's the client's price/terms, so it's deliberately not copied, kept off the
     vendor's contract) — for formalizing an actual signed agreement between Fifteen and the vendor using
-    the same per-service prices already captured, without retyping them or exposing the client's pricing
+    the same per-service prices already captured, without retyping them or exposing the client's pricing.
+    Also appends two generated clauses so the vendor has enough context to do the work without seeing the
+    client's contract: "Project Reference" (names the linked contract's counterparty as the underlying
+    client, for context only — not a party to the vendor agreement) and "Information & Materials Provided
+    by Fifteen" (Fifteen will furnish credentials/assets/briefs needed to hit the timeline, with a
+    tolling clause if it doesn't) — both are just regular sections.entries, editable/removable like any
+    other clause before sending
 
 contractTemplates/{id}   — reusable contract templates (admin.html Contracts tab → Templates)
   name, type: 'customer' | 'vendor'
@@ -135,7 +141,8 @@ contracts/{id}           — one per engagement, behind contract.html?id=... (ad
   counterpartyName, counterpartyAddress, counterpartyEmail, counterpartyPhone
   title, effectiveDate     — effectiveDate is 'YYYY-MM-DD'
   intro, sections: [{ title, body }], compensation: { summary, term, invoicing, lateFees }  — editable per contract
-    (no longer locked to the template's snapshot — admin.html's New/Edit Contract modal exposes all four fields)
+    (no longer locked to the template's snapshot — admin.html's New/Edit Contract modal exposes all four,
+    including a full add/remove/edit Sections builder and an Intro textarea, same as the Templates tab's)
   deliverables: [{ id, label, detail, dueRule, dueDate, delivered, cost }]  — dueDate/delivered/cost are set per
     engagement (cost is optional, admin-entered per line item — what's owed to whichever vendor is linked via
     fulfillmentVendorId for each service, editable both from the Contracts tab and from that vendor's own edit
