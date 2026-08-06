@@ -3702,6 +3702,16 @@ async function saveVendorContractDeliverables(contractId) {
 // clauses/timeline, with each service's Cost pre-filled from the price already entered above — so the
 // admin isn't retyping prices that were already captured while linking. Delivery dates are left blank
 // since this is a separate engagement with its own schedule; the linked contract itself is untouched.
+// Builds a compensation summary from this vendor's own per-service prices — never the client
+// contract's compensation object, which would otherwise leak the client's price/terms to the vendor.
+function buildVendorCompensationSummary(deliverables) {
+  const priced = deliverables.filter(d => d.cost != null && d.cost !== '');
+  if (!priced.length) return '';
+  const total = deliverables.reduce((sum, d) => sum + (Number(d.cost) || 0), 0);
+  const lines = priced.map(d => `${d.label}: $${Number(d.cost).toFixed(2)}`).join('; ');
+  return `${lines}. Total: $${total.toFixed(2)}.`;
+}
+
 async function createVendorAgreementFromLinked(contractId) {
   const src = contracts.find(x => x.docId === contractId);
   if (!src || !editingVendorId) return;
@@ -3714,7 +3724,9 @@ async function createVendorAgreementFromLinked(contractId) {
   editingContractId = null;
   editingContractType = 'vendor';
   editingContractSections = JSON.parse(JSON.stringify(src.sections || []));
-  editingContractDeliverables = rows.map(d => ({ ...d, dueDate: '', delivered: false }));
+  // Keep each service's dueDate (the vendor needs to know when it's due) and cost (their price);
+  // only reset delivered, since nothing has shipped yet under this new, separate agreement.
+  editingContractDeliverables = rows.map(d => ({ ...d, delivered: false }));
   editingContractIntro = src.intro || '';
 
   closeVendorModal();
@@ -3726,8 +3738,11 @@ async function createVendorAgreementFromLinked(contractId) {
   tplSel.disabled = false;
   document.getElementById('cb-title').value = src.title || '';
   document.getElementById('cb-type').value = 'vendor';
-  document.getElementById('cb-effective-date').value = '';
-  setContractCompensationFields(src.compensation || {});
+  document.getElementById('cb-effective-date').value = src.effectiveDate || '';
+  // Deliberately NOT src.compensation — that's the client's price/terms. Built fresh from this
+  // vendor's own per-service costs instead; Term/Invoicing/LateFees are left blank for the admin
+  // to set for this specific vendor relationship rather than inheriting the client's.
+  setContractCompensationFields({ summary: buildVendorCompensationSummary(editingContractDeliverables), term: '', invoicing: '', lateFees: '' });
   populateContractCounterpartySelect();
   document.getElementById('cb-counterparty').value = targetVendorId;
   onContractCounterpartySelectChange();
@@ -3735,7 +3750,7 @@ async function createVendorAgreementFromLinked(contractId) {
   renderContractDeliverablesEditor();
 
   document.getElementById('contractModal').classList.add('open');
-  toast('Vendor prices carried over from the linked contract — set a new Effective Date and delivery dates, then Save', 'success');
+  toast('Vendor prices & delivery dates carried over — adjust anything that should differ, then Save', 'success');
 }
 
 let _savingVendor = false;
