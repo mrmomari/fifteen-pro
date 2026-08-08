@@ -4953,19 +4953,57 @@ function closeSendInvoiceModal() {
   sendingInvoiceId = null;
 }
 
-function buildInvoiceMessage(inv, cust, docId) {
+function invoiceStatusLabel(status) {
+  const s = status || 'pending';
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+// WhatsApp supports a light markdown dialect (*bold*, _italic_) — lean on
+// that plus a couple of emoji anchors so the message reads like a real
+// invoice at a glance instead of a wall of plain labels.
+function buildInvoiceWhatsAppMessage(inv, cust, docId) {
   const invoiceLink = getInvoiceLink(docId);
   return [
-    `Hi${cust.name ? ' ' + cust.name : ''}! Here's your invoice from Fifteen:`,
+    `Hi${cust.name ? ' ' + cust.name : ''}! 👋`,
     '',
-    `Description: ${inv.description || 'Invoice'}`,
-    `Amount: ${invoiceAmountStr(inv)}`,
-    `Due: ${inv.dueDate ? formatDate(inv.dueDate) : '—'}`,
-    `Status: ${inv.status || 'pending'}`,
+    `Here's your invoice from *Fifteen*:`,
     '',
-    `View invoice & payment details: ${invoiceLink}`,
+    `🧾 *${inv.description || 'Invoice'}*`,
+    `💰 Amount: *${invoiceAmountStr(inv)}*`,
+    `📅 Due: *${inv.dueDate ? formatDate(inv.dueDate) : '—'}*`,
+    `📌 Status: *${invoiceStatusLabel(inv.status)}*`,
     '',
+    `🔗 View invoice & payment details:`,
+    invoiceLink,
+    '',
+    'Thanks for your business!',
     '— Fifteen'
+  ].join('\n');
+}
+
+// mailto: bodies are plain text — no markdown, so this leans on simple
+// aligned labels and a proper greeting/sign-off instead.
+function buildInvoiceEmailBody(inv, cust, docId) {
+  const invoiceLink = getInvoiceLink(docId);
+  return [
+    `Hi${cust.name ? ' ' + cust.name : ''},`,
+    '',
+    `Please find your invoice from Fifteen below.`,
+    '',
+    'INVOICE DETAILS',
+    '------------------------------------',
+    `Description:  ${inv.description || 'Invoice'}`,
+    `Amount:       ${invoiceAmountStr(inv)}`,
+    `Due Date:     ${inv.dueDate ? formatDate(inv.dueDate) : '—'}`,
+    `Status:       ${invoiceStatusLabel(inv.status)}`,
+    '',
+    'View invoice & payment details:',
+    invoiceLink,
+    '',
+    'If you have any questions about this invoice, just reply to this email.',
+    '',
+    'Thanks,',
+    'Fifteen'
   ].join('\n');
 }
 
@@ -4975,7 +5013,7 @@ function sendInvoiceWhatsApp() {
   const digits = (document.getElementById('si-phone').value || '').replace(/[^\d]/g, '');
   if (!digits) { toast('Enter a WhatsApp number first', 'error'); return; }
   const cust = invoiceCustomers[inv.userId] || {};
-  const text = encodeURIComponent(buildInvoiceMessage(inv, cust, sendingInvoiceId));
+  const text = encodeURIComponent(buildInvoiceWhatsAppMessage(inv, cust, sendingInvoiceId));
   window.open(`https://wa.me/${digits}?text=${text}`, '_blank', 'noopener');
 }
 
@@ -4986,7 +5024,7 @@ function sendInvoiceEmail() {
   if (!email) { toast('Enter a customer email first', 'error'); return; }
   const cust = invoiceCustomers[inv.userId] || {};
   const subject = encodeURIComponent(`Invoice from Fifteen${inv.description ? ' — ' + inv.description : ''}`);
-  const body = encodeURIComponent(buildInvoiceMessage(inv, cust, sendingInvoiceId));
+  const body = encodeURIComponent(buildInvoiceEmailBody(inv, cust, sendingInvoiceId));
   window.location.href = `mailto:${encodeURIComponent(email)}?subject=${subject}&body=${body}`;
 }
 

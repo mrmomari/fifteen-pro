@@ -77,9 +77,13 @@ body{background:var(--cream);color:var(--text);font-family:'Inter',system-ui,san
 }
 @media print{
   body{background:#fff}
-  .iv-print{display:none}
-  .iv-box{box-shadow:none;border:1px solid rgba(0,0,0,.12);break-inside:avoid}
-  .iv-page{padding:10px 0}
+  .iv-print{display:none !important}
+  .iv-page{max-width:100%;padding:0}
+  .iv-header{margin-bottom:16px}
+  .iv-logo{margin-bottom:10px}
+  .iv-box{box-shadow:none;border:1px solid rgba(0,0,0,.12);break-inside:avoid;padding:14px 18px;margin-bottom:10px}
+  .iv-amount-row{padding:8px 0}
+  .iv-foot{margin-top:14px}
 }
 </style>
 </head>
@@ -199,7 +203,7 @@ function bankDetailsHtml() {
   }
   if (b.zelleQrUrl) {
     html += `<div class="iv-comp-row" style="align-items:flex-start">
-      <span class="iv-comp-label">Pay Via</span>
+      <span class="iv-comp-label">${rows.length ? 'Or Via' : 'Pay Via'}</span>
       <span>
         <strong>Zelle</strong>
         ${b.zelleNote ? `<div style="font-size:12px;color:var(--text-dim);margin:4px 0 8px">${escHtml(b.zelleNote)}</div>` : ''}
