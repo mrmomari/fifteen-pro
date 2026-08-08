@@ -206,10 +206,23 @@ function bankDetailsHtml() {
     ['Bank', b.bankName], ['Account Name', b.accountName], ['Account Number', b.accountNumber],
     ['Routing Number', b.routingNumber], ['SWIFT / BIC', b.swift], ['IBAN', b.iban], ['Notes', b.notes]
   ].filter(([, v]) => v);
-  if (!rows.length) return '';
-  return `<div class="ct-comp-row" style="border-top:2px solid rgba(0,0,0,.08);margin-top:4px;padding-top:12px">
-    <span class="ct-comp-label">Pay Via</span><span><strong>Bank Transfer</strong></span>
-  </div>` + rows.map(([label, v]) => `<div class="ct-comp-row"><span class="ct-comp-label">${escHtml(label)}</span><span>${escHtml(v)}</span></div>`).join('');
+  let html = '';
+  if (rows.length) {
+    html += `<div class="ct-comp-row" style="border-top:2px solid rgba(0,0,0,.08);margin-top:4px;padding-top:12px">
+      <span class="ct-comp-label">Pay Via</span><span><strong>Bank Transfer</strong></span>
+    </div>` + rows.map(([label, v]) => `<div class="ct-comp-row"><span class="ct-comp-label">${escHtml(label)}</span><span>${escHtml(v)}</span></div>`).join('');
+  }
+  if (b.zelleQrUrl) {
+    html += `<div class="ct-comp-row" style="border-top:2px solid rgba(0,0,0,.08);margin-top:4px;padding-top:12px;align-items:flex-start">
+      <span class="ct-comp-label">Pay Via</span>
+      <span>
+        <strong>Zelle</strong>
+        ${b.zelleNote ? `<div style="font-size:12px;color:#666;margin:4px 0 8px">${escHtml(b.zelleNote)}</div>` : ''}
+        <img src="${escHtml(b.zelleQrUrl)}" alt="Zelle QR code" style="display:block;width:140px;height:140px;object-fit:contain;border:1px solid rgba(0,0,0,.1);border-radius:8px;margin-top:6px">
+      </span>
+    </div>`;
+  }
+  return html;
 }
 
 function partyBlock(label, name, address, email, phone) {
