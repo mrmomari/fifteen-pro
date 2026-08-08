@@ -87,7 +87,6 @@ settings/company        — company info, logo URL, social links, bank account (
                            (?cr=, only when showPrices is on). Admin-only otherwise; blank fields are hidden
 settings/pricing        — currency, tax, bundle discount, promo codes
 settings/team           — { members: [name, ...] } — internal team roster for milestone "Assigned To"; no login, admin-managed (admin.html Tasks tab)
-settings/industryContacts — { mapping: { industryName: phoneNumber, ... } } — per-industry WhatsApp routing for application quiz reports (admin.html Applications tab)
 settings/notifications  — { emailApplications, emailServices, emailTickets, emailInvoices, emailRecipients, smsEnabled } — read by the optional
                            backend service's daily digest/overdue-invoice job (server/); inert if that service isn't deployed
 settings/markupRules    — { defaultPct, byPhase: { 1, 2, 3 }, byService: { serviceId: pct } } — configurable markup used by
@@ -99,6 +98,9 @@ admins/{uid}            — admin registry (doc id = Firebase Auth UID); managed
 
 vendors/{id}            — persistent vendor directory (admin.html Vendors tab), independent of any one report
   name, email, phone, phases: [1,2,3], notes, active
+  internalContactName, internalContactPhone — optional: the internal team member who owns this vendor
+    relationship, separate from the vendor's own email/phone above. Used only for the "Message Internal
+    Contact" WhatsApp shortcut in the vendor's edit modal.
   createdAt, updatedAt
   — distinct from vendorQuotes below: this is a reusable contact record; vendorQuotes is the disposable
     per-engagement passcode-protected cost sheet. vendorQuotes.vendorId can optionally link back here.
@@ -187,6 +189,10 @@ customers/{uid}         — created when admin approves an application, or direc
   name, email, industry, phone, applicationId
   status: 'active'
   createdAt
+  internalContactName, internalContactPhone — optional: the internal team member (e.g. account manager)
+    who owns this customer relationship, used only for the "Message" WhatsApp shortcut in Customer 360
+    (admin.html) — never shown to the customer. Set on the Add Customer form or edited any time from
+    Customer 360's Internal Contact card.
   — applicationId is only present when the account came from approving a quiz application; phone is
     optional, only set when entered on the Add Customer form
 
@@ -331,7 +337,7 @@ auditLogs/{id}          — append-only action trail (admin.html Audit tab)
 **New partner applies:**
 1. Completes 15-question quiz on `index.html#apply`
 2. Sees personalized recommendation, fills contact info → saved to `applications` collection
-3. Admin sees it in `admin.html` → Applications tab → **View** shows the full quiz Q&A (readable labels, not raw `q0`..`q14` keys) alongside phone/website, plus a **Send Report via WhatsApp** button that routes the full report to whichever number is configured for that application's industry in the Industry WhatsApp Routing card (`settings/industryContacts`) — e.g. the team member or group handling that sector
+3. Admin sees it in `admin.html` → Applications tab → **View** shows the full quiz Q&A (readable labels, not raw `q0`..`q14` keys) alongside phone/website, plus a **Send Report via WhatsApp** button — prompts for a WhatsApp number each time (whoever is covering that lead) and sends the full report there; no persistent per-industry routing table anymore
 4. Admin clicks Approve → Firebase Auth account created → password-reset email sent → a `customers/{uid}` doc is created
 5. Customer sets password → logs in at `portal.html`
 6. **Approving does NOT assign any service or create anything billable.** Nothing shows up for that customer in Service Mgmt, Orders, or Invoices until admin explicitly does step 7/8 below — the quiz answers are only a signal of what to sell them.
@@ -403,12 +409,12 @@ auditLogs/{id}          — append-only action trail (admin.html Audit tab)
 
 **Admin manages content:**
 - Sidebar → Admin → `admin.html` → signs in (email/password) → sidebar groups tabs by where they sit in the business flow: **Pipeline** (Applications, Orders, Questionnaires) → **Customers** (Access, Contracts, Invoices) → **Delivery** (Service Mgmt, Tasks, Tickets) → **Partners** (Vendors) → **Settings** (Site Content: Company/Pricing/Services/Expertise, and System: Audit/Notifications)
-- Customers (tab id `access`): **Add Customer** creates a portal account directly, no application required (see flow above). Click any customer row to open **Customer 360** — one view aggregating their application (if any), services + milestone progress, contracts, tickets, invoices, tasks, questionnaires, and a merged chronological activity feed, instead of checking each tab separately — plus **Assign Product/Service** and **New Contract** quick actions that jump into those tabs with the customer already selected
+- Customers (tab id `access`): **Add Customer** creates a portal account directly, no application required (see flow above). Click any customer row to open **Customer 360** — one view aggregating their application (if any), services + milestone progress, contracts, tickets, invoices, tasks, questionnaires, and a merged chronological activity feed, instead of checking each tab separately — plus **Assign Product/Service** and **New Contract** quick actions that jump into those tabs with the customer already selected, and an **Internal Contact** card (name + WhatsApp of whoever on the team owns this customer, e.g. their account manager) with Save and one-tap **Message** — set at creation on the Add Customer form or edited any time from here
 - Service Mgmt: assign services to customers, edit status/notes, and manage the milestone checklist per service (progress bar + `x/y complete` shown both in the Active Services table and the edit modal) — this is what the customer sees in their portal. Each milestone can be assigned to a team member and, once checked complete, given a free-text "what was achieved" note — both are editable from the same edit modal, which also has a "Send Progress Update via WhatsApp" button. Milestones can still be added here directly (without a task), for backwards-compatible fine-grained editing.
 - Tasks: the backbone for all internal work — independent of any customer/service. A "Team Members" roster (`settings/team`, name-only, no login) feeds the "Assigned To" dropdown. Admin creates tasks directly (with an optional linked customer + service, due date, assignee, and invoice amount), completes them inline with a "what was achieved" note, and every priced task auto-invoices the linked customer on completion — no more jumping to Service Mgmt just to check something off. Filterable by assignee and status (pending/completed/all).
 - Invoices: bill a customer for completed/in-progress work (manually, or automatically from a completed task); customer sees it in their portal Billing tab in real time
 - Tickets: replies are live — a reply sent from either admin.html or portal.html while the other side has that ticket's thread open appears immediately (`onSnapshot`), no refresh needed
-- Vendors: persistent vendor directory (contact info, phase specialties, notes) + configurable markup rules (used by a questionnaire report's "Apply Rule-Based Markup") + the portfolio-wide margin report — see the vendor/markup flow above
+- Vendors: persistent vendor directory (contact info, phase specialties, notes, and an internal contact — the team member who owns that vendor relationship, with a one-tap **Message Internal Contact** WhatsApp button) + configurable markup rules (used by a questionnaire report's "Apply Rule-Based Markup") + the portfolio-wide margin report — see the vendor/markup flow above
 
 ## Firebase Console Requirements
 - **Authentication → Email/Password** → Enable
@@ -458,6 +464,16 @@ What it adds once deployed:
   (used only when Firebase failed to initialize) has been removed. Admin
   login is Firebase Auth only now, matching how the rest of the app's
   security already worked in practice.
+- **Breaking change — Industry WhatsApp Routing removed.** The Company
+  panel's per-industry `settings/industryContacts` mapping (industry →
+  routing phone number) has been replaced by a per-record **Internal
+  Contact** (name + WhatsApp) on `customers/{uid}` and `vendors/{id}`
+  instead — set on Add Customer / the vendor edit modal, editable from
+  Customer 360 / the vendor modal, with a one-tap Message button on each.
+  Applications' **Send Report via WhatsApp** button now just prompts for
+  a number each time rather than looking one up by industry. The old
+  `settings/industryContacts` doc is no longer read anywhere; delete it
+  manually if you want to clear it out, or leave it, it's inert.
 - **Additive — new collections**: `vendors`, `customerTimeline` (backend-
   only), `settings/markupRules`, `contractTemplates`, `contracts`. None of
   these existed before; nothing reads or depends on them until you use the

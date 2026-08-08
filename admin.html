@@ -837,13 +837,6 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
           </div>
 
           <button class="form-save" onclick="saveCompanyInfo()">Save Company Info</button>
-
-          <div class="form-card" style="max-width:680px;margin-top:22px">
-            <div class="form-card-title">Industry WhatsApp Routing</div>
-            <p style="font-size:12px;color:var(--text-dim);margin:-6px 0 14px">Each application's quiz report is sent via WhatsApp to the number responsible for that industry — e.g. the team member or group handling that sector. Leave a field blank to skip routing for that industry.</p>
-            <div id="industryRoutingList"></div>
-            <button class="form-save" onclick="saveIndustryRouting()">Save Routing</button>
-          </div>
         </div>
 
         <!-- ═══ PRICING PANEL ═══ -->
@@ -1440,6 +1433,19 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
   </div>
 </div>
 
+<!-- ══ Send Application Report via WhatsApp ══ -->
+<div class="modal-overlay" id="appWhatsAppModal">
+  <div class="modal-box" style="width:400px;max-width:92vw;text-align:left">
+    <h3>Send Report via WhatsApp</h3>
+    <p style="font-size:12px;color:var(--text-dim);margin:6px 0 16px">Enter the WhatsApp number of whoever should get this application's full quiz report — e.g. the teammate covering this lead.</p>
+    <div class="f-field"><label>WhatsApp Number</label><input id="aw-phone" type="tel" placeholder="+1 555 123 4567"></div>
+    <div class="modal-actions" style="margin-top:18px">
+      <button class="modal-cancel" onclick="closeAppWhatsAppModal()">Cancel</button>
+      <button class="btn-whatsapp" style="width:auto;padding:10px 18px" onclick="confirmSendApplicationWhatsApp()"><i class="fa-brands fa-whatsapp"></i> Send</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ Service Edit Modal ══ -->
 <div class="modal-overlay" id="svcEditModal">
   <div class="modal-box modal-box-full" style="overflow-y:auto;text-align:left">
@@ -1707,6 +1713,14 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
     <div class="f-field"><label>Notes</label><textarea id="vd-notes" rows="3" placeholder="Strengths, past engagements, reliability…"></textarea></div>
     <div class="f-field"><label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="vd-active" checked> Active</label></div>
 
+    <div class="form-card-title" style="margin-top:14px">Internal Contact</div>
+    <p style="font-size:12px;color:var(--text-dim);margin:-10px 0 14px">Whoever on the team owns this vendor relationship — separate from the vendor's own contact info above.</p>
+    <div class="form-grid">
+      <div class="f-field"><label>Name</label><input id="vd-internal-name" placeholder="e.g. Karim"></div>
+      <div class="f-field"><label>WhatsApp</label><input id="vd-internal-phone" type="tel" placeholder="+1 555 123 4567"></div>
+    </div>
+    <button type="button" class="btn-approve" onclick="messageVendorInternalContact()"><i class="fa-brands fa-whatsapp"></i> Message Internal Contact</button>
+
     <div class="form-card-title" style="margin-top:14px">Linked Contract</div>
     <div id="vd-linked-contracts-wrap"></div>
 
@@ -1819,6 +1833,12 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
       <div class="f-field"><label>Email</label><input id="ac-email" type="email" placeholder="customer@business.com"></div>
       <div class="f-field"><label>Phone</label><input id="ac-phone" type="tel" placeholder="+1 555 123 4567"></div>
       <div class="f-field"><label>Industry</label><input id="ac-industry" placeholder="e.g. Roofing, Retail…"></div>
+    </div>
+    <div class="form-card-title" style="margin-top:8px">Internal Contact (optional)</div>
+    <p style="font-size:12px;color:var(--text-dim);margin:-10px 0 14px">Whoever on the team owns this customer — e.g. their account manager. Used for the "Message" WhatsApp shortcut in Customer 360, not shown to the customer.</p>
+    <div class="form-grid">
+      <div class="f-field"><label>Name</label><input id="ac-ic-name" placeholder="e.g. Sara"></div>
+      <div class="f-field"><label>WhatsApp</label><input id="ac-ic-phone" type="tel" placeholder="+1 555 123 4567"></div>
     </div>
     <div class="modal-actions" style="margin-top:18px">
       <button class="modal-cancel" onclick="closeAddCustomerModal()">Cancel</button>
@@ -2293,7 +2313,6 @@ const INDUSTRY_LIST = [
   'Finance & Fintech', 'Education & Training', 'Hospitality & Tourism',
   'Construction & Contracting', 'Other'
 ];
-let industryContacts = {};
 
 /* ── Discovery questionnaire template (Questionnaires tab → Load Discovery Template) ──
    A retail / farm-&-feed-store style business discovery form. Meant as a
@@ -2540,41 +2559,6 @@ function loadSampleContractTemplate() {
   toast('✓ Sample agreement loaded — edit or remove anything before saving', 'success');
 }
 
-async function loadIndustryContacts() {
-  if (!db) return;
-  try {
-    const doc = await db.collection('settings').doc('industryContacts').get();
-    industryContacts = (doc.exists && doc.data().mapping) ? doc.data().mapping : {};
-  } catch(e) { console.warn('Could not load industry routing:', e.message); industryContacts = {}; }
-  renderIndustryRoutingList();
-}
-
-function renderIndustryRoutingList() {
-  const wrap = document.getElementById('industryRoutingList');
-  if (!wrap) return;
-  wrap.innerHTML = INDUSTRY_LIST.map(ind => `
-    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
-      <span style="flex:1;font-size:13px;color:var(--text)">${escHtml(ind)}</span>
-      <input type="tel" data-industry="${escHtml(ind)}" value="${escHtml(industryContacts[ind] || '')}" placeholder="+1 555 123 4567" style="flex:1">
-    </div>
-  `).join('');
-}
-
-async function saveIndustryRouting() {
-  if (!db) { toast('Connect Firebase first', 'error'); return; }
-  try {
-    const mapping = {};
-    document.querySelectorAll('#industryRoutingList input[data-industry]').forEach(i => {
-      const v = i.value.trim();
-      if (v) mapping[i.dataset.industry] = v;
-    });
-    industryContacts = mapping;
-    await db.collection('settings').doc('industryContacts').set({ mapping, updatedAt: new Date().toISOString() }, { merge: true });
-    await AppUtils.logAudit(currentAdminIdentity(), 'update', 'industryContacts', 'settings', {});
-    toast('✓ Routing saved', 'success');
-  } catch(e) { toast('Save failed: ' + e.message, 'error'); }
-}
-
 function buildApplicationReport(app) {
   const lines = [];
   lines.push(`*New Application — ${app.name || 'Unknown'}*`);
@@ -2599,19 +2583,31 @@ function buildApplicationReport(app) {
   return lines.join('\n');
 }
 
+// Who should get this report is a one-off judgment call each time (whichever teammate is
+// covering that lead right now), not a fixed per-industry mapping — so this just opens a small
+// modal for the admin to type/paste that number, instead of an auto-routed lookup.
+let sendingAppReportId = null;
 function sendApplicationWhatsApp(docId) {
   const app = applications.find(a => a.docId === docId);
   if (!app) { toast('Application not found', 'error'); return; }
-  const industry = app.industry || '';
-  const phoneRaw = industryContacts[industry];
-  if (!phoneRaw) {
-    toast(`No WhatsApp number set for "${industry || 'this industry'}" — add one in Industry Routing`, 'error');
-    return;
-  }
-  const digits = phoneRaw.replace(/[^\d]/g, '');
-  if (!digits) { toast('Invalid routing number for this industry', 'error'); return; }
+  sendingAppReportId = docId;
+  document.getElementById('aw-phone').value = '';
+  document.getElementById('appWhatsAppModal').classList.add('open');
+}
+
+function closeAppWhatsAppModal() {
+  document.getElementById('appWhatsAppModal').classList.remove('open');
+  sendingAppReportId = null;
+}
+
+function confirmSendApplicationWhatsApp() {
+  const app = applications.find(a => a.docId === sendingAppReportId);
+  if (!app) { toast('Application not found', 'error'); return; }
+  const digits = (document.getElementById('aw-phone').value || '').replace(/[^\d]/g, '');
+  if (!digits) { toast('Enter a WhatsApp number first', 'error'); return; }
   const text = encodeURIComponent(buildApplicationReport(app));
   window.open(`https://wa.me/${digits}?text=${text}`, '_blank', 'noopener');
+  closeAppWhatsAppModal();
 }
 
 /* ── Approve flow ── */
@@ -2743,7 +2739,7 @@ async function approveApplicationClientFallback(docId, name, email, industry) {
    public quiz (e.g. signed up over a call, a referral, a legacy client).
 ══════════════════════════════════════════════ */
 function openAddCustomerModal() {
-  ['ac-name', 'ac-email', 'ac-phone', 'ac-industry'].forEach(id => { document.getElementById(id).value = ''; });
+  ['ac-name', 'ac-email', 'ac-phone', 'ac-industry', 'ac-ic-name', 'ac-ic-phone'].forEach(id => { document.getElementById(id).value = ''; });
   document.getElementById('addCustomerModal').classList.add('open');
 }
 
@@ -2757,6 +2753,8 @@ async function createCustomerManually() {
   const email = document.getElementById('ac-email').value.trim();
   const phone = document.getElementById('ac-phone').value.trim();
   const industry = document.getElementById('ac-industry').value.trim();
+  const internalContactName = document.getElementById('ac-ic-name').value.trim();
+  const internalContactPhone = document.getElementById('ac-ic-phone').value.trim();
   if (!name || !email) { toast('Name and email are required', 'error'); return; }
 
   const btn = document.getElementById('acSaveBtn');
@@ -2774,6 +2772,8 @@ async function createCustomerManually() {
       await db.collection('customers').doc(uid).set({
         name, email, industry,
         ...(phone ? { phone } : {}),
+        ...(internalContactName ? { internalContactName } : {}),
+        ...(internalContactPhone ? { internalContactPhone } : {}),
         status: 'active',
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
@@ -3228,7 +3228,7 @@ async function loadCustomers() {
     }
     wrap.innerHTML = `<div>
       ${customers.map(c => `<div class="customer-row" style="cursor:pointer" onclick="openCustomer360('${c.docId}')" title="View full customer history">
-        <div><div class="customer-name">${escHtml(c.name || '—')}</div><div style="font-size:11px;color:var(--text-dim)">${escHtml(c.industry || '')}</div></div>
+        <div><div class="customer-name">${escHtml(c.name || '—')}</div><div style="font-size:11px;color:var(--text-dim)">${escHtml(c.industry || '')}${c.internalContactName ? ' · Internal: ' + escHtml(c.internalContactName) : ''}</div></div>
         <div class="customer-email">${escHtml(c.email || '—')}</div>
         <span class="customer-status">${c.status || 'active'}</span>
       </div>`).join('')}
@@ -3247,10 +3247,17 @@ async function loadCustomers() {
    already loaded by showDashboard(), so opening this costs zero extra
    Firestore reads.
 ══════════════════════════════════════════════ */
+// Kept alongside the modal so the Internal Contact card's Save/Message buttons (added below)
+// can act on "whichever customer is currently open" without re-passing an id through every
+// onclick attribute (custId is safe to inline elsewhere since it's a plain Firestore doc id, but
+// the contact name isn't, and re-fetching on every click would just be extra reads).
+let current360Cust = null;
+
 async function openCustomer360(custId) {
   const all = await getAllCustomers();
   const cust = all.find(c => c.docId === custId);
   if (!cust) { toast('Customer not found', 'error'); return; }
+  current360Cust = cust;
 
   document.getElementById('c360-title').innerHTML =
     `${escHtml(cust.name || 'Customer')} <span style="font-size:12px;font-weight:600;color:var(--text-dim)">— ${escHtml(cust.email || '')}</span>`;
@@ -3260,6 +3267,31 @@ async function openCustomer360(custId) {
 
 function closeCustomer360() {
   document.getElementById('cust360Modal').classList.remove('open');
+  current360Cust = null;
+}
+
+async function saveCustomerInternalContact() {
+  if (!db || !current360Cust) return;
+  const name = document.getElementById('c360-ic-name').value.trim();
+  const phone = document.getElementById('c360-ic-phone').value.trim();
+  try {
+    await db.collection('customers').doc(current360Cust.docId).update({
+      internalContactName: name,
+      internalContactPhone: phone
+    });
+    current360Cust.internalContactName = name;
+    current360Cust.internalContactPhone = phone;
+    invalidateCustomersCache();
+    toast('✓ Internal contact saved', 'success');
+  } catch(e) { toast('Save failed: ' + e.message, 'error'); }
+}
+
+function messageCustomerInternalContact() {
+  if (!current360Cust || !current360Cust.internalContactPhone) { toast('No internal contact WhatsApp number set for this customer', 'error'); return; }
+  const digits = current360Cust.internalContactPhone.replace(/[^\d]/g, '');
+  if (!digits) { toast('Invalid WhatsApp number', 'error'); return; }
+  const text = encodeURIComponent(`Hi${current360Cust.internalContactName ? ' ' + current360Cust.internalContactName : ''}, checking in on our customer *${current360Cust.name || 'Unknown'}*.`);
+  window.open(`https://wa.me/${digits}?text=${text}`, '_blank', 'noopener');
 }
 
 function renderCustomer360Body(cust) {
@@ -3275,6 +3307,21 @@ function renderCustomer360Body(cust) {
   const quickActions = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
     <button class="btn-approve" onclick="closeCustomer360(); switchTab('services-mgmt', {presetCustomerId:'${custId}'})"><i class="fa-solid fa-briefcase"></i> Assign Product/Service</button>
     <button class="btn-approve" onclick="closeCustomer360(); switchTab('contracts', {newContractForCustomerId:'${custId}'})"><i class="fa-solid fa-file-signature"></i> New Contract</button>
+  </div>`;
+
+  // Dedicated per-customer WhatsApp contact — e.g. their account manager — replacing what used to
+  // be a single industry-wide routing table. Read/written straight off current360Cust rather than
+  // custId so Save can update it in place without a full re-render or extra Firestore read.
+  const internalContactCard = `<div style="border:1px solid rgba(0,0,0,.08);border-radius:8px;padding:14px;margin-bottom:16px;background:rgba(255,255,255,.5)">
+    <div style="font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px"><i class="fa-brands fa-whatsapp"></i> Internal Contact</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <div class="f-field" style="flex:1;min-width:140px;margin-bottom:0"><label>Name</label><input id="c360-ic-name" value="${escHtml(cust.internalContactName || '')}" placeholder="e.g. Sara"></div>
+      <div class="f-field" style="flex:1;min-width:140px;margin-bottom:0"><label>WhatsApp</label><input id="c360-ic-phone" type="tel" value="${escHtml(cust.internalContactPhone || '')}" placeholder="+1 555 123 4567"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn-approve" onclick="saveCustomerInternalContact()">Save</button>
+      <button class="btn-approve" onclick="messageCustomerInternalContact()"><i class="fa-brands fa-whatsapp"></i> Message</button>
+    </div>
   </div>`;
 
   const kpi = (label, val) => `<div style="flex:1;min-width:90px;text-align:center;padding:10px 6px;background:rgba(255,255,255,.5);border-radius:8px">
@@ -3375,7 +3422,7 @@ function renderCustomer360Body(cust) {
     ${body}
   </div>`;
 
-  return kpiRow + profileRow + quickActions + `
+  return kpiRow + profileRow + quickActions + internalContactCard + `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px">
       <div>
         ${section('Services', 'fa-briefcase', servicesSection)}
@@ -3406,7 +3453,6 @@ async function loadAllSettings() {
     if (pricDoc.exists) fillPricingForm(pricDoc.data());
     await loadExpertise();
     await loadTeamMembers();
-    await loadIndustryContacts();
   } catch(e) { console.warn('Could not load settings:', e.message); }
 }
 
@@ -3780,7 +3826,7 @@ function renderVendorList() {
   }
   wrap.innerHTML = vendors.map(v => `
     <div class="customer-row" style="cursor:pointer" onclick="openVendorModal('${v.docId}')" title="Edit vendor">
-      <div><div class="customer-name">${escHtml(v.name || 'Unnamed')}</div><div style="font-size:11px;color:var(--text-dim)">${(v.phases || []).map(p => 'Phase ' + p).join(', ') || 'No specialties set'}</div></div>
+      <div><div class="customer-name">${escHtml(v.name || 'Unnamed')}</div><div style="font-size:11px;color:var(--text-dim)">${(v.phases || []).map(p => 'Phase ' + p).join(', ') || 'No specialties set'}${v.internalContactName ? ' · Internal: ' + escHtml(v.internalContactName) : ''}</div></div>
       <div class="customer-email">${escHtml(v.email || '—')}</div>
       <span class="customer-status">${v.active === false ? 'inactive' : 'active'}</span>
     </div>
@@ -3797,6 +3843,8 @@ async function openVendorModal(docId) {
   [1, 2, 3].forEach(p => { document.getElementById('vd-phase-' + p).checked = !!(v && (v.phases || []).includes(p)); });
   document.getElementById('vd-notes').value = (v && v.notes) || '';
   document.getElementById('vd-active').checked = !v || v.active !== false;
+  document.getElementById('vd-internal-name').value = (v && v.internalContactName) || '';
+  document.getElementById('vd-internal-phone').value = (v && v.internalContactPhone) || '';
   document.getElementById('vd-delete-btn').style.display = v ? '' : 'none';
   document.getElementById('vendorModal').classList.add('open');
 
@@ -3809,6 +3857,18 @@ async function openVendorModal(docId) {
   linkWrap.innerHTML = '<div class="panel-sub" style="margin:0">Loading contracts…</div>';
   if (!contracts.length) await loadContracts();
   renderVendorLinkedContracts();
+}
+
+// Reads the currently-typed fields rather than the saved vendor record, so it reflects an
+// unsaved edit in progress instead of requiring Save first.
+function messageVendorInternalContact() {
+  const name = document.getElementById('vd-internal-name').value.trim();
+  const phoneRaw = document.getElementById('vd-internal-phone').value.trim();
+  const vendorName = document.getElementById('vd-name').value.trim();
+  const digits = phoneRaw.replace(/[^\d]/g, '');
+  if (!digits) { toast('Enter an internal contact WhatsApp number first', 'error'); return; }
+  const text = encodeURIComponent(`Hi${name ? ' ' + name : ''}, checking in on our vendor *${vendorName || 'Unknown'}*.`);
+  window.open(`https://wa.me/${digits}?text=${text}`, '_blank', 'noopener');
 }
 
 function closeVendorModal() {
@@ -4007,6 +4067,8 @@ async function saveVendor() {
       phases: [1, 2, 3].filter(p => document.getElementById('vd-phase-' + p).checked),
       notes: document.getElementById('vd-notes').value.trim(),
       active: document.getElementById('vd-active').checked,
+      internalContactName: document.getElementById('vd-internal-name').value.trim(),
+      internalContactPhone: document.getElementById('vd-internal-phone').value.trim(),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
     if (editingVendorId) {
