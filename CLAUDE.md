@@ -21,6 +21,7 @@ B2B digital solutions website for **15fifteen15 / Fifteen**. One partner per ind
 | `questionnaire.html` | Public, no-login discovery questionnaire form — opened via a unique `?id=` link admin.html generates per customer (admin.html Questionnaires tab) |
 | `report.html` | Public report pages: `?vq=` passcode-protected 3rd-party vendor cost sheet, `?cr=` published client engagement roadmap, `?rid=&view=internal\|client` admin-only pop-out of a saved analysis report (requires admin sign-in in the same browser), `?qid=` raw completed-questionnaire Q&A (public get-by-id, same link-trust model as `questionnaire.html?id=`); `&print=1` auto-opens the print dialog (used by admin.html's Export PDF buttons) |
 | `contract.html` | Public contract review + signing page: `?id=` opens a customer- or vendor-facing contract instance (no login), shows parties/recitals/delivery timeline/compensation/clauses, and lets the counterparty type-sign it (name + timestamp); `&print=1` auto-opens the print dialog |
+| `invoice.html` | Public invoice view: `?id=` opens one `invoices/{id}` doc (no login, same link-trust model as `contract.html?id=`/`questionnaire.html?id=` — public `get`-by-id only, the collection can't be listed/browsed) — shows the amount, description, due date, status, and payment details (bank transfer + Zelle QR, hidden once paid); `&print=1` auto-opens the print dialog. This is what admin.html's Invoices tab **Send**/**View** actions link to |
 | `firebase-config.js` | Firebase project credentials (project: `fifteen-pro`) |
 | `backend-config.js` | Optional backend service URL (`apiUrl`, empty = disabled) — see `server/README.md`. Contains no secrets, safe to commit like `firebase-config.js` |
 | `app.js` | Shared admin.html utilities (`AppUtils`: HTML escaping, audit logging, confirm-modal helper) |
@@ -77,8 +78,9 @@ All answers + contact saved to `applications/{id}` with `quizAnswers` object and
 settings/company        — company info, logo URL, social links, bank account (bank: { bankName, accountName,
                            accountNumber, routingNumber, swift, iban, notes, zelleQrUrl, zelleNote }) — surfaced
                            wherever the customer needs to pay: portal.html Billing tab (when an invoice is
-                           pending/overdue), contract.html's Compensation section, and report.html's published
-                           client roadmap. zelleQrUrl is an admin-uploaded QR image (Firebase Storage,
+                           pending/overdue), invoice.html (an unpaid invoice's own public page), contract.html's
+                           Compensation section, and report.html's published client roadmap. zelleQrUrl is an
+                           admin-uploaded QR image (Firebase Storage,
                            company/zelle-qr.*) shown alongside the bank details wherever those appear;
                            zelleNote is an optional caption (e.g. the Zelle-enrolled email/phone). Both blank
                            by default — shown only when zelleQrUrl is set
@@ -208,10 +210,13 @@ tickets/{id}/replies/{replyId}   — reply thread on a ticket (admin.html Ticket
   from: 'customer' | 'admin', authorId, message, createdAt
 
 invoices/{id}           — billing invoices per customer
-  userId, description, amount, currency
+  userId, customerName, description, amount, currency
   status: 'paid' | 'pending' | 'overdue'
   dueDate, paidDate
   source, taskId          — present when auto-created by completing a task (see tasks/{id} below)
+  — firestore.rules: public `get` by direct id (same link-trust model as contracts/questionnaires),
+    behind invoice.html?id=...; `list` stays restricted to admin/owner so the collection itself can't
+    be browsed — portal.html's own "my invoices" query is a `list` gated per-doc by isOwner, unaffected
 
 tasks/{id}              — internal work backbone (admin.html Tasks tab), independent of any service
   customerId, customerName   — optional; null for internal/no-customer tasks
@@ -351,7 +356,7 @@ auditLogs/{id}          — append-only action trail (admin.html Audit tab)
    — or automatically, by completing a priced task in the Tasks tab (see below)
 2. Customer sees it immediately in `portal.html` → Billing tab (amount, due date, status) and in the dashboard's Outstanding Invoices KPI
 3. Admin marks it `paid` / `overdue` / back to `pending` from the Invoices tab as money comes in or a due date passes. If the optional backend service (`server/`) is deployed, a daily job also does this automatically — invoices past their due date flip to `overdue` on their own, and (if enabled in Notifications) an email digest goes out. Without that service deployed, this stays fully manual, same as before
-4. Admin → Invoices → any row → **Send** opens a modal with the customer's email (auto-filled from their customer record) and WhatsApp number (auto-filled via the same phone lookup used elsewhere — customer record, falling back to their original application — and editable). **Send via WhatsApp** opens a prefilled `wa.me` chat; **Open Email Draft** opens a `mailto:` link in the admin's own email client — both prefilled with the invoice's description/amount/due date/status and a link to `portal.html` to view and pay. Neither requires the optional backend; nothing is sent automatically, the admin still hits send
+4. Admin → Invoices → any row → **View** opens the public `invoice.html?id=...` page directly (no login) — the actual invoice document: amount, description, due date, status, and payment details (bank transfer + Zelle QR, hidden once paid). **Send** opens a modal with the customer's email (auto-filled from their customer record) and WhatsApp number (auto-filled via the same phone lookup used elsewhere — customer record, falling back to their original application — and editable), plus a **Copy Invoice Link** button. **Send via WhatsApp** opens a prefilled `wa.me` chat; **Open Email Draft** opens a `mailto:` link in the admin's own email client — both prefilled with the invoice's description/amount/due date/status and a link to that same `invoice.html?id=...` page (not `portal.html` — the recipient doesn't need to log in to see what they're paying). Neither requires the optional backend; nothing is sent automatically, the admin still hits send
 
 **Admin completes a task and bills the customer:**
 1. Admin → Tasks → New Task → title, optional customer + linked service, due date, assignee, and an optional invoice amount → saved to `tasks` collection (status `pending`); if a service is linked, a matching entry is also pushed into that service's `milestones[]` so the portal progress bar reflects it

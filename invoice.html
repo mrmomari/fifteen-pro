@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Invoice — Fifteen</title>
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="assets/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#26915E;
+  --green-dim:#1d7a4c;
+  --orange:#E36C44;
+  --red:#c0392b;
+  --cream:#E0E8CF;
+  --cream-alt:#D5DFBE;
+  --text:#1C2416;
+  --text-muted:#5A6B4E;
+  --text-dim:#7A8B6A;
+  --radius:12px;
+  --radius-lg:16px;
+}
+body{background:var(--cream);color:var(--text);font-family:'Inter',system-ui,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased;min-height:100vh}
+
+.iv-shell{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px}
+.iv-card{background:#fff;border-radius:var(--radius-lg);box-shadow:0 8px 40px rgba(0,0,0,.12);padding:44px 38px;width:100%;max-width:440px;text-align:center}
+.iv-card i.big{font-size:34px;color:var(--green);margin-bottom:16px;display:block}
+.iv-card.err i.big{color:var(--orange)}
+.iv-card h2{font-size:20px;font-weight:800;letter-spacing:-.02em;margin-bottom:10px}
+.iv-card p{font-size:13.5px;color:var(--text-muted)}
+.spinner{width:30px;height:30px;border:3px solid rgba(38,145,94,.2);border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.iv-page{max-width:720px;margin:0 auto;padding:40px 20px 80px}
+.iv-header{text-align:center;margin-bottom:30px}
+.iv-logo{display:inline-flex;align-items:center;gap:8px;text-decoration:none;margin-bottom:22px}
+.iv-logo img{max-height:56px;width:auto;object-fit:contain;display:none}
+.iv-logo-text{font-size:24px;font-weight:900;letter-spacing:-.04em;color:var(--text)}
+.iv-logo-text span{color:var(--green)}
+.iv-title{font-size:26px;font-weight:900;letter-spacing:-.03em;line-height:1.25;margin-bottom:8px}
+.iv-sub{font-size:14px;color:var(--text-muted)}
+.iv-meta-line{margin-top:12px;font-size:12px;color:var(--text-dim)}
+.iv-tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#fff;background:var(--green);border-radius:6px;padding:5px 12px;margin-top:12px}
+.iv-tag.pending{background:var(--orange)}
+.iv-tag.overdue{background:var(--red)}
+
+.iv-box{background:#fff;border-radius:var(--radius);box-shadow:0 2px 14px rgba(0,0,0,.05);margin-bottom:18px;padding:22px 26px}
+.iv-sec-title{font-size:12px;font-weight:800;color:var(--green);text-transform:uppercase;letter-spacing:.05em;margin:0 0 10px}
+.iv-party-label{font-size:10.5px;font-weight:800;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.iv-party-name{font-size:14px;font-weight:700;margin-bottom:2px}
+.iv-party-line{font-size:12.5px;color:var(--text-muted)}
+
+.iv-amount-row{display:flex;align-items:baseline;justify-content:space-between;gap:14px;padding:14px 0;border-top:1px solid rgba(0,0,0,.06)}
+.iv-amount-row:first-child{border-top:none}
+.iv-amount-label{font-size:13px;color:var(--text-muted);font-weight:600}
+.iv-amount-value{font-size:15px;font-weight:700}
+.iv-amount-value.total{font-size:26px;font-weight:900;color:var(--green)}
+
+.iv-comp-row{display:flex;gap:10px;padding:6px 0;font-size:13px;border-top:1px solid rgba(0,0,0,.06)}
+.iv-comp-row:first-child{border-top:none}
+.iv-comp-label{font-weight:700;color:var(--text-dim);flex-shrink:0;width:130px}
+
+.iv-footer-note{font-size:12px;color:var(--text-dim);text-align:center;margin:22px auto 16px;max-width:520px}
+.iv-print{position:fixed;right:18px;bottom:18px;background:var(--text);color:#fff;border:none;border-radius:99px;padding:12px 20px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.25);display:flex;align-items:center;gap:8px}
+.iv-print:hover{background:#000}
+.iv-foot{border-top:1.5px solid rgba(0,0,0,.1);margin-top:26px;padding-top:12px;font-size:11px;color:var(--text-dim);display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}
+
+@media(max-width:640px){
+  .iv-box{padding:16px}
+  .iv-title{font-size:21px}
+}
+@media print{
+  body{background:#fff}
+  .iv-print{display:none}
+  .iv-box{box-shadow:none;border:1px solid rgba(0,0,0,.12);break-inside:avoid}
+  .iv-page{padding:10px 0}
+}
+</style>
+</head>
+<body>
+
+<div class="iv-shell" id="loadingScreen">
+  <div class="iv-card"><div class="spinner"></div><p>Loading invoice…</p></div>
+</div>
+
+<div class="iv-shell" id="errorScreen" style="display:none">
+  <div class="iv-card err">
+    <i class="fa-solid fa-triangle-exclamation big"></i>
+    <h2 id="errTitle">Link Not Found</h2>
+    <p id="errMsg">This invoice link is invalid or has been removed. Please check the link or contact whoever sent it to you.</p>
+  </div>
+</div>
+
+<div class="iv-page" id="pageScreen" style="display:none">
+  <div class="iv-header">
+    <a href="https://15fifteen15.com" class="iv-logo">
+      <img id="ivLogoImg" alt="Fifteen">
+      <span class="iv-logo-text" id="ivLogoText">FIFTEEN<span>.</span></span>
+    </a>
+    <h1 class="iv-title" id="ivTitle">Invoice</h1>
+    <p class="iv-sub" id="ivSub"></p>
+    <div class="iv-meta-line" id="ivMeta"></div>
+    <div id="ivTagWrap"></div>
+  </div>
+  <div id="ivBody"></div>
+  <div class="iv-foot"><span>© 2026 Fifteen · 15fifteen15.com</span><span>Please retain a copy of this invoice for your records</span></div>
+</div>
+
+<button class="iv-print" id="printBtn" style="display:none" onclick="window.print()"><i class="fa-solid fa-print"></i> Print / Save PDF</button>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+(function(){
+
+function escHtml(str) {
+  return String(str == null ? '' : str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+function show(id) {
+  ['loadingScreen','errorScreen','pageScreen'].forEach(s => {
+    document.getElementById(s).style.display = (s === id) ? (s === 'pageScreen' ? 'block' : 'flex') : 'none';
+  });
+}
+
+function fail(title, msg) {
+  document.getElementById('errTitle').textContent = title || 'Link Not Found';
+  if (msg) document.getElementById('errMsg').textContent = msg;
+  show('errorScreen');
+}
+
+function fmtDate(val) {
+  try {
+    if (!val) return '';
+    const d = val && val.toDate ? val.toDate() : new Date(val + (typeof val === 'string' && val.length === 10 ? 'T00:00:00' : ''));
+    return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  } catch(e) { return String(val || ''); }
+}
+
+function fmtMoney(amount, currency) {
+  const symbol = (currency && currency !== 'USD') ? currency + ' ' : '$';
+  const n = parseFloat(amount);
+  if (isNaN(n)) return symbol + '0.00';
+  return symbol + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+const params = new URLSearchParams(location.search);
+const iid = params.get('id');
+
+if (!iid || typeof FIREBASE_CONFIG === 'undefined' || !FIREBASE_CONFIG.apiKey) {
+  fail();
+  return;
+}
+
+firebase.initializeApp(FIREBASE_CONFIG);
+const db = firebase.firestore();
+let invoice = null;
+let company = {};
+
+const companyPromise = db.collection('settings').doc('company').get().then(doc => {
+  company = doc.exists ? doc.data() : {};
+  const logoUrl = (company.logo || '').trim();
+  if (!logoUrl) return;
+  const img = document.getElementById('ivLogoImg');
+  img.onload = () => { img.style.display = 'block'; document.getElementById('ivLogoText').style.display = 'none'; };
+  img.onerror = () => {};
+  img.src = logoUrl;
+}).catch(() => {});
+
+Promise.all([companyPromise, db.collection('invoices').doc(iid).get()]).then(([, doc]) => {
+  if (!doc.exists) { fail(); return; }
+  invoice = doc.data();
+  render();
+  show('pageScreen');
+  maybePrint();
+}).catch(err => { console.error(err); fail(); });
+
+function maybePrint() {
+  if (params.get('print')) setTimeout(() => window.print(), 600);
+}
+
+function bankDetailsHtml() {
+  const b = company.bank || {};
+  const rows = [
+    ['Bank', b.bankName], ['Account Name', b.accountName], ['Account Number', b.accountNumber],
+    ['Routing Number', b.routingNumber], ['SWIFT / BIC', b.swift], ['IBAN', b.iban], ['Notes', b.notes]
+  ].filter(([, v]) => v);
+  let html = '';
+  if (rows.length) {
+    html += `<div class="iv-comp-row"><span class="iv-comp-label">Pay Via</span><span><strong>Bank Transfer</strong></span></div>` +
+      rows.map(([label, v]) => `<div class="iv-comp-row"><span class="iv-comp-label">${escHtml(label)}</span><span>${escHtml(v)}</span></div>`).join('');
+  }
+  if (b.zelleQrUrl) {
+    html += `<div class="iv-comp-row" style="align-items:flex-start">
+      <span class="iv-comp-label">Pay Via</span>
+      <span>
+        <strong>Zelle</strong>
+        ${b.zelleNote ? `<div style="font-size:12px;color:var(--text-dim);margin:4px 0 8px">${escHtml(b.zelleNote)}</div>` : ''}
+        <img src="${escHtml(b.zelleQrUrl)}" alt="Zelle QR code" style="display:block;width:140px;height:140px;object-fit:contain;border:1px solid rgba(0,0,0,.1);border-radius:8px;margin-top:6px">
+      </span>
+    </div>`;
+  }
+  return html;
+}
+
+function statusInfo(status) {
+  const s = status || 'pending';
+  if (s === 'paid') return { label: 'Paid', tag: '' };
+  if (s === 'overdue') return { label: 'Overdue', tag: 'overdue' };
+  return { label: 'Pending', tag: 'pending' };
+}
+
+function render() {
+  const inv = invoice;
+  const st = statusInfo(inv.status);
+  document.title = 'Invoice — Fifteen';
+  document.getElementById('ivTitle').textContent = 'Invoice #' + iid.substring(0, 8).toUpperCase();
+  document.getElementById('ivSub').textContent = inv.customerName ? 'Billed to ' + inv.customerName : '';
+  document.getElementById('ivMeta').textContent = [
+    inv.createdAt ? 'Issued ' + fmtDate(inv.createdAt) : '',
+    inv.dueDate ? 'Due ' + fmtDate(inv.dueDate) : ''
+  ].filter(Boolean).join(' · ');
+  document.getElementById('ivTagWrap').innerHTML = `<span class="iv-tag ${st.tag}">${escHtml(st.label)}</span>`;
+
+  let html = '';
+
+  html += `<div class="iv-box"><div class="iv-sec-title">From</div>
+    <div class="iv-party-name">${escHtml(company.name || 'Fifteen')}</div>
+    ${company.address ? `<div class="iv-party-line">${escHtml(company.address)}</div>` : ''}
+    ${company.email ? `<div class="iv-party-line">${escHtml(company.email)}</div>` : ''}
+    ${company.phone ? `<div class="iv-party-line">${escHtml(company.phone)}</div>` : ''}
+  </div>`;
+
+  if (inv.customerName) {
+    html += `<div class="iv-box"><div class="iv-sec-title">Billed To</div>
+      <div class="iv-party-name">${escHtml(inv.customerName)}</div>
+    </div>`;
+  }
+
+  html += `<div class="iv-box"><div class="iv-sec-title">Invoice</div>
+    <div class="iv-amount-row"><span class="iv-amount-label">${escHtml(inv.description || 'Services rendered')}</span><span class="iv-amount-value">${fmtMoney(inv.amount, inv.currency)}</span></div>
+    <div class="iv-amount-row"><span class="iv-amount-label">Total Due</span><span class="iv-amount-value total">${fmtMoney(inv.amount, inv.currency)}</span></div>
+    ${inv.status === 'paid' && inv.paidDate ? `<div class="iv-amount-row"><span class="iv-amount-label">Paid On</span><span class="iv-amount-value">${escHtml(fmtDate(inv.paidDate))}</span></div>` : ''}
+  </div>`;
+
+  const payHtml = bankDetailsHtml();
+  if (inv.status !== 'paid' && payHtml) {
+    html += `<div class="iv-box"><div class="iv-sec-title">Payment Details</div>${payHtml}</div>`;
+  }
+
+  document.getElementById('ivBody').innerHTML = html;
+  document.getElementById('printBtn').style.display = 'flex';
+}
+
+})();
+</script>
+</body>
+</html>
