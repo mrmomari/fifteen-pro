@@ -476,8 +476,9 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
           </button>
         </nav>
 
+        <!-- Lead intake — everything that turns a visitor into a prospect -->
         <div class="sb-divider"></div>
-        <div class="sb-label">Sales</div>
+        <div class="sb-label">Pipeline</div>
         <nav class="sb-nav">
           <button class="sb-tab" data-tab="applications" onclick="switchTab('applications')">
             <i class="fa-regular fa-clipboard"></i> Applications <span class="sb-count" id="appBadge" style="display:none"></span>
@@ -488,11 +489,24 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
           <button class="sb-tab" data-tab="questionnaires" onclick="switchTab('questionnaires')">
             <i class="fa-solid fa-list-ol"></i> Questionnaires
           </button>
+        </nav>
+
+        <!-- Everything tied to one customer's account, legal agreement, and billing -->
+        <div class="sb-divider"></div>
+        <div class="sb-label">Customers</div>
+        <nav class="sb-nav">
+          <button class="sb-tab" data-tab="access" onclick="switchTab('access')">
+            <i class="fa-solid fa-lock"></i> Customers
+          </button>
           <button class="sb-tab" data-tab="contracts" onclick="switchTab('contracts')">
             <i class="fa-solid fa-file-signature"></i> Contracts
           </button>
+          <button class="sb-tab" data-tab="invoices" onclick="switchTab('invoices')">
+            <i class="fa-solid fa-receipt"></i> Invoices
+          </button>
         </nav>
 
+        <!-- Internal execution of the work already sold -->
         <div class="sb-divider"></div>
         <div class="sb-label">Delivery</div>
         <nav class="sb-nav">
@@ -505,19 +519,22 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
           <button class="sb-tab" data-tab="tickets" onclick="switchTab('tickets')">
             <i class="fa-solid fa-headset"></i> Tickets <span class="sb-count" id="tkBadge" style="display:none"></span>
           </button>
-          <button class="sb-tab" data-tab="invoices" onclick="switchTab('invoices')">
-            <i class="fa-solid fa-receipt"></i> Invoices
+        </nav>
+
+        <!-- 3rd parties Fifteen outsources to — separate from Fifteen's own customers -->
+        <div class="sb-divider"></div>
+        <div class="sb-label">Partners</div>
+        <nav class="sb-nav">
+          <button class="sb-tab" data-tab="vendors" onclick="switchTab('vendors')">
+            <i class="fa-solid fa-handshake"></i> Vendors
           </button>
         </nav>
 
         <div class="sb-divider"></div>
         <div class="sb-label">Settings</div>
         <nav class="sb-nav">
-          <button class="sb-tab" data-tab="company" data-group="company,pricing,services,expertise,vendors" onclick="switchTab('company')">
+          <button class="sb-tab" data-tab="company" data-group="company,pricing,services,expertise" onclick="switchTab('company')">
             <i class="fa-regular fa-building"></i> Site Content
-          </button>
-          <button class="sb-tab" data-tab="access" onclick="switchTab('access')">
-            <i class="fa-solid fa-lock"></i> Access
           </button>
           <button class="sb-tab" data-tab="audit" data-group="audit,notifications" onclick="switchTab('audit')">
             <i class="fa-solid fa-clock-rotate-left"></i> System
@@ -558,6 +575,8 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
           <div class="panel-heading">Overview</div>
           <div class="panel-sub">Everything that needs your attention, at a glance. Click a tile to jump to it.</div>
 
+          <!-- Tile order mirrors the sidebar's Pipeline → Customers → Delivery → Partners
+               grouping, so this row reads as one flow instead of a random grab-bag. -->
           <div class="stats-row eight">
             <div class="stat-tile clickable" onclick="switchTab('applications')">
               <div class="stat-tile-num orange" id="ovApps">—</div>
@@ -567,13 +586,9 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
               <div class="stat-tile-num orange" id="ovOrders">—</div>
               <div class="stat-tile-label">New Orders</div>
             </div>
-            <div class="stat-tile clickable" onclick="switchTab('tickets')">
-              <div class="stat-tile-num red" id="ovTickets">—</div>
-              <div class="stat-tile-label">Open Tickets</div>
-            </div>
-            <div class="stat-tile clickable" onclick="switchTab('tasks')">
-              <div class="stat-tile-num" id="ovTasks">—</div>
-              <div class="stat-tile-label">Pending Tasks</div>
+            <div class="stat-tile clickable" onclick="switchTab('contracts')">
+              <div class="stat-tile-num orange" id="ovContractsAwaiting">—</div>
+              <div class="stat-tile-label">Contracts Awaiting Countersign</div>
             </div>
             <div class="stat-tile clickable" onclick="switchTab('invoices')">
               <div class="stat-tile-num red" id="ovInvoices">—</div>
@@ -583,9 +598,13 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
               <div class="stat-tile-num green" id="ovServices">—</div>
               <div class="stat-tile-label">Active Services</div>
             </div>
-            <div class="stat-tile clickable" onclick="switchTab('contracts')">
-              <div class="stat-tile-num orange" id="ovContractsAwaiting">—</div>
-              <div class="stat-tile-label">Contracts Awaiting Countersign</div>
+            <div class="stat-tile clickable" onclick="switchTab('tasks')">
+              <div class="stat-tile-num" id="ovTasks">—</div>
+              <div class="stat-tile-label">Pending Tasks</div>
+            </div>
+            <div class="stat-tile clickable" onclick="switchTab('tickets')">
+              <div class="stat-tile-num red" id="ovTickets">—</div>
+              <div class="stat-tile-label">Open Tickets</div>
             </div>
             <div class="stat-tile clickable" onclick="switchTab('vendors')">
               <div class="stat-tile-num green" id="ovVendors">—</div>
@@ -760,7 +779,6 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
             <button class="subnav-pill" onclick="switchTab('pricing')">Pricing</button>
             <button class="subnav-pill" onclick="switchTab('services')">Catalog</button>
             <button class="subnav-pill" onclick="switchTab('expertise')">Expertise</button>
-            <button class="subnav-pill" onclick="switchTab('vendors')">Vendors</button>
           </div>
 
           <div class="form-card">
@@ -836,7 +854,6 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
             <button class="subnav-pill active" onclick="switchTab('pricing')">Pricing</button>
             <button class="subnav-pill" onclick="switchTab('services')">Catalog</button>
             <button class="subnav-pill" onclick="switchTab('expertise')">Expertise</button>
-            <button class="subnav-pill" onclick="switchTab('vendors')">Vendors</button>
           </div>
 
           <div class="form-card">
@@ -866,7 +883,6 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
             <button class="subnav-pill" onclick="switchTab('pricing')">Pricing</button>
             <button class="subnav-pill active" onclick="switchTab('services')">Catalog</button>
             <button class="subnav-pill" onclick="switchTab('expertise')">Expertise</button>
-            <button class="subnav-pill" onclick="switchTab('vendors')">Vendors</button>
           </div>
 
           <div class="form-card" style="max-width:820px">
@@ -907,7 +923,7 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
 
         <!-- ═══ ACCESS PANEL ═══ -->
         <div class="dash-panel" id="panel-access">
-          <div class="panel-heading">Access Control</div>
+          <div class="panel-heading">Customers</div>
 
           <div class="form-card pw-section">
             <div class="form-card-title">Change Admin Password</div>
@@ -938,7 +954,6 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
             <button class="subnav-pill" onclick="switchTab('pricing')">Pricing</button>
             <button class="subnav-pill" onclick="switchTab('services')">Catalog</button>
             <button class="subnav-pill active" onclick="switchTab('expertise')">Expertise</button>
-            <button class="subnav-pill" onclick="switchTab('vendors')">Vendors</button>
           </div>
           <div class="panel-sub">Manage the three team member profiles shown on the main site.</div>
 
@@ -986,14 +1001,7 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
 
         <!-- ═══ VENDORS PANEL ═══ -->
         <div class="dash-panel" id="panel-vendors">
-          <div class="panel-heading">Site Content</div>
-          <div class="subnav">
-            <button class="subnav-pill" onclick="switchTab('company')">Company</button>
-            <button class="subnav-pill" onclick="switchTab('pricing')">Pricing</button>
-            <button class="subnav-pill" onclick="switchTab('services')">Catalog</button>
-            <button class="subnav-pill" onclick="switchTab('expertise')">Expertise</button>
-            <button class="subnav-pill active" onclick="switchTab('vendors')">Vendors</button>
-          </div>
+          <div class="panel-heading">Partners</div>
           <div class="panel-sub">Third-party vendors used to outsource services, and the markup rules applied when pricing their costs for a customer.</div>
 
           <div class="form-card">
