@@ -1480,6 +1480,7 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
     <div class="modal-actions" style="margin-top:18px;flex-direction:column;gap:8px">
       <button class="btn-whatsapp" style="width:100%" onclick="sendInvoiceWhatsApp()"><i class="fa-brands fa-whatsapp"></i> Send via WhatsApp</button>
       <button class="btn-approve" style="width:100%;justify-content:center" onclick="sendInvoiceEmail()"><i class="fa-solid fa-envelope"></i> Open Email Draft</button>
+      <button class="btn-approve" style="width:100%;justify-content:center;background:rgba(0,0,0,.04);color:var(--text-muted);border-color:rgba(0,0,0,.12)" onclick="copyInvoiceLink(sendingInvoiceId)"><i class="fa-solid fa-link"></i> Copy Invoice Link</button>
       <button class="modal-cancel" style="width:100%" onclick="closeSendInvoiceModal()">Close</button>
     </div>
   </div>
@@ -4899,6 +4900,7 @@ function renderInvoices() {
     const cust = invoiceCustomers[inv.userId] || {};
     let actions = '';
     actions += `<button class="btn-approve" style="background:rgba(0,0,0,.04);color:var(--text-muted);border-color:rgba(0,0,0,.12)" onclick="openSendInvoiceModal('${inv.docId}')"><i class="fa-solid fa-paper-plane"></i> Send</button>`;
+    actions += `<button class="btn-approve" style="margin-left:6px;background:rgba(0,0,0,.04);color:var(--text-muted);border-color:rgba(0,0,0,.12)" onclick="window.open(getInvoiceLink('${inv.docId}'), '_blank', 'noopener')">View</button>`;
     if (status !== 'paid') actions += `<button class="btn-approve" style="margin-left:6px" onclick="setInvoiceStatus('${inv.docId}','paid')">Mark Paid</button>`;
     if (status === 'pending') actions += `<button class="btn-reject" style="margin-left:6px" onclick="setInvoiceStatus('${inv.docId}','overdue')">Mark Overdue</button>`;
     if (status !== 'pending') actions += `<button class="btn-approve" style="margin-left:6px;background:rgba(0,0,0,.04);color:var(--text-muted);border-color:rgba(0,0,0,.12)" onclick="setInvoiceStatus('${inv.docId}','pending')">Reopen</button>`;
@@ -4916,6 +4918,18 @@ function renderInvoices() {
 
 /* ── Send Invoice (WhatsApp / Email) ── */
 let sendingInvoiceId = null;
+
+function getInvoiceLink(docId) {
+  return new URL('invoice.html?id=' + encodeURIComponent(docId), location.href).href;
+}
+
+async function copyInvoiceLink(docId) {
+  const link = getInvoiceLink(docId);
+  try {
+    await navigator.clipboard.writeText(link);
+    toast('✓ Invoice link copied', 'success');
+  } catch(e) { toast('Copy failed: ' + e.message, 'error'); }
+}
 
 async function openSendInvoiceModal(docId) {
   const inv = invoices.find(i => i.docId === docId);
@@ -4939,8 +4953,8 @@ function closeSendInvoiceModal() {
   sendingInvoiceId = null;
 }
 
-function buildInvoiceMessage(inv, cust) {
-  const portalLink = new URL('portal.html', location.href).href;
+function buildInvoiceMessage(inv, cust, docId) {
+  const invoiceLink = getInvoiceLink(docId);
   return [
     `Hi${cust.name ? ' ' + cust.name : ''}! Here's your invoice from Fifteen:`,
     '',
@@ -4949,7 +4963,7 @@ function buildInvoiceMessage(inv, cust) {
     `Due: ${inv.dueDate ? formatDate(inv.dueDate) : '—'}`,
     `Status: ${inv.status || 'pending'}`,
     '',
-    `View & pay in your portal: ${portalLink}`,
+    `View invoice & payment details: ${invoiceLink}`,
     '',
     '— Fifteen'
   ].join('\n');
@@ -4961,7 +4975,7 @@ function sendInvoiceWhatsApp() {
   const digits = (document.getElementById('si-phone').value || '').replace(/[^\d]/g, '');
   if (!digits) { toast('Enter a WhatsApp number first', 'error'); return; }
   const cust = invoiceCustomers[inv.userId] || {};
-  const text = encodeURIComponent(buildInvoiceMessage(inv, cust));
+  const text = encodeURIComponent(buildInvoiceMessage(inv, cust, sendingInvoiceId));
   window.open(`https://wa.me/${digits}?text=${text}`, '_blank', 'noopener');
 }
 
@@ -4972,7 +4986,7 @@ function sendInvoiceEmail() {
   if (!email) { toast('Enter a customer email first', 'error'); return; }
   const cust = invoiceCustomers[inv.userId] || {};
   const subject = encodeURIComponent(`Invoice from Fifteen${inv.description ? ' — ' + inv.description : ''}`);
-  const body = encodeURIComponent(buildInvoiceMessage(inv, cust));
+  const body = encodeURIComponent(buildInvoiceMessage(inv, cust, sendingInvoiceId));
   window.location.href = `mailto:${encodeURIComponent(email)}?subject=${subject}&body=${body}`;
 }
 

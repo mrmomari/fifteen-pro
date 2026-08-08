@@ -146,8 +146,15 @@ service cloud.firestore {
     }
 
     // ── Invoices ──
+    // get is public (same link-trust model as contracts/questionnaires/
+    // vendorQuotes: the doc id is unguessable and treated as the secret,
+    // used by invoice.html?id=... so a sent invoice link actually shows
+    // the invoice); list stays restricted so the collection can't be
+    // browsed — portal.html's own "my invoices" query still works since
+    // it's gated per-doc by isOwner.
     match /invoices/{id} {
-      allow read: if isAdmin() || isOwner(resource.data.userId);
+      allow get: if true;
+      allow list: if isAdmin() || isOwner(resource.data.userId);
       allow write: if isAdmin();
     }
 
