@@ -52,6 +52,7 @@ body{background:var(--cream);color:var(--text);font-family:'Inter',system-ui,san
 
 .iv-box{background:#fff;border-radius:var(--radius);box-shadow:0 2px 14px rgba(0,0,0,.05);margin-bottom:18px;padding:22px 26px}
 .iv-sec-title{font-size:12px;font-weight:800;color:var(--green);text-transform:uppercase;letter-spacing:.05em;margin:0 0 10px}
+.iv-parties{display:grid;grid-template-columns:1fr 1fr;gap:18px}
 .iv-party-label{font-size:10.5px;font-weight:800;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
 .iv-party-name{font-size:14px;font-weight:700;margin-bottom:2px}
 .iv-party-line{font-size:12.5px;color:var(--text-muted)}
@@ -74,16 +75,25 @@ body{background:var(--cream);color:var(--text);font-family:'Inter',system-ui,san
 @media(max-width:640px){
   .iv-box{padding:16px}
   .iv-title{font-size:21px}
+  .iv-parties{grid-template-columns:1fr}
 }
+@page{margin:12mm}
 @media print{
-  body{background:#fff}
+  body{background:#fff;line-height:1.45}
   .iv-print{display:none !important}
   .iv-page{max-width:100%;padding:0}
-  .iv-header{margin-bottom:16px}
-  .iv-logo{margin-bottom:10px}
-  .iv-box{box-shadow:none;border:1px solid rgba(0,0,0,.12);break-inside:avoid;padding:14px 18px;margin-bottom:10px}
-  .iv-amount-row{padding:8px 0}
-  .iv-foot{margin-top:14px}
+  .iv-header{margin-bottom:10px}
+  .iv-logo{margin-bottom:6px}
+  .iv-logo img{max-height:38px}
+  .iv-title{font-size:20px;margin-bottom:4px}
+  .iv-tag{margin-top:6px}
+  .iv-box{box-shadow:none;border:1px solid rgba(0,0,0,.12);break-inside:avoid;padding:10px 16px;margin-bottom:8px}
+  .iv-sec-title{margin-bottom:6px}
+  .iv-amount-row{padding:5px 0}
+  .iv-comp-row{padding:4px 0;font-size:12px}
+  .iv-party-line{font-size:11.5px}
+  .iv-box img{width:90px !important;height:90px !important;margin-top:4px !important}
+  .iv-foot{margin-top:10px;padding-top:8px}
 }
 </style>
 </head>
@@ -235,18 +245,19 @@ function render() {
 
   let html = '';
 
-  html += `<div class="iv-box"><div class="iv-sec-title">From</div>
-    <div class="iv-party-name">${escHtml(company.name || 'Fifteen')}</div>
-    ${company.address ? `<div class="iv-party-line">${escHtml(company.address)}</div>` : ''}
-    ${company.email ? `<div class="iv-party-line">${escHtml(company.email)}</div>` : ''}
-    ${company.phone ? `<div class="iv-party-line">${escHtml(company.phone)}</div>` : ''}
-  </div>`;
-
-  if (inv.customerName) {
-    html += `<div class="iv-box"><div class="iv-sec-title">Billed To</div>
-      <div class="iv-party-name">${escHtml(inv.customerName)}</div>
-    </div>`;
-  }
+  html += `<div class="iv-box"><div class="iv-sec-title">Parties</div><div class="iv-parties">
+    <div>
+      <div class="iv-party-label">From</div>
+      <div class="iv-party-name">${escHtml(company.name || 'Fifteen')}</div>
+      ${company.address ? `<div class="iv-party-line">${escHtml(company.address)}</div>` : ''}
+      ${company.email ? `<div class="iv-party-line">${escHtml(company.email)}</div>` : ''}
+      ${company.phone ? `<div class="iv-party-line">${escHtml(company.phone)}</div>` : ''}
+    </div>
+    <div>
+      <div class="iv-party-label">Billed To</div>
+      <div class="iv-party-name">${escHtml(inv.customerName || '—')}</div>
+    </div>
+  </div></div>`;
 
   html += `<div class="iv-box"><div class="iv-sec-title">Invoice</div>
     <div class="iv-amount-row"><span class="iv-amount-label">${escHtml(inv.description || 'Services rendered')}</span><span class="iv-amount-value">${fmtMoney(inv.amount, inv.currency)}</span></div>
