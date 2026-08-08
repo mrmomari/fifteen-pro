@@ -183,10 +183,12 @@ orders/{id}             — quotes submitted from shop.html
   source: 'shop'
   createdAt (serverTimestamp)
 
-customers/{uid}         — created when admin approves an application
-  name, email, industry, applicationId
+customers/{uid}         — created when admin approves an application, or directly via Access → Add Customer
+  name, email, industry, phone, applicationId
   status: 'active'
   createdAt
+  — applicationId is only present when the account came from approving a quiz application; phone is
+    optional, only set when entered on the Add Customer form
 
 customerServices/{id}   — services assigned to a customer
   userId, serviceId, serviceName, phase
@@ -335,6 +337,12 @@ auditLogs/{id}          — append-only action trail (admin.html Audit tab)
 6. **Approving does NOT assign any service or create anything billable.** Nothing shows up for that customer in Service Mgmt, Orders, or Invoices until admin explicitly does step 7/8 below — the quiz answers are only a signal of what to sell them.
 7. Admin → Service Mgmt → Assign Service to Customer, based on what they said they need in the quiz
 
+**Admin adds a customer directly (no application):**
+1. Admin → Access → **Add Customer** → name, email, optional phone/industry → Create Customer
+2. Same Auth-account-then-`customers/{uid}`-doc flow as approving an application (with account rollback if the Firestore write fails), just without an `applicationId` link — a password-setup email is sent immediately and the customer can log in at `portal.html` right away
+3. Customer 360 opens automatically for the new customer, with **Assign Product/Service** and **New Contract** quick actions that jump straight into Service Mgmt / Contracts with that customer pre-selected — for onboarding someone who signed up over a call, a referral, or a legacy client, without inventing a fake quiz application for them
+4. From any customer row → Customer 360 also shows a **Contracts** section (alongside Services, Tickets, Invoices, etc.) listing every contract where they're the counterparty
+
 **Visitor builds a plan (shop):**
 1. Picks services on `shop.html` → Get Quote → fills contact details → Submit Order
 2. Order saved to `orders` collection (status `new`)
@@ -395,7 +403,7 @@ auditLogs/{id}          — append-only action trail (admin.html Audit tab)
 
 **Admin manages content:**
 - Sidebar → Admin → `admin.html` → signs in (email/password) → tabs: Applications / Orders / Tickets / Access / Service Mgmt / Tasks / Invoices / Questionnaires / Contracts / Company / Pricing / Services / Expertise / Vendors / Audit / Notifications
-- Access: click any customer row to open **Customer 360** — one view aggregating their application, services + milestone progress, tickets, invoices, tasks, questionnaires, and a merged chronological activity feed, instead of checking each tab separately
+- Access: **Add Customer** creates a portal account directly, no application required (see flow above). Click any customer row to open **Customer 360** — one view aggregating their application (if any), services + milestone progress, contracts, tickets, invoices, tasks, questionnaires, and a merged chronological activity feed, instead of checking each tab separately — plus **Assign Product/Service** and **New Contract** quick actions that jump into those tabs with the customer already selected
 - Service Mgmt: assign services to customers, edit status/notes, and manage the milestone checklist per service (progress bar + `x/y complete` shown both in the Active Services table and the edit modal) — this is what the customer sees in their portal. Each milestone can be assigned to a team member and, once checked complete, given a free-text "what was achieved" note — both are editable from the same edit modal, which also has a "Send Progress Update via WhatsApp" button. Milestones can still be added here directly (without a task), for backwards-compatible fine-grained editing.
 - Tasks: the backbone for all internal work — independent of any customer/service. A "Team Members" roster (`settings/team`, name-only, no login) feeds the "Assigned To" dropdown. Admin creates tasks directly (with an optional linked customer + service, due date, assignee, and invoice amount), completes them inline with a "what was achieved" note, and every priced task auto-invoices the linked customer on completion — no more jumping to Service Mgmt just to check something off. Filterable by assignee and status (pending/completed/all).
 - Invoices: bill a customer for completed/in-progress work (manually, or automatically from a completed task); customer sees it in their portal Billing tab in real time

@@ -919,7 +919,11 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
           </div>
 
           <div class="form-card" style="max-width:820px">
-            <div class="form-card-title">Customers (Portal Users)</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:2px">
+              <div class="form-card-title" style="margin:0">Customers (Portal Users)</div>
+              <button class="form-save" style="margin:0" onclick="openAddCustomerModal()"><i class="fa-solid fa-user-plus"></i> Add Customer</button>
+            </div>
+            <p style="font-size:12px;color:var(--text-dim);margin:2px 0 14px">Click a customer to open Customer 360 — assign a product/service or draft a contract for them from there.</p>
             <div id="customerListWrap">
               <div class="empty-state" style="padding:32px"><i class="fa-solid fa-users"></i>Loading customers…</div>
             </div>
@@ -1797,6 +1801,24 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
   </div>
 </div>
 
+<!-- ══ Add Customer ══ -->
+<div class="modal-overlay" id="addCustomerModal">
+  <div class="modal-box" style="overflow-y:auto;text-align:left">
+    <h3>Add Customer</h3>
+    <p style="font-size:12px;color:var(--text-dim);margin:6px 0 14px">Creates a portal login for this customer directly — no application required. A password-setup email is sent immediately; from there you can assign a product/service and draft a contract for them.</p>
+    <div class="form-grid">
+      <div class="f-field"><label>Name</label><input id="ac-name" placeholder="Full name or business name"></div>
+      <div class="f-field"><label>Email</label><input id="ac-email" type="email" placeholder="customer@business.com"></div>
+      <div class="f-field"><label>Phone</label><input id="ac-phone" type="tel" placeholder="+1 555 123 4567"></div>
+      <div class="f-field"><label>Industry</label><input id="ac-industry" placeholder="e.g. Roofing, Retail…"></div>
+    </div>
+    <div class="modal-actions" style="margin-top:18px">
+      <button class="modal-cancel" onclick="closeAddCustomerModal()">Cancel</button>
+      <button id="acSaveBtn" class="modal-confirm" onclick="createCustomerManually()">Create Customer</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ Customer 360 ══ -->
 <div class="modal-overlay" id="cust360Modal">
   <div class="modal-box" style="width:820px;max-width:94vw;max-height:90vh;overflow-y:auto;text-align:left">
@@ -2031,7 +2053,12 @@ function renderOverview() {
 ══════════════════════════════════════════════ */
 const TABS = ['overview','applications','orders','tickets','access','services-mgmt','tasks','invoices','questionnaires','contracts','company','pricing','services','expertise','vendors','audit','notifications'];
 
-function switchTab(name) {
+// `opts` carries one-shot cross-tab hand-offs — e.g. Customer 360's "Assign
+// Product/Service" and "New Contract" quick actions land here already
+// pointed at that customer. Chained onto the relevant load's promise (not
+// fired in parallel with it) so the preset can't be wiped out by that
+// same load's own DOM rebuild finishing after it.
+function switchTab(name, opts) {
   TABS.forEach(t => {
     const pnl = document.getElementById('panel-' + t);
     if (pnl) pnl.classList.toggle('active', t === name);
@@ -2047,14 +2074,46 @@ function switchTab(name) {
   if (name === 'applications') loadApplications();
   if (name === 'orders') loadOrders();
   if (name === 'tickets') loadTickets();
-  if (name === 'services-mgmt') loadServiceMgmt();
+  if (name === 'services-mgmt') {
+    const p = loadServiceMgmt();
+    if (opts && opts.presetCustomerId) p.then(() => presetServiceMgmtCustomer(opts.presetCustomerId));
+  }
   if (name === 'tasks') loadTasks();
   if (name === 'invoices') loadInvoices();
   if (name === 'questionnaires') loadQuestionnaires();
-  if (name === 'contracts') loadContracts();
+  if (name === 'contracts') {
+    setContractsView('list');
+    const p = loadContracts();
+    if (opts && opts.newContractForCustomerId) p.then(() => openContractModalForCustomer(opts.newContractForCustomerId));
+  }
   if (name === 'audit') loadAuditLogs();
   if (name === 'notifications') loadNotifications();
   if (name === 'vendors') { loadVendors(); loadMarkupRules(); renderMarginReport(); }
+}
+
+function presetServiceMgmtCustomer(custId) {
+  const sel = document.getElementById('sm-customer');
+  if (!sel) return;
+  const opt = Array.from(sel.options).find(o => o.value === custId);
+  if (!opt) return;
+  sel.value = custId;
+  onSmCustomerChange();
+}
+
+// New-Contract flow pre-aimed at one customer (from Customer 360) — same
+// "New Contract" state openContractModal() already builds, just with Type
+// forced to 'customer' and that customer pre-selected as the counterparty
+// (their name/email autofilled the same way picking them manually would).
+async function openContractModalForCustomer(custId) {
+  await openContractModal();
+  document.getElementById('cb-type').value = 'customer';
+  onContractTypeChange();
+  const sel = document.getElementById('cb-counterparty');
+  const opt = Array.from(sel.options).find(o => o.value === custId);
+  if (opt) {
+    sel.value = custId;
+    onContractCounterpartySelectChange();
+  }
 }
 
 /* ══════════════════════════════════════════════
@@ -2668,6 +2727,71 @@ async function approveApplicationClientFallback(docId, name, email, industry) {
   toast('✓ Approved — invite email sent to ' + email, 'success');
 }
 
+/* ══════════════════════════════════════════════
+   ADD CUSTOMER DIRECTLY (no application required)
+   Same Auth-account-then-Firestore-doc-then-rollback-on-failure pattern as
+   approveApplicationClientFallback above, minus the applicationId link —
+   for customers Fifteen wants to onboard without them going through the
+   public quiz (e.g. signed up over a call, a referral, a legacy client).
+══════════════════════════════════════════════ */
+function openAddCustomerModal() {
+  ['ac-name', 'ac-email', 'ac-phone', 'ac-industry'].forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('addCustomerModal').classList.add('open');
+}
+
+function closeAddCustomerModal() {
+  document.getElementById('addCustomerModal').classList.remove('open');
+}
+
+async function createCustomerManually() {
+  if (!auth || !db) { toast('Firebase not connected', 'error'); return; }
+  const name = document.getElementById('ac-name').value.trim();
+  const email = document.getElementById('ac-email').value.trim();
+  const phone = document.getElementById('ac-phone').value.trim();
+  const industry = document.getElementById('ac-industry').value.trim();
+  if (!name || !email) { toast('Name and email are required', 'error'); return; }
+
+  const btn = document.getElementById('acSaveBtn');
+  btn.disabled = true;
+  btn.textContent = 'Creating…';
+  try {
+    const tempPw = genSecurePassword();
+    const secondaryApp = firebase.apps.find(a => a.name === 'Secondary')
+      || firebase.initializeApp(FIREBASE_CONFIG, 'Secondary');
+    const secondaryAuth = secondaryApp.auth();
+    const cred = await secondaryAuth.createUserWithEmailAndPassword(email, tempPw);
+    const uid = cred.user.uid;
+
+    try {
+      await db.collection('customers').doc(uid).set({
+        name, email, industry,
+        ...(phone ? { phone } : {}),
+        status: 'active',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    } catch (writeErr) {
+      try { await cred.user.delete(); } catch (cleanupErr) { /* best-effort rollback */ }
+      await secondaryAuth.signOut();
+      throw writeErr;
+    }
+
+    await secondaryAuth.sendPasswordResetEmail(email);
+    await secondaryAuth.signOut();
+    invalidateCustomersCache();
+    await AppUtils.logAudit(currentAdminIdentity(), 'create', uid, 'customer', { email, name });
+
+    closeAddCustomerModal();
+    toast('✓ Customer created — invite email sent to ' + email, 'success');
+    await loadCustomers();
+    openCustomer360(uid);
+  } catch (e) {
+    toast('Error: ' + (e.message || e), 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Create Customer';
+  }
+}
+
 async function rejectApp(docId) {
   if (!db) { toast('Firebase not connected', 'error'); return; }
   if (!confirm('Reject this application?')) return;
@@ -3138,6 +3262,12 @@ function renderCustomer360Body(cust) {
   const custTasks = allTasks.filter(t => t.customerId === custId);
   const custQuestionnaires = questionnaires.filter(q => q.customerId === custId || (cust.applicationId && q.applicationId === cust.applicationId));
   const custServiceEntries = Object.entries(custServicesCache).filter(([, d]) => d.customerId === custId || d.userId === custId);
+  const custContracts = contracts.filter(c => c.customerId === custId);
+
+  const quickActions = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+    <button class="btn-approve" onclick="closeCustomer360(); switchTab('services-mgmt', {presetCustomerId:'${custId}'})"><i class="fa-solid fa-briefcase"></i> Assign Product/Service</button>
+    <button class="btn-approve" onclick="closeCustomer360(); switchTab('contracts', {newContractForCustomerId:'${custId}'})"><i class="fa-solid fa-file-signature"></i> New Contract</button>
+  </div>`;
 
   const kpi = (label, val) => `<div style="flex:1;min-width:90px;text-align:center;padding:10px 6px;background:rgba(255,255,255,.5);border-radius:8px">
     <div style="font-size:20px;font-weight:800;color:var(--green)">${val}</div>
@@ -3225,20 +3355,28 @@ function renderCustomer360Body(cust) {
       </div>`).join('')
     : '<div class="empty-state" style="padding:14px"><i class="fa-regular fa-clock"></i>No activity yet</div>';
 
+  const contractsSection = custContracts.length
+    ? custContracts.map(c => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.05);font-size:12px;cursor:pointer" onclick="closeCustomer360(); window.open(getContractLink('${c.docId}'), '_blank', 'noopener')" title="Open contract">
+        <span>${escHtml(c.title || 'Untitled')}</span>
+        <span class="status-badge ${contractStatusBadgeClass(c.status)}">${escHtml(c.status || 'draft')}</span>
+      </div>`).join('')
+    : '<div class="empty-state" style="padding:14px"><i class="fa-solid fa-file-signature"></i>No contracts</div>';
+
   const section = (title, icon, body) => `<div style="margin-bottom:16px">
     <div style="font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px"><i class="fa-solid ${icon}"></i> ${title}</div>
     ${body}
   </div>`;
 
-  return kpiRow + profileRow + `
+  return kpiRow + profileRow + quickActions + `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px">
       <div>
         ${section('Services', 'fa-briefcase', servicesSection)}
-        ${section('Tickets', 'fa-comments', ticketsSection)}
+        ${section('Contracts', 'fa-file-signature', contractsSection)}
         ${section('Questionnaires', 'fa-list-ol', qnSection)}
       </div>
       <div>
         ${section('Invoices', 'fa-file-invoice', invoicesSection)}
+        ${section('Tickets', 'fa-comments', ticketsSection)}
         ${section('Tasks', 'fa-list-check', tasksSection)}
         ${section('Recent Activity', 'fa-clock', timelineSection)}
       </div>
