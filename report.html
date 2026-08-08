@@ -232,10 +232,14 @@ function bankDetailsBox() {
     ['Bank', b.bankName], ['Account Name', b.accountName], ['Account Number', b.accountNumber],
     ['Routing Number', b.routingNumber], ['SWIFT / BIC', b.swift], ['IBAN', b.iban], ['Notes', b.notes]
   ].filter(([, v]) => v);
-  if (!rows.length) return '';
-  return `<div class="rp-box"><div class="rp-sec-title">Pay via Bank Transfer</div>` +
+  const bankBox = rows.length ? `<div class="rp-box"><div class="rp-sec-title">Pay via Bank Transfer</div>` +
     rows.map(([label, v], i) => `<div style="padding:6px 0;font-size:13px;${i ? 'border-top:1px solid rgba(0,0,0,.06);' : ''}display:flex;gap:10px"><span style="font-weight:700;color:var(--text-dim);flex-shrink:0;width:130px">${escHtml(label)}</span><span>${escHtml(v)}</span></div>`).join('') +
-    `</div>`;
+    `</div>` : '';
+  const zelleBox = b.zelleQrUrl ? `<div class="rp-box"><div class="rp-sec-title">Pay via Zelle</div>` +
+    (b.zelleNote ? `<div style="font-size:13px;color:var(--text-dim);margin-bottom:10px">${escHtml(b.zelleNote)}</div>` : '') +
+    `<img src="${escHtml(b.zelleQrUrl)}" alt="Zelle QR code" style="width:160px;height:160px;object-fit:contain;border:1px solid rgba(0,0,0,.08);border-radius:8px">` +
+    `</div>` : '';
+  return bankBox + zelleBox;
 }
 
 function setHeader(title, sub, meta, tagHtml) {

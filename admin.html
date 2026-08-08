@@ -286,6 +286,12 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
 }
 .tp-preview{width:56px;height:56px;border-radius:50%;background:var(--cream-alt);border:2px solid rgba(0,0,0,.1);overflow:hidden;margin-bottom:10px}
 .tp-preview img{width:100%;height:100%;object-fit:cover}
+.qr-preview{
+  width:140px;height:140px;border-radius:8px;background:var(--cream-alt);
+  border:1px solid rgba(0,0,0,.1);display:flex;align-items:center;
+  justify-content:center;overflow:hidden;margin-bottom:10px;
+}
+.qr-preview img{width:100%;height:100%;object-fit:contain}
 
 /* Promo / partner rows */
 .drow{display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
@@ -801,6 +807,15 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
               <div class="f-field"><label>IBAN</label><input id="d-bank-iban" placeholder="optional, for international transfers"></div>
             </div>
             <div class="f-field"><label>Bank Address / Notes</label><textarea id="d-bank-notes" rows="2" placeholder="Branch address, reference instructions, etc. (optional)"></textarea></div>
+          </div>
+
+          <div class="form-card">
+            <div class="form-card-title">Zelle QR Code</div>
+            <p style="font-size:12px;color:var(--text-dim);margin:-6px 0 14px">Upload a QR image (e.g. exported from your bank's Zelle screen). Shown alongside bank details wherever those appear — portal.html Billing, signed contracts, and the published client roadmap. Leave blank to hide it.</p>
+            <div class="f-field"><label>Zelle QR Image URL</label><input id="d-zelle-qr-url" type="url" placeholder="https://..." oninput="previewZelleQr()"></div>
+            <div class="qr-preview" id="zelleQrPreview"><span class="nolgo">No QR uploaded</span></div>
+            <label class="upload-btn"><i class="fa-solid fa-arrow-up-from-bracket"></i> Upload Zelle QR<input type="file" id="zelleQrFile" accept="image/*" style="display:none" onchange="uploadZelleQrFile(this)"></label>
+            <div class="f-field" style="margin-top:12px"><label>Caption (optional)</label><input id="d-zelle-note" placeholder="e.g. Send to: billing@fifteen.pro"></div>
           </div>
 
           <button class="form-save" onclick="saveCompanyInfo()">Save Company Info</button>
@@ -1451,6 +1466,21 @@ body{background:#E0E8CF;color:#1C2416;font-family:'Inter',system-ui,sans-serif;l
       <button class="modal-cancel" onclick="closeSvcEditModal()">Cancel</button>
       <button class="btn-reject" style="flex:1;padding:11px" onclick="deleteSvcEdit()">Remove Service</button>
       <button class="modal-confirm" onclick="saveSvcEdit()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Send Invoice Modal ══ -->
+<div class="modal-overlay" id="sendInvoiceModal">
+  <div class="modal-box" style="width:440px;max-width:92vw;text-align:left">
+    <h3>Send Invoice</h3>
+    <p style="font-size:12px;color:var(--text-dim);margin:6px 0 16px" id="si-summary"></p>
+    <div class="f-field"><label>Customer Email</label><input id="si-email" type="email" placeholder="customer@email.com"></div>
+    <div class="f-field" style="margin-top:10px"><label>WhatsApp Number</label><input id="si-phone" type="tel" placeholder="+1 555 123 4567"></div>
+    <div class="modal-actions" style="margin-top:18px;flex-direction:column;gap:8px">
+      <button class="btn-whatsapp" style="width:100%" onclick="sendInvoiceWhatsApp()"><i class="fa-brands fa-whatsapp"></i> Send via WhatsApp</button>
+      <button class="btn-approve" style="width:100%;justify-content:center" onclick="sendInvoiceEmail()"><i class="fa-solid fa-envelope"></i> Open Email Draft</button>
+      <button class="modal-cancel" style="width:100%" onclick="closeSendInvoiceModal()">Close</button>
     </div>
   </div>
 </div>
@@ -3248,6 +3278,7 @@ function fillCompanyForm(d) {
   s('d-bank-name', d.bank?.bankName); s('d-bank-account-name', d.bank?.accountName);
   s('d-bank-account-number', d.bank?.accountNumber); s('d-bank-routing', d.bank?.routingNumber);
   s('d-bank-swift', d.bank?.swift); s('d-bank-iban', d.bank?.iban); s('d-bank-notes', d.bank?.notes);
+  s('d-zelle-qr-url', d.bank?.zelleQrUrl); s('d-zelle-note', d.bank?.zelleNote); previewZelleQr();
 }
 
 function previewLogo() {
@@ -3275,6 +3306,31 @@ async function uploadLogoFile(input) {
   } catch(e) { toast('Upload failed: ' + e.message, 'error'); }
 }
 
+function previewZelleQr() {
+  const url = (document.getElementById('d-zelle-qr-url') || {}).value?.trim() || '';
+  const box = document.getElementById('zelleQrPreview');
+  if (!box) return;
+  box.innerHTML = url
+    ? `<img src="${url}" alt="Zelle QR" onerror="this.parentElement.innerHTML='<span class=nolgo>Image not found</span>'">`
+    : '<span class="nolgo">No QR uploaded</span>';
+}
+
+async function uploadZelleQrFile(input) {
+  if (!storage) { toast('Firebase Storage not connected', 'error'); return; }
+  const file = input.files[0]; if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { toast('File too large (max 5MB)', 'error'); return; }
+  toast('Uploading Zelle QR…', '');
+  try {
+    const ext = file.name.split('.').pop();
+    const ref = storage.ref(`company/zelle-qr.${ext}`);
+    await ref.put(file);
+    const url = await ref.getDownloadURL();
+    document.getElementById('d-zelle-qr-url').value = url;
+    previewZelleQr();
+    toast('✓ Zelle QR uploaded', 'success');
+  } catch(e) { toast('Upload failed: ' + e.message, 'error'); }
+}
+
 async function saveCompanyInfo() {
   if (!db) { toast('Connect Firebase first', 'error'); return; }
   const v = id => document.getElementById(id)?.value.trim() || '';
@@ -3289,7 +3345,8 @@ async function saveCompanyInfo() {
     bank: {
       bankName: v('d-bank-name'), accountName: v('d-bank-account-name'),
       accountNumber: v('d-bank-account-number'), routingNumber: v('d-bank-routing'),
-      swift: v('d-bank-swift'), iban: v('d-bank-iban'), notes: v('d-bank-notes')
+      swift: v('d-bank-swift'), iban: v('d-bank-iban'), notes: v('d-bank-notes'),
+      zelleQrUrl: v('d-zelle-qr-url'), zelleNote: v('d-zelle-note')
     },
     updatedAt: new Date().toISOString()
   };
@@ -4841,7 +4898,8 @@ function renderInvoices() {
     const badgeClass = status === 'paid' ? 'status-approved' : status === 'overdue' ? 'status-rejected' : 'status-pending';
     const cust = invoiceCustomers[inv.userId] || {};
     let actions = '';
-    if (status !== 'paid') actions += `<button class="btn-approve" onclick="setInvoiceStatus('${inv.docId}','paid')">Mark Paid</button>`;
+    actions += `<button class="btn-approve" style="background:rgba(0,0,0,.04);color:var(--text-muted);border-color:rgba(0,0,0,.12)" onclick="openSendInvoiceModal('${inv.docId}')"><i class="fa-solid fa-paper-plane"></i> Send</button>`;
+    if (status !== 'paid') actions += `<button class="btn-approve" style="margin-left:6px" onclick="setInvoiceStatus('${inv.docId}','paid')">Mark Paid</button>`;
     if (status === 'pending') actions += `<button class="btn-reject" style="margin-left:6px" onclick="setInvoiceStatus('${inv.docId}','overdue')">Mark Overdue</button>`;
     if (status !== 'pending') actions += `<button class="btn-approve" style="margin-left:6px;background:rgba(0,0,0,.04);color:var(--text-muted);border-color:rgba(0,0,0,.12)" onclick="setInvoiceStatus('${inv.docId}','pending')">Reopen</button>`;
     actions += `<button class="btn-reject" style="margin-left:6px" onclick="deleteInvoice('${inv.docId}')">Delete</button>`;
@@ -4854,6 +4912,68 @@ function renderInvoices() {
       <td style="white-space:nowrap">${actions}</td>
     </tr>`;
   }).join('');
+}
+
+/* ── Send Invoice (WhatsApp / Email) ── */
+let sendingInvoiceId = null;
+
+async function openSendInvoiceModal(docId) {
+  const inv = invoices.find(i => i.docId === docId);
+  if (!inv) return;
+  sendingInvoiceId = docId;
+  const cust = invoiceCustomers[inv.userId] || {};
+  document.getElementById('si-summary').textContent =
+    `${cust.name || inv.customerName || 'Customer'} — ${invoiceAmountStr(inv)} · ${inv.description || 'Invoice'}${inv.dueDate ? ' · due ' + formatDate(inv.dueDate) : ''}`;
+  document.getElementById('si-email').value = cust.email || '';
+  document.getElementById('si-phone').value = cust.phone || '';
+  document.getElementById('sendInvoiceModal').classList.add('open');
+
+  if (!cust.phone) {
+    const phone = await lookupCustomerPhone(inv.userId);
+    if (phone && sendingInvoiceId === docId) document.getElementById('si-phone').value = phone;
+  }
+}
+
+function closeSendInvoiceModal() {
+  document.getElementById('sendInvoiceModal').classList.remove('open');
+  sendingInvoiceId = null;
+}
+
+function buildInvoiceMessage(inv, cust) {
+  const portalLink = new URL('portal.html', location.href).href;
+  return [
+    `Hi${cust.name ? ' ' + cust.name : ''}! Here's your invoice from Fifteen:`,
+    '',
+    `Description: ${inv.description || 'Invoice'}`,
+    `Amount: ${invoiceAmountStr(inv)}`,
+    `Due: ${inv.dueDate ? formatDate(inv.dueDate) : '—'}`,
+    `Status: ${inv.status || 'pending'}`,
+    '',
+    `View & pay in your portal: ${portalLink}`,
+    '',
+    '— Fifteen'
+  ].join('\n');
+}
+
+function sendInvoiceWhatsApp() {
+  const inv = invoices.find(i => i.docId === sendingInvoiceId);
+  if (!inv) return;
+  const digits = (document.getElementById('si-phone').value || '').replace(/[^\d]/g, '');
+  if (!digits) { toast('Enter a WhatsApp number first', 'error'); return; }
+  const cust = invoiceCustomers[inv.userId] || {};
+  const text = encodeURIComponent(buildInvoiceMessage(inv, cust));
+  window.open(`https://wa.me/${digits}?text=${text}`, '_blank', 'noopener');
+}
+
+function sendInvoiceEmail() {
+  const inv = invoices.find(i => i.docId === sendingInvoiceId);
+  if (!inv) return;
+  const email = (document.getElementById('si-email').value || '').trim();
+  if (!email) { toast('Enter a customer email first', 'error'); return; }
+  const cust = invoiceCustomers[inv.userId] || {};
+  const subject = encodeURIComponent(`Invoice from Fifteen${inv.description ? ' — ' + inv.description : ''}`);
+  const body = encodeURIComponent(buildInvoiceMessage(inv, cust));
+  window.location.href = `mailto:${encodeURIComponent(email)}?subject=${subject}&body=${body}`;
 }
 
 let _creatingInvoice = false;

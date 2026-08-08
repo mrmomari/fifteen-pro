@@ -75,9 +75,13 @@ All answers + contact saved to `applications/{id}` with `quizAnswers` object and
 
 ```
 settings/company        — company info, logo URL, social links, bank account (bank: { bankName, accountName,
-                           accountNumber, routingNumber, swift, iban, notes }) — surfaced wherever the customer
-                           needs to pay: portal.html Billing tab (when an invoice is pending/overdue),
-                           contract.html's Compensation section, and report.html's published client roadmap
+                           accountNumber, routingNumber, swift, iban, notes, zelleQrUrl, zelleNote }) — surfaced
+                           wherever the customer needs to pay: portal.html Billing tab (when an invoice is
+                           pending/overdue), contract.html's Compensation section, and report.html's published
+                           client roadmap. zelleQrUrl is an admin-uploaded QR image (Firebase Storage,
+                           company/zelle-qr.*) shown alongside the bank details wherever those appear;
+                           zelleNote is an optional caption (e.g. the Zelle-enrolled email/phone). Both blank
+                           by default — shown only when zelleQrUrl is set
                            (?cr=, only when showPrices is on). Admin-only otherwise; blank fields are hidden
 settings/pricing        — currency, tax, bundle discount, promo codes
 settings/team           — { members: [name, ...] } — internal team roster for milestone "Assigned To"; no login, admin-managed (admin.html Tasks tab)
@@ -347,6 +351,7 @@ auditLogs/{id}          — append-only action trail (admin.html Audit tab)
    — or automatically, by completing a priced task in the Tasks tab (see below)
 2. Customer sees it immediately in `portal.html` → Billing tab (amount, due date, status) and in the dashboard's Outstanding Invoices KPI
 3. Admin marks it `paid` / `overdue` / back to `pending` from the Invoices tab as money comes in or a due date passes. If the optional backend service (`server/`) is deployed, a daily job also does this automatically — invoices past their due date flip to `overdue` on their own, and (if enabled in Notifications) an email digest goes out. Without that service deployed, this stays fully manual, same as before
+4. Admin → Invoices → any row → **Send** opens a modal with the customer's email (auto-filled from their customer record) and WhatsApp number (auto-filled via the same phone lookup used elsewhere — customer record, falling back to their original application — and editable). **Send via WhatsApp** opens a prefilled `wa.me` chat; **Open Email Draft** opens a `mailto:` link in the admin's own email client — both prefilled with the invoice's description/amount/due date/status and a link to `portal.html` to view and pay. Neither requires the optional backend; nothing is sent automatically, the admin still hits send
 
 **Admin completes a task and bills the customer:**
 1. Admin → Tasks → New Task → title, optional customer + linked service, due date, assignee, and an optional invoice amount → saved to `tasks` collection (status `pending`); if a service is linked, a matching entry is also pushed into that service's `milestones[]` so the portal progress bar reflects it
