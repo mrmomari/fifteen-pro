@@ -3270,6 +3270,17 @@ function closeCustomer360() {
   current360Cust = null;
 }
 
+async function saveCustomerPhone() {
+  if (!db || !current360Cust) return;
+  const phone = document.getElementById('c360-phone').value.trim();
+  try {
+    await db.collection('customers').doc(current360Cust.docId).update({ phone });
+    current360Cust.phone = phone;
+    invalidateCustomersCache();
+    toast('✓ Phone saved', 'success');
+  } catch(e) { toast('Save failed: ' + e.message, 'error'); }
+}
+
 async function saveCustomerInternalContact() {
   if (!db || !current360Cust) return;
   const name = document.getElementById('c360-ic-name').value.trim();
@@ -3307,6 +3318,19 @@ function renderCustomer360Body(cust) {
   const quickActions = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
     <button class="btn-approve" onclick="closeCustomer360(); switchTab('services-mgmt', {presetCustomerId:'${custId}'})"><i class="fa-solid fa-briefcase"></i> Assign Product/Service</button>
     <button class="btn-approve" onclick="closeCustomer360(); switchTab('contracts', {newContractForCustomerId:'${custId}'})"><i class="fa-solid fa-file-signature"></i> New Contract</button>
+  </div>`;
+
+  // The customer's own phone/WhatsApp number (customers/{uid}.phone) — previously only ever set
+  // once on the Add Customer form (or as a side-effect of typing it into a Service Mgmt edit), with
+  // no way to add or fix it afterward. This is what lookupCustomerPhone() reads to auto-fill the
+  // WhatsApp field on Questionnaires, Invoices, and Service updates, so give it a direct editor here.
+  const phoneCard = `<div style="border:1px solid rgba(0,0,0,.08);border-radius:8px;padding:14px;margin-bottom:16px;background:rgba(255,255,255,.5)">
+    <div style="font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px"><i class="fa-solid fa-phone"></i> Customer Phone</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+      <div class="f-field" style="flex:1;min-width:180px;margin-bottom:0"><label>Phone / WhatsApp</label><input id="c360-phone" type="tel" value="${escHtml(cust.phone || '')}" placeholder="+1 555 123 4567"></div>
+      <button class="btn-approve" onclick="saveCustomerPhone()">Save</button>
+    </div>
+    <p style="font-size:11px;color:var(--text-dim);margin-top:8px">Auto-fills the WhatsApp number on this customer's questionnaires, invoices, and service updates.</p>
   </div>`;
 
   // Dedicated per-customer WhatsApp contact — e.g. their account manager — replacing what used to
@@ -3422,7 +3446,7 @@ function renderCustomer360Body(cust) {
     ${body}
   </div>`;
 
-  return kpiRow + profileRow + quickActions + internalContactCard + `
+  return kpiRow + profileRow + quickActions + phoneCard + internalContactCard + `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px">
       <div>
         ${section('Services', 'fa-briefcase', servicesSection)}
