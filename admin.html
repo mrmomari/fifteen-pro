@@ -5740,6 +5740,12 @@ function viewQuestionnaire(docId) {
   document.getElementById('qnv-analyze-btn').style.display = qnHasAnswers(qn) ? '' : 'none';
   document.getElementById('qnv-pdf-btn').style.display = qnHasAnswers(qn) ? '' : 'none';
   document.getElementById('qnViewModal').classList.add('open');
+
+  if (qn.customerId) {
+    lookupCustomerPhone(qn.customerId).then(phone => {
+      if (phone && viewingQnDocId === docId) document.getElementById('qnv-phone').value = phone;
+    });
+  }
 }
 
 function analyzeFromViewModal() {
@@ -6987,6 +6993,12 @@ async function analyzeQuestionnaire(docId) {
   document.getElementById('qnAnalysisModal').classList.add('open');
   // Vendor may have submitted since the report was last saved — pull silently.
   if (saved && saved.vendorQuoteId && saved.vendorStatus !== 'submitted') refreshVendorCosts(true);
+
+  if (qn.customerId) {
+    lookupCustomerPhone(qn.customerId).then(phone => {
+      if (phone && qnReport && qnReport.questionnaireId === docId) document.getElementById('qna-phone').value = phone;
+    });
+  }
 }
 
 function closeQnAnalysisModal() {
